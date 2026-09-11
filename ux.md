@@ -1,39 +1,40 @@
 # Viewer experience
 
-The task is to see what Codex emits, find an event, and inspect its input without losing the current reading position.
+The task is to see what Codex emits, find an event, and inspect its input without losing the current reading position. The selected design is the [Event journal prototype](docs/mockups/event-journal-v2.html). Open the HTML file locally in a browser. The [Electron build handoff](docs/mockups/event-journal-v2-notes.md) supplies implementation boundaries and acceptance checks. The prototype is synthetic, not a running Electron application.
 
-## One stream, two viewing modes
+Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 
-Live mode follows the newest matching events. Scrolling away from the newest row, selecting a row for inspection, or choosing Pause freezes following. Capture continues, while a count shows newly received matching events. Go live clears the historical position and follows the newest matching rows. There is no Play control or time-based reenactment.
+The toolbar contains a literal payload search, a session dropdown with All sessions as its default, and a multi-select hook filter with All hooks as its default. Filters apply to retained history and live arrivals equally. Filtering changes what is displayed, not what is collected. Debounce search, cancel obsolete queries, and prevent stale results from replacing a newer query. Identify payload matches even when they occur outside the visible preview.
 
-Connection status and viewing mode are separate. "History · capturing" means the position is frozen but events are arriving. "Disconnected" means events may be missing. Go live cannot repair a disconnected transport or fetch missed events.
+Each journal entry shows receive time in UTC, hook type, a short preview, and the session identifier. Keep the selected entry visually distinct with a warm background and a small accent marker. Show a bounded neighborhood around it. The left journal has no scrollbar. Do not simply hide a scrollbar on a long list that still requires scrolling to discover events.
 
-## Find and inspect
+The journal's left pin is a vertical scrubber. The top is the oldest matching retained event. Each stop represents one matching event in recording order, not an equal duration of elapsed time. The last stop below the newest event is Live. Clicking or dragging the track selects a stop and updates both journal entries and payload. The newest event itself can still be inspected in history mode; only the Live stop resumes following. The Live label is part of the scrubber and is also clickable. Use neutral warm text and a quiet warm background for its active state. Avoid a green fill that competes with event content.
 
-Keep hook selection, literal text search, and Pause or Go live prominent. Support multiple selected hook types, with All as the default. Apply the same filters to live and historical queries. Debounce text changes and keep stale query results from replacing newer ones.
+Arrow Up and Left select the previous event; Arrow Down and Right select the next event. Home selects the oldest retained match; End selects Live. Page Up and Page Down move five matching events. The mouse wheel over the journal moves through events with bounded updates. Support touch dragging. Expose a named vertical slider with its current receive time and hook, or Live, as its accessible value. Event rows remain keyboard-operable buttons.
 
-Rows show receive time, hook type, session, tool where available, and a short preview. Session IDs distinguish concurrent Codex sessions. Previews may be shortened visibly; the inspector shows the complete accepted payload. A search hit can occur in text that is not visible in the preview, so identify the matching field or highlight it in the inspector.
+Selecting an event or scrubbing away from Live freezes following while capture continues. Incoming events do not change the selected event, visible neighborhood, or payload scroll position. Count new matching events separately. Returning to Live clears this count and selects the newest matching event. Normal application startup starts in Live; the prototype deliberately opens a populated historical event to demonstrate inspection.
 
-Load older and newer pages around stable event IDs. Offer a timestamp jump, show the display timezone, and explain when the requested time predates retained history. Keep scroll position stable when filters return results and when new events arrive. On narrow windows, the inspector can replace the list with a clear Back action.
+Connection and viewing mode are separate. Show whether the viewer is connected and whether its position is held. Live while disconnected does not reconnect the collector or recover missed events. Reconnecting starts a new live connection and preserves a visible coverage gap with an unknown loss count. It does not move a user who is inspecting history.
 
-The inspector supports expanding JSON fields and copying the accepted raw payload. Treat all values as plain text. Large accepted events must not trigger unbounded syntax highlighting, formatting, or expansion work.
+The inspector shows the complete accepted payload as plain text, with receive time, session, optional tool, and byte count. Copy JSON copies the original accepted payload bytes as text, not a reconstructed object with fields removed or reordered. The production data contract must preserve those original bytes. The prototype formats synthetic objects for illustration and does not demonstrate byte preservation.
 
-## Limits and exceptional states
+The right payload pane scrolls normally with wheel, trackpad, touch, and keyboard. Hide browser-native scrollbar visuals and provide a custom draggable thumb and track. Derive thumb height from the visible fraction of content and thumb position from scroll offset. Clicking the track positions the thumb around the click; dragging preserves the initial grab offset. Arrow keys move a small distance, Page Up and Page Down move most of the viewport, and Home and End reach its limits. Hide and remove the custom control from keyboard navigation when content fits. Use a named scrollbar role, its controlled element, orientation, and value. Keep the payload itself focusable for native keyboard scrolling.
 
-- Empty recording: show connection state and whether any event has been received. Do not claim hooks are installed from a working connection alone.
-- No filter matches: keep filters visible and provide a clear reset action.
-- Disconnection: preserve history and show the affected interval with unknown loss count.
-- Known drops: show a bounded count and reason when available, without claiming complete accounting.
-- Storage eviction: show the earliest retained timestamp. If the current event is evicted, say so and offer the nearest retained history. Any already open payload remains subject to a memory cap.
-- Storage or resource pressure: stop accepting excess data while preserving responsive navigation. State why collection is limited.
-- Query timeout: stop work and invite a narrower search; do not keep background scans running.
-- Clear history: use a destructive control and a brief confirmation because deletion is irreversible. Clear loaded rows, selected payloads, counters, and pending old results too.
-- Window close: quit and clean up without a routine confirmation dialog. If deletion fails, report that failure without hanging indefinitely.
+Clear history is a small red outlined button containing a locked icon and Clear. The first activation unlocks it for 3,000 milliseconds, changes the icon and accessible label, and shows Clear? with a receding fill. Only another activation before that deadline deletes history. Expiry relocks without deleting anything; an activation after expiry starts a new confirmation window. Use a monotonic deadline, not animation completion, to authorize deletion. Escape and document hiding cancel the unlocked state. Reduced motion can suppress the fill animation without extending the deadline. Disable the control on an empty recording. Do not show a modal confirmation dialog.
 
-## Visual decisions
+Clearing invalidates loaded rows, selected payloads, counters, pending queries, and old incoming batches, and starts a fresh recording connection. Late work from the previous recording cannot repopulate history. Closing the only window quits and deletes the temporary recording without a routine confirmation. Hiding or minimizing keeps capture running. Report deletion failures without hanging indefinitely.
 
-The [SVG mockup](docs/diagrams/event-stream.svg) is a design illustration with synthetic data, not a screenshot of a working product. Use warm paper `#F2EADE`, surfaces `#EADFCD`, primary text `#604939`, and blue-gray links `#3D5D71`. Use `#784F26` sparingly for the main action and `#8F3A2D` for destructive actions.
+| Condition | Visible behavior |
+| --- | --- |
+| Empty recording | Show connection state and that no events have arrived. Do not infer hook installation from connectivity. Disable event scrubbing and clearing. |
+| No filter matches | Keep the toolbar visible, show No matching events, and offer Reset filters. Do not display an unrelated selected payload. |
+| Disconnection | Preserve received history and inspection position. Show the gap and unknown loss count. |
+| Known drops | Show the known count and reason separately from intervals with unknown losses. |
+| History eviction | Update earliest retained time. If the selected event is removed, explain that and select the nearest retained matching event. Never silently relabel another payload as the evicted event. |
+| Storage pressure | State that incoming data is being dropped, retain responsive navigation, and preserve available history. |
+| Search timeout | Stop the query, keep the filters editable, and invite a narrower search or reset. |
+| Clear failure | Report the failure. Do not claim all history was deleted; isolate old recording results while cleanup is resolved. |
 
-Use system UI fonts in the initial offline desktop app, with system monospace for timestamps, identifiers, and JSON. Keep normal text at least 16px and use 400, 500, and 600 weights. The system stack avoids a network font dependency. No theme switcher is planned.
+Use warm paper `#F2EADE`, panels `#EADFCD`, raised areas `#E0D2BD`, fields `#F9F6F0`, borders `#C1AF9A`, primary text `#604939`, secondary text `#66574D`, links and payload text `#3D5D71`, selected-event accents `#784F26`, and destructive controls `#8F3A2D`. The custom scrollbar uses a panel-colored track and a border-colored thumb, darkening on interaction. A small green connection dot is acceptable; Live is neutral. Keep visible focus rings, soft corners, and 400, 500, and 600 font weights. Use system UI text at 16px for primary controls and event names, 13.5px for secondary text and JSON, and system monospace for identifiers, timestamps, and payloads. No theme switcher or remote font dependency.
 
-Virtualize the event list. Keyboard navigation, visible focus, semantic controls, and accessible labels belong in the first implementation. Avoid announcing every incoming row to assistive technology; announce connection and mode changes instead.
+Keep UI work bounded. The scrubber does not justify loading the complete recording into the renderer. Render only the visible event neighborhood, keep a limited summary cache, and load selected payloads on demand. Bound text formatting and search work for large accepted events. Announce connection and mode changes and clear confirmation status; do not announce every incoming row.
