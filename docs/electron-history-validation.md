@@ -7,6 +7,13 @@ Search, full scrub navigation and authenticated network input remain separate
 issues. Linux results do not establish real Codex compatibility or macOS
 performance, energy use, native window behavior, sleep or setup.
 
+The original bare-Xvfb minimize checks below verified capture after calling
+`minimize()`, but did not prove that the window became minimized. The
+[integrated regression suite](electron-regression-validation.md) adds an
+isolated Openbox session, requires `isMinimized()` to become true and
+checks suppressed presentation during continued capture. Treat the older
+minimize wording only as call-path coverage, not native minimization evidence.
+
 ## Environment and commands
 
 Ubuntu 26.04.1 x64, Linux 7.0.0-31-generic, two DO-Regular virtual CPU cores,

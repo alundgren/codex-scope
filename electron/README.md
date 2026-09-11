@@ -24,7 +24,10 @@ restart, and there is no replay or recovery of missed events.
 Tested with Node 24.21.0, npm 11.19.0, Ubuntu 26.04.1 x64 and Xvfb. Electron
 44.3.0 embeds Node 24.20.0 and SQLite 3.53.4. Playwright 1.63.0 is used only for
 development validation. Linux needs Electron's shared libraries, including
-NSS, ATK, X11, GBM, ALSA and CUPS, plus Xvfb and xauth. Check
+NSS, ATK, X11, GBM, ALSA and CUPS, plus Xvfb and xauth. The combined
+validation and Electron test commands also need Openbox and `xprop` from
+`x11-utils` to test actual minimization. On Ubuntu, install those development
+prerequisites with `sudo apt-get install --no-install-recommends openbox x11-utils`. Check
 `ldd node_modules/electron/dist/electron` for missing libraries after installing.
 No Electron commands or dependencies are installed in `linux/`.
 
@@ -105,8 +108,7 @@ runtime package dependency, embedded server, formatter, framework or extra
 OS process. One bounded Node worker owns SQLite and ingestion. Tests and
 Playwright's FFmpeg binary are excluded from the bundle.
 
-`npm test` runs the adapter and fake-server transport checks and actual Electron integration tests after
-a build. Tests use isolated private owner directories and synthetic data.
+`npm test` builds the production bundle, then runs adapter and fake-server transport checks and actual Electron integration tests. Tests use isolated private owner directories and synthetic data.
 Search tests also cover literal punctuation, matches outside previews, full-ID
 collisions, several hooks, cancellation during SQLite execution, timed queries,
 stale filter/target replies, paging choices and gesture eviction.
@@ -129,28 +131,38 @@ files. It does not install hooks, change trust or configure a proxy:
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:collector
 ```
 
-Capture the unchanged visual reference separately:
+Run the complete visual workflow, including the unchanged reference and an artifact manifest:
 
 ```bash
-xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/reference.mjs
+setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' npm run validate:visual
 ```
 
-Run measurements separately from recordings or other Electron tests:
+Run the integrated resource workflow separately from recordings or other Electron tests:
 
 ```bash
-xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:transport
-xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:navigation
-xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:history
-xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure -- baseline
+setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' npm run validate:resources
+npm run check:resources
+npm run check:resources -- --prove-failure
 ```
 
-Results go under ignored `measurements/`. [Transport validation](../docs/electron-transport-validation.md)
-records current protocol and resource evidence. See [search and navigation validation](../docs/electron-navigation-validation.md)
-for current query/interaction budgets and evidence, [history validation](../docs/electron-history-validation.md)
-for budgets, measurements and evidence, and [initial inspector validation](../docs/electron-validation.md)
-for the original empty-window comparison. Linux synthetic checks do not
-establish real Codex compatibility or macOS performance, energy use, sleep,
-native lifecycle or setup.
+The resource command builds the app and runs three empty-window/app trials,
+including bounded capture, search, repeated eviction, hidden/minimized capture,
+bursts, stalled storage and failure/recovery. Append `-- --runs=1` for a single
+trial. Reports go under ignored `measurements/regression/`. Missing required
+metrics or exceeded checked-in thresholds return failure. Visual artifacts go
+under ignored `validation/visual/`; inspect the screenshots and recordings.
+See [integrated regression validation](../docs/electron-regression-validation.md)
+for metric definitions, machine prerequisites, measured variation, limits and
+the complete handoff scenario matrix.
+
+The original per-feature `measure:history`, `measure:navigation`,
+`measure:transport` and `measure -- baseline` commands remain available for
+focused investigation. [Transport validation](../docs/electron-transport-validation.md),
+[search and navigation validation](../docs/electron-navigation-validation.md),
+[history validation](../docs/electron-history-validation.md) and
+[initial inspector validation](../docs/electron-validation.md) retain their
+dated results. Linux synthetic checks do not establish real Codex compatibility
+or macOS performance, energy use, sleep, native lifecycle or setup.
 
 ## Ownership and limits
 

@@ -12,6 +12,13 @@ Linux development behavior. Real Codex compatibility, private HTTPS proxy
 routing, cross-account capture and macOS setup, performance, energy use, sleep
 and native lifecycle remain unverified.
 
+The original bare-Xvfb minimize checks below verified capture after calling
+`minimize()`, but did not prove that the window became minimized. The
+[integrated regression suite](electron-regression-validation.md) adds an
+isolated Openbox session, requires `isMinimized()` to become true and
+checks suppressed presentation during continued capture. Treat the older
+minimize wording only as call-path coverage, not native minimization evidence.
+
 ## Architecture and limits
 
 The existing SQLite worker also owns Node HTTP/HTTPS transport. The renderer

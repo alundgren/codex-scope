@@ -51,6 +51,8 @@ the shared generation before closing old transport and deleting its recording.
 [Transport validation](electron-transport-validation.md) records protocol limits,
 measured working sets, sources and actual-app failure/recovery evidence.
 
+[Integrated regression validation](electron-regression-validation.md) runs the production app through capture, full-history search, repeated eviction, hidden presentation and storage failures. It compares all Electron processes with an empty window, enforces measured resource thresholds and keeps the recorded visual suite separate. Validation tooling and its synthetic fake server are development-only.
+
 The diagrams below describe the complete target system.
 There is no recording of missed events, replay or offline recovery. macOS
 performance, energy use, sleep, setup and native lifecycle remain unverified.

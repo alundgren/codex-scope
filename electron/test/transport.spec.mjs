@@ -81,8 +81,11 @@ test('recorded transport: connection, held reconnect, totals, local drops, Clear
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show());
     await expect(page.locator('#count')).toHaveText('9 retained'); await capture(page, info, 'hidden-recovered');
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].minimize());
+    await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMinimized())).toBe(true);
+    const minimizedText = await page.locator('#count').textContent();
     for (let index = 0; index < 6; index++) { server.event(source[1]); await wait(350); }
     expect((await status(app)).total).toBe(15);
+    expect(await page.locator('#count').textContent()).toBe(minimizedText);
     await app.evaluate(({ BrowserWindow }) => { BrowserWindow.getAllWindows()[0].restore(); BrowserWindow.getAllWindows()[0].show(); });
     await expect(page.locator('#count')).toHaveText('15 retained'); await capture(page, info, 'minimized-recovered');
     expect(errors).toEqual([]); expect(server.state.requests.every(value => value.authorization && ['/v1/stream','/v1/heartbeat'].includes(value.path))).toBe(true);
