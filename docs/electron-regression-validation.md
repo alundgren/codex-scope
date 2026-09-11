@@ -121,7 +121,12 @@ was achieved exactly.
 Later phases measure hidden/minimized capture with a DOM mutation observer and a native `isMinimized()` check,
 100 ms storage delay, a 2,000-event immediate burst, a 6,500 ms stalled event,
 real SQLite read-only and full errors, simulated low free space, recovery,
-settled idle, failed cleanup and fresh restart. No fault installs a growing
+settled idle, failed cleanup and fresh restart. Phase completion uses a debugger-only request for the worker's current processing
+slot and response buffer, together with main queue/request counts. Coalesced UI
+status can be stale while a chunk is still processing and is not a completion
+signal. The delayed phase also requires all sixty events accepted and at least
+six seconds elapsed before removing the 100 ms per-event fault. Diagnostic
+requests add bounded work to the measured process. No fault installs a growing
 work queue. The stall verifies that heartbeat renewal stops; the burst verifies
 refusal or rate disconnection. Restart and normal close check owned files.
 

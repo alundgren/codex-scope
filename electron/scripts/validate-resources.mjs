@@ -32,6 +32,7 @@ const report = { schemaVersion: 1, generatedAt: new Date().toISOString(), mode: 
     excluded: 'Xvfb, Openbox, Node driver, fake collector and metric reader. No video, screenshots, tests or concurrent app workloads.',
     latency: 'Monotonic driver input start through completed journal aria-busy=false, matching selected row/payload/slider, successful result, and following animation frame. Search includes 180 ms debounce. Startup includes launch, connection readiness and two animation frames.',
     disk: 'Worker maximum of all recording files inside transactions includes rollback journal, sidecars and owner marker. SQLite temp_store=MEMORY; 8 MiB SQLite heap includes its temporary work. Independent endpoint scan verifies disk totals.',
+    completion: 'Phase completion queries current worker transport processing and response-buffer diagnostics; coalesced UI notifications are not a worker completion signal.',
     faults: 'Debugger-only bounded delays and SQLite read-only/page-limit errors; simulated free-space/cleanup failure. No private configuration or collector process.' }, trials: [] };
 const checkpoint = () => writeFile(path.join(output, 'report.partial.json'), JSON.stringify(report, null, 2) + '\n');
 for (const signal of ['SIGTERM', 'SIGINT']) process.once(signal, () => {
@@ -59,14 +60,20 @@ async function trial(index) {
   const result = { index, baseline: {}, workloads: {}, assertions: [] };
   report.trials.push(result);
   let app, page, server;
-  const state = () => app.evaluate(() => globalThis.scopeHistory.snapshot());
+  const state = () => app.evaluate(async () => {
+    const history = globalThis.scopeHistory, main = history.snapshot();
+    const current = await history.call('test', { faults: {} });
+    if (!current.ok) throw new Error('Current worker diagnostics are unavailable.');
+    delete current.directory; delete current.limits; delete current.ok;
+    return { ...main, ...current };
+  });
   const fault = faults => app.evaluate((_electron, faults) => globalThis.scopeHistory.call('test', { faults }), faults);
   const assertThat = (value, label) => { assert(value, label); result.assertions.push(label); };
   async function settle() {
     const deadline = performance.now() + 8000;
     while (true) {
       const current = await state();
-      if (!current.queuedCount && !current.pendingRequests && !current.transport.processing) return current;
+      if (!current.queuedCount && !current.pendingRequests && !current.transport.processing && !current.transportBufferedBytes) return current;
       assert(performance.now() < deadline, 'Pending input must drain within eight seconds.');
       await wait(25);
     }
@@ -78,6 +85,7 @@ async function trial(index) {
         tail: `${'x'.repeat(60)} literal [a.*]%_ ${cursor % 2 ? 'odd' : 'even'}`, index: cursor }));
       if (intervalMs) await wait(intervalMs);
     }
+    await wait(100);
     await settle();
     return { offered: count, intervalMs, durationMs: performance.now() - started,
       bytesWritten: server.state.written - beforeBytes, serverRefused: server.state.refused - beforeRefused,
@@ -173,8 +181,10 @@ async function trial(index) {
       await app.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]; window.restore(); window.show(); });
       await wait(400); await completed(page);
     }
+    const beforeDelayed = (await state()).accepted;
     await fault({ transportDelay: 100 });
     await record('delayedStorage', async () => { const load = await feed(60, 8); await fault({ transportDelay: 0 }); return load; });
+    assertThat((await state()).accepted === beforeDelayed + 60 && result.workloads.delayedStorage.workload.durationMs >= 6000, 'All sixty delayed events finish their storage work before measurement ends.');
     await record('burst', async () => { const load = await feed(2000, 0); await wait(3500); return load; });
     assertThat(server.state.refused > 0 || (await state()).transport.metrics.rateDisconnects > 0, 'Over-limit burst drops input instead of accumulating a replay queue.');
     await page.waitForFunction(() => document.querySelector('.connection').textContent === 'Connected');
@@ -212,7 +222,7 @@ async function trial(index) {
     await record('restartRecovery', async () => { await feed(20, 12); await wait(500); }, { timer: false });
     assertThat((await state()).total === 20, 'Restart removes abandoned history and accepts only fresh events.');
     const final = await settle();
-    assertThat(final.queuedCount === 0 && final.pendingRequests === 0 && final.transport.processing === 0, 'Final intake and request queues are empty.');
+    assertThat(final.queuedCount === 0 && final.pendingRequests === 0 && final.transport.processing === 0 && final.transportBufferedBytes === 0, 'Final intake, transport buffer and request queues are empty.');
     result.server = { writtenBytes: server.state.written, refused: server.state.refused, requests: server.state.requestCount, heartbeats: server.state.heartbeats, peakSockets: server.state.peakSockets };
     assertThat(server.state.requests.every(value => ['/v1/stream', '/v1/heartbeat'].includes(value.path)), 'No replay request is sent.');
     await app.close(); app = null;
