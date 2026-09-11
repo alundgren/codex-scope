@@ -19,6 +19,11 @@ scrollbar. No runtime package or extra OS process is added.
 Each application recording starts in Live with synthetic seed events and
 continued arrivals. Selecting a row holds its neighborhood and payload offset
 while capture continues. Retained bounds and arrival counts stay current.
+Literal search covers complete accepted payloads and metadata. Full session IDs
+and several hook selections filter history and matching-arrival counters equally.
+The vertical slider freezes its matching count and retained upper bound during a
+gesture, with one logical stop per event and a distinct Live endpoint. Timed
+worker queries and bounded option pages avoid whole-recording result arrays.
 Clear requires two separate activations within its three-second deadline,
 invalidates old work and removes old history before starting a fresh connection.
 One application instance owns private recording files, separately from settings.
@@ -29,11 +34,12 @@ while suppressing presentation work. Deletion failures remain explicit.
 Admission, worker requests, database/cache/journal sizes, retention and cleanup
 all have fixed limits. The [Electron development guide](../electron/README.md)
 explains commands and ownership; [history validation](electron-history-validation.md)
-records those budgets, actual Electron lifecycle checks, inspected recordings
-and whole-application resource measurements.
+records storage budgets and actual Electron lifecycle checks.
+[Navigation validation](electron-navigation-validation.md) records inspected
+search/scrub flows, bounded queries and whole-application measurements.
 
 The diagrams below describe the complete target system. Authenticated viewer
-transport, credentials, search and full scrub navigation remain separate work.
+transport and credentials remain separate work.
 There is no recording of missed events, replay or offline recovery. macOS
 performance, energy use, sleep, setup and native lifecycle remain unverified.
 
@@ -129,9 +135,16 @@ Store original accepted payload bytes with a small envelope: local event ID, rec
 
 Both processes need limits on incoming bytes, event rate, queue bytes, queue count, and pending operations. On the Mac, database work and expensive searching belong off the renderer and must not block Electron's lifecycle handling. Rate-limit UI updates and provide a bounded number of pending database batches. When capacity runs out, drop input before allocating more work.
 
-Use a configurable recording size budget and evict the oldest rows in small transactions. Account for the database, journal or WAL, temporary search files, and SQLite cache, not just payload lengths. Set physical growth limits and leave disk headroom. If eviction cannot keep up or a write fails, discard incoming events and keep the app responsive. Avoid full database compaction during capture. Freed pages can be reused without shrinking the file on every eviction. See [SQLite pragmas](https://sqlite.org/pragma.html) for the controls to evaluate; a database page limit alone does not bound every sidecar file.
+Use a fixed measured recording size budget and evict the oldest rows in small transactions. Account for the database, journal or WAL, temporary search files, and SQLite cache, not just payload lengths. Set physical growth limits and leave disk headroom. If eviction cannot keep up or a write fails, discard incoming events and keep the app responsive. Avoid full database compaction during capture. Freed pages can be reused without shrinking the file on every eviction. See [SQLite pragmas](https://sqlite.org/pragma.html) for the controls to evaluate; a database page limit alone does not bound every sidecar file.
 
-The current viewer loads at most five visible summaries and one selected payload, with no whole-recording ID array or summary cache. Page with stable event IDs rather than increasingly large offsets. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured.
+The current viewer loads at most five visible summaries and one selected payload, with no whole-recording ID array or summary cache. Use stable event IDs for neighboring rows. Coarse slider positions may use SQL
+offsets within the measured retained row/byte ceilings and query deadline. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured. One active worker predicate
+also updates scalar matching counts when rows arrive or are evicted. A frozen
+navigation request carries the matching count, retained upper ID and cumulative
+matching eviction count. New arrivals cannot change its ranks; matching eviction
+invalidates it. Recording, filter and target identities reject obsolete replies.
+A JavaScript SQLite function checks shared cancellation and the query deadline
+per visited row. Choice indexes and result pages stay inside fixed budgets.
 
 Numeric defaults for bytes, timeouts, rates, and storage are implementation decisions to establish with measured overload checks in step 1 and step 3 of [the plan](../plan.md). The agreed behavior at every limit is to shed work, not expand capacity indefinitely.
 

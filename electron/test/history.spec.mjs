@@ -40,12 +40,15 @@ async function append(app, count, template = 1, { burst = false, oversized = fal
   }, { message: source[template], count, burst, oversized, receivedStart });
 }
 async function expectAlignedPin(page) {
-  const distance = await page.evaluate(() => {
+  const difference = await page.evaluate(() => {
+    const slider = document.querySelector('#scrubber');
     const pin = document.querySelector('#pin').getBoundingClientRect();
-    const row = document.querySelector('.event[aria-pressed="true"]').getBoundingClientRect();
-    return Math.abs(pin.top + pin.height / 2 - row.top - row.height / 2);
+    const track = slider.getBoundingClientRect();
+    const maximum = Number(slider.getAttribute('aria-valuemax'));
+    const position = Number(slider.getAttribute('aria-valuenow'));
+    return Math.abs(pin.top + pin.height / 2 - track.top - track.height * position / maximum);
   });
-  expect(distance).toBeLessThanOrEqual(1);
+  expect(difference).toBeLessThanOrEqual(1);
 }
 async function clear(page) {
   await page.locator('#clear').click();

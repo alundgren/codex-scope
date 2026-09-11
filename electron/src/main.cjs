@@ -1,6 +1,7 @@
 const { app, BrowserWindow, clipboard, ipcMain, Menu, protocol, session } = require('electron');
 const { readFile } = require('node:fs/promises');
 const path = require('node:path');
+const { validNavigation, positive, QUERY_LIMITS } = require('./search.cjs');
 const { History, LIMITS } = require('./history.cjs');
 
 const PAGE = 'scope://app/index.html';
@@ -10,6 +11,7 @@ const assets = new Map([
   ['scope://app/style.css', ['style.css', 'text/css']],
   ['scope://app/renderer.js', ['renderer.js', 'text/javascript']],
   ['scope://app/scrollbar.js', ['scrollbar.js', 'text/javascript']],
+  ['scope://app/filters.js', ['filters.js', 'text/javascript']],
 ]);
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'";
 protocol.registerSchemesAsPrivileged([{ scheme: 'scope', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
@@ -98,6 +100,23 @@ app.whenReady().then(async () => {
     inspecting = true;
     try { return { ...await history.inspect(generation, id, rows), localDrops: history.localDrops, rateDrops: history.rateDrops, unknownGap: history.unknownGap }; }
     finally { inspecting = false; }
+  });
+  ipcMain.on('scope:cancel', (event, generation, targetId) => {
+    if (trusted(event) && Number.isSafeInteger(generation) && positive(targetId)) history.cancel(generation, targetId);
+  });
+  ipcMain.handle('scope:navigate', async (event, generation, query) => {
+    if (!trusted(event) || inspecting || !Number.isSafeInteger(generation) || !validNavigation(query, LIMITS.rows)) throw new Error('Navigation unavailable.');
+    inspecting = true;
+    try { return { ...await history.navigate(generation, query), localDrops: history.localDrops, rateDrops: history.rateDrops, unknownGap: history.unknownGap }; }
+    finally { inspecting = false; }
+  });
+  let readingChoices = false;
+  ipcMain.handle('scope:choices', async (event, generation, field, cursor, direction) => {
+    if (!trusted(event) || readingChoices || !Number.isSafeInteger(generation) || !['session', 'hook'].includes(field) ||
+        !['next', 'previous'].includes(direction) || !(cursor === null || typeof cursor === 'string' && Buffer.byteLength(cursor) <= QUERY_LIMITS.choiceBytes)) throw new Error('Filter choices unavailable.');
+    readingChoices = true;
+    try { return await history.choices(generation, field, cursor, direction); }
+    finally { readingChoices = false; }
   });
   ipcMain.handle('scope:clear', (event, generation) => {
     if (!trusted(event) || !Number.isSafeInteger(generation)) throw new Error('Clear unavailable.');

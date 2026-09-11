@@ -1,6 +1,7 @@
 const { Worker } = require('node:worker_threads');
 const { EventEmitter } = require('node:events');
 const path = require('node:path');
+const { validNavigation, positive } = require('./search.cjs');
 const { MAX_FRAME_BYTES } = require('./recording.cjs');
 
 const LIMITS = Object.freeze({
@@ -17,7 +18,7 @@ class History extends EventEmitter {
   constructor(options) {
     super();
     this.generation = 1;
-    this.shared = new Int32Array(new SharedArrayBuffer(4));
+    this.shared = new Int32Array(new SharedArrayBuffer(8));
     Atomics.store(this.shared, 0, this.generation);
     this.pending = new Map();
     this.queue = [];
@@ -33,6 +34,7 @@ class History extends EventEmitter {
     this.tokenTime = performance.now();
     this.peakQueueCount = 0;
     this.peakQueueBytes = 0;
+    this.peakPending = 0;
     this.status = { generation: 1, total: 0, accepted: 0, first: null, last: null, drops: {}, starting: true };
     this.worker = new Worker(path.join(__dirname, 'history-worker.cjs'), {
       workerData: { ...options, limits: LIMITS, shared: this.shared.buffer },
@@ -57,7 +59,7 @@ class History extends EventEmitter {
   }
   snapshot() {
     return { ...this.status, localDrops: this.localDrops, rateDrops: this.rateDrops, unknownGap: this.unknownGap, peakQueueCount: this.peakQueueCount,
-      peakQueueBytes: this.peakQueueBytes, queuedCount: this.queue.length, queuedBytes: this.queueBytes };
+      peakQueueBytes: this.peakQueueBytes, queuedCount: this.queue.length, queuedBytes: this.queueBytes, pendingRequests: this.pending.size, peakPending: this.peakPending };
   }
   fail() {
     this.closed = true;
@@ -76,6 +78,7 @@ class History extends EventEmitter {
       // A timed-out request keeps its slot until the worker replies or exits.
       const timer = setTimeout(() => resolve({ error: 'History operation timed out. Try again.', timedOut: true }), LIMITS.requestMs);
       this.pending.set(request, { resolve, timer, generation: this.generation, operation });
+      this.peakPending = Math.max(this.peakPending, this.pending.size);
       try { this.worker.postMessage({ request, generation: this.generation, operation, ...data }); }
       catch { clearTimeout(timer); this.pending.delete(request); resolve({ error: 'History operation failed.' }); }
     });
@@ -137,10 +140,25 @@ class History extends EventEmitter {
     if (generation !== this.generation) return Promise.resolve({ stale: true });
     return this.call('inspect', { id, rows });
   }
+  cancel(generation, targetId) {
+    if (generation === this.generation && positive(targetId) && targetId > Atomics.load(this.shared, 1)) Atomics.store(this.shared, 1, targetId);
+  }
+  navigate(generation, query) {
+    if (generation !== this.generation) return Promise.resolve({ stale: true });
+    if (!validNavigation(query, LIMITS.rows)) return Promise.resolve({ error: 'Invalid navigation request.' });
+    this.cancel(generation, query.targetId);
+    if (query.targetId !== Atomics.load(this.shared, 1)) return Promise.resolve({ stale: true });
+    return this.call('navigate', { query });
+  }
+  choices(generation, field, cursor, direction) {
+    if (generation !== this.generation) return Promise.resolve({ stale: true });
+    return this.call('choices', { field, cursor, direction });
+  }
   async clear(generation) {
     if (generation !== this.generation || this.status.clearing || !this.status.total) return { stale: true };
     this.generation++;
     Atomics.store(this.shared, 0, this.generation);
+    Atomics.store(this.shared, 1, 0);
     this.queue = [];
     this.queueBytes = 0;
     this.localDrops = 0;
@@ -159,6 +177,7 @@ class History extends EventEmitter {
     if (this.closed) return false;
     this.generation++;
     Atomics.store(this.shared, 0, this.generation);
+    Atomics.store(this.shared, 1, 0);
     this.queue = [];
     this.queueBytes = 0;
     const result = await this.call('close');
