@@ -2,6 +2,20 @@
 
 The task is to see what Codex emits, find an event, and inspect its input without losing the current reading position. The selected design is the [Event journal prototype](docs/mockups/event-journal-v2.html). Open the HTML file locally in a browser. The [Electron build handoff](docs/mockups/event-journal-v2-notes.md) supplies implementation boundaries and acceptance checks. The prototype is synthetic, not a running Electron application.
 
+The first [Electron implementation](electron/README.md) opens a fixed synthetic
+recording. Row selection, original-text inspection, copying and the custom
+payload scrollbar work. Search, session and hook filters, Live navigation and
+Clear are disabled placeholders for later work. The static journal pin marks
+the selected visible row; it is not a scrubber. The header says Synthetic data,
+with no connection claim. Three to five neighboring rows fit the current
+window, and selecting an adjacent row exposes further fixtures. The narrow
+journal keeps three rows above the payload. All accepted payloads display in
+their original text form, with no formatting expansion. Metadata and previews
+can use visible ellipses to keep the payload accessible; inspection and copying
+preserve the complete text. These are the deliberate partial-scope differences
+from the full experience below. [Recorded Linux evidence](docs/electron-validation.md)
+compares the actual app with the reference.
+
 Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 
 The toolbar contains a literal payload search, a session dropdown with All sessions as its default, and a multi-select hook filter with All hooks as its default. Filters apply to retained history and live arrivals equally. Filtering changes what is displayed, not what is collected. Debounce search, cancel obsolete queries, and prevent stale results from replacing a newer query. Identify payload matches even when they occur outside the visible preview.

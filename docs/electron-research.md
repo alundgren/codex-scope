@@ -2,6 +2,12 @@
 
 Checked 2026-09-11 against current primary sources. Recommendations below are planning judgments, not measured Codex Scope results.
 
+Implementation rechecked the sources and pinned Electron 44.3.0 with Playwright
+1.63.0. The actual sandboxed app, asynchronous original-text clipboard writes,
+and Xvfb recording work with that pair. It uses no application package
+dependencies, formatting library or added worker. See [Linux validation](electron-validation.md)
+for the measured empty-window comparison and the limits of those results.
+
 - Use a supported stable Electron release and pin the version used for validation. Electron 43 improved startup through snapshots, cached bytecode and less blocking IPC. Electron 44 includes further initialization and IPC improvements. Recheck release notes at implementation time rather than copying an old starter template. Sources: https://www.electronjs.org/blog/electron-43-0 and https://www.electronjs.org/blog/electron-44-0
 - Electron 44 adds built-in window-state persistence and changes clipboard APIs to asynchronous operations. Check these APIs before adding packages for the same jobs, and use documentation for the pinned version. Source: https://www.electronjs.org/blog/electron-44-0
 - Profile startup, dependency loading and actual interactions. Avoid unnecessary runtime packages, polyfills, startup work and synchronous main-process I/O or IPC. Bundle shipped code; load optional formatting only when needed. Source: https://www.electronjs.org/docs/latest/tutorial/performance
