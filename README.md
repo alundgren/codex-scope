@@ -24,11 +24,13 @@ No offline recording is planned, in this or later releases. Events generated whi
 
 ## Explore the stream
 
-[![Design mockup of the event viewer, with hook and text filters, frozen history, new-event count, full JSON inspection, and a Go live control. All displayed data is synthetic.](docs/diagrams/event-stream.svg)](docs/diagrams/event-stream.svg)
+[Open the selected Event journal prototype](docs/mockups/event-journal-v2.html) in a browser. [Viewer behavior](ux.md) and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the implementation contract. All prototype data is synthetic.
+
+The [earlier static illustration](docs/diagrams/event-stream.svg) is retained for reference. The interactive Event journal and `ux.md` supersede its navigation controls.
 
 - Follow incoming events, or freeze the view while capture continues.
-- Filter by hook type and free text across retained payloads.
-- Scroll through older and newer events, jump to a time, or return to live.
+- Filter by session, hook type, and free text across retained payloads.
+- Drag the journal pin through older and newer events, or move to its Live endpoint to follow arrivals.
 - Inspect and copy an event's complete accepted payload.
 - Clear history without closing the app.
 
