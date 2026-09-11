@@ -11,7 +11,7 @@ Temporary implementation checklist. Linux code and synthetic tests are implement
 - [ ] Validate real-session policy behavior before approving capture for actual use. This work deliberately does not install account hooks or change trust. Collector tests can run synthetically, but do not complete this acceptance gate.
 - [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Live transport, filters, scrub navigation, Clear and SQLite remain separate work.
 - [x] Complete issue #5's recorded Electron tests, visual inspection, clean-checkout validation and measured empty-window comparison. Evidence and Linux-only limits are in `docs/electron-validation.md`.
-- [ ] Complete issue #5's independent completion review and implementation PR.
+- [x] Complete issue #5's independent Plan, technical and UX review. The reviewer reported no findings.
 
 ## Fixed requirements
 
