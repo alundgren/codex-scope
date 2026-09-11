@@ -4,7 +4,17 @@ Codex Scope is a best-effort inspector. Preserve normal Codex behavior first,
 keep host and Mac resource use bounded second, and retain events third.
 Losing events is acceptable; blocking Codex or exhausting the user's laptop
 is not.
+Every retained event and pending operation needs a limit on both machines.
 
+- Preserve normal agent behavior before capturing data. Observation must not
+  alter decisions, inject context, wrap other hooks, or depend on the viewer
+  to finish. Capture failure must remain independent of session success.
+- Observe only the supplied hook input. Do not collect transcripts,
+  environment variables, or the output of other hook commands.
+- Keep payloads out of logs and telemetry, and real captures and machine
+  configuration out of Git. Recordings must remain private.
+- Respect existing configuration and hook trust. Installation must be
+  explicit, and removal must preserve unrelated or user-edited entries.
 - Treat the Mac viewer as a companion to the user's work. Protect interactive
   responsiveness, memory headroom, CPU availability, and battery life. Prefer
   dropping excess events or evicting old history to growing resource use.
@@ -19,20 +29,24 @@ is not.
   cancel obsolete work, and coalesce updates during bursts. Avoid continuous
   polling, redraws, or animation when nothing useful has changed. Hidden or
   minimized windows may keep capturing without spending CPU on presentation.
+- Filtering or pausing the view must not change capture behavior.
 - A frozen history view must stay responsive and preserve the reader's event
   and payload position while capture continues. Visual effects, formatting,
   and update frequency must yield to that requirement.
 - Apply limits before accepting or expanding expensive input. Preserve the
-  original bytes of accepted payloads; drop oversized events rather than
-  silently truncating them and presenting them as complete. Rendering and
-  copying accepted data must also respect resource limits.
+  original bytes of accepted payloads, including unknown fields. Drop oversized
+  events rather than silently truncating them and presenting them as complete.
+  Rendering and copying accepted data must also respect resource limits.
 - Disk history is temporary and bounded. Include database sidecars and
   temporary work in the budget. Cleanup and eviction must not cause long UI
   stalls or compete indefinitely with capture. When cleanup cannot keep up,
   drop incoming data and explain the limitation.
-- No offline recording or recovery of missed events. Reconnection must not
-  create a replay backlog. Distinguish known drops from gaps whose loss count
-  is unknown, and never imply that missing history can be recovered.
+- No offline recording, delivery retries, or recovery of missed events,
+  including in future releases. Reconnection must not create a replay backlog.
+  Distinguish known drops from gaps whose loss count is unknown. Never imply
+  complete coverage or that missing history can be recovered.
+- State what validation actually proves. Synthetic checks do not establish
+  real-session compatibility, and Linux checks do not establish Mac behavior.
 - Choose numeric limits from measurements, not guesses or the size of demo
   fixtures. Validate idle use, sustained capture, bursts, large accepted
   payloads, rapid search and scrubbing, and resource pressure on macOS. Report
