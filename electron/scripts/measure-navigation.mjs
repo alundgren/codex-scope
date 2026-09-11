@@ -11,7 +11,7 @@ const started = performance.now();
 const app = await _electron.launch({ args: [path.resolve('dist/app'), '--history-test', '--fixtures-only', `--scope-test-root=${root}`], chromiumSandbox: true });
 const page = await app.firstWindow();
 const report = { date: new Date().toISOString(), environment: { platform: os.platform(), release: os.release(), cpus: os.cpus().map(cpu => cpu.model), memory: os.totalmem() },
-  method: 'Actual Electron/Xvfb without recording. All Electron process-group members and descendants sampled every 250 ms. Summed RSS duplicates shared pages; final PSS is one aggregate snapshot. CPU 100% is one core. Main includes synthetic input serialization. Search timings include 180 ms input debounce and driver/IPC costs; keyboard timings include driver/IPC. Per-query worker maximum excludes those costs.', workloads: {} };
+  method: 'Actual Electron/Xvfb without recording. All Electron process-group members and descendants sampled every 250 ms. Summed RSS duplicates shared pages; final PSS is one aggregate snapshot. CPU 100% is one core. Main includes synthetic input serialization. Search timings include 180 ms input debounce and driver/IPC costs; keyboard timings include driver/IPC, expected selected ID, completed journal update and the next animation frame. Per-query worker maximum excludes those costs.', workloads: {} };
 const status = () => app.evaluate(() => globalThis.scopeHistory.snapshot());
 async function feed(count, maximum = false) {
   await app.evaluate(async (_electron, { count, message, maximum }) => {
@@ -34,21 +34,36 @@ async function feed(count, maximum = false) {
     if (history.sending) throw new Error('Input did not drain.');
   }, { count, message: fixture[4], maximum });
 }
+async function settled(expected = null) {
+  await page.waitForFunction(expected => {
+    if (document.querySelector('#entries').getAttribute('aria-busy') !== 'false') return false;
+    return !expected || document.querySelector('#payload').dataset.event === String(expected.id) &&
+      document.querySelector('.event[aria-pressed="true"]')?.dataset.event === String(expected.id) &&
+      document.querySelector('#scrubber').getAttribute('aria-valuenow') === String(expected.position);
+  }, expected);
+  if (/timed out|could not|Searching…/.test(await page.locator('#notice').textContent())) throw new Error('Measured query did not succeed.');
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => resolve())));
+}
 async function search(text) {
   await page.locator('#search').fill(text);
-  await page.waitForFunction(() => !document.querySelector('#notice').textContent.includes('Searching…'));
-  if ((await page.locator('#notice').textContent()).includes('timed out')) throw new Error('Measured search exceeded its deadline.');
+  await settled();
 }
 async function interact() {
   const queries = [], keys = [];
   for (const text of ['population', 'odd', 'literal [a.*]%_', 'missing literal', '2026-09-11t18', 'POPULATION', 'even', 'session-39', '.*', '']) {
     const start = performance.now(); await search(text); queries.push(performance.now() - start);
   }
+  const history = await status();
+  if (history.last.id - history.first.id + 1 !== history.total) throw new Error('Measurement expects contiguous retained IDs.');
+  let position = 0;
   await page.locator('#scrubber').press('Home');
+  await settled({ id: history.first.id, position });
   for (const key of ['End', 'ArrowUp', 'PageUp', 'PageDown', 'Home', 'ArrowDown', 'ArrowRight', 'ArrowLeft', 'End', 'ArrowUp']) {
-    const before = await page.locator('#scrubber').getAttribute('aria-valuenow');
+    const moves = { End: history.total, Home: 0, ArrowUp: position - 1, ArrowLeft: position - 1,
+      ArrowDown: position + 1, ArrowRight: position + 1, PageUp: position - 5, PageDown: position + 5 };
+    position = Math.max(0, Math.min(history.total, moves[key]));
     const start = performance.now(); await page.locator('#scrubber').press(key);
-    await page.waitForFunction(previous => document.querySelector('#scrubber').getAttribute('aria-valuenow') !== previous, before);
+    await settled({ id: history.first.id + Math.min(history.total - 1, position), position });
     keys.push(performance.now() - start);
   }
   const track = await page.locator('#scrubber').boundingBox();
@@ -56,7 +71,7 @@ async function interact() {
   await page.mouse.move(track.x + 22, track.y + track.height - 2, { steps: 120 });
   await page.mouse.move(track.x + 22, track.y + 1, { steps: 120 });
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  await settled();
   return { searchMs: { maximum: Math.max(...queries), p95: queries.toSorted((a, b) => a - b).at(-1), operations: queries.length },
     keyboardMs: { maximum: Math.max(...keys), p95: keys.toSorted((a, b) => a - b).at(-1), operations: keys.length },
     pointerMoves: 240, summaryRows: await page.locator('.event').count(), tickNodes: await page.locator('.tick').count() };

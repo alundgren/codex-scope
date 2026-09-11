@@ -298,3 +298,63 @@ test('a late navigation reply cannot display a target evicted after its database
     expect(shown.every(id => id >= retained.first.id)).toBe(true);
   } finally { await app.close(); await video.saveAs(info.outputPath('late-target-walkthrough.webm')); }
 });
+
+test('recorded failed moves restore displayed rank and viewing mode before arrow and Live recovery', async ({}, info) => {
+  const { app, page, video } = await launch(info);
+  const slider = page.locator('#scrubber');
+  const settled = () => expect(page.locator('#entries')).toHaveAttribute('aria-busy', 'false');
+  try {
+    await page.locator('button[data-event="5"]').click(); await settled();
+    await expectSelected(page, 5);
+    await fault(app, { searchMs: 0 });
+    await slider.press('Home'); await settled();
+    await expect(page.locator('#notice')).toContainText('Previous selection is still shown.');
+    await expect(slider).toHaveAttribute('aria-valuenow', '4');
+    await expectSelected(page, 5);
+    await expect(page.locator('#mode')).toContainText('History');
+    await capture(page, info, 'failed-home-history');
+
+    await fault(app, { searchMs: 250 });
+    await slider.press('ArrowDown'); await settled();
+    await expect(page.locator('#mode')).toHaveText('Live');
+    await expect(slider).toHaveAttribute('aria-valuenow', '5');
+    await expectSelected(page, 5);
+    await expect(page.locator('#notice')).not.toContainText('timed out');
+    await fault(app, { searchMs: 0 });
+    await slider.press('Home'); await settled();
+    await expect(page.locator('#notice')).toContainText('Search timed out');
+    await expect(slider).toHaveAttribute('aria-valuenow', '5');
+    await expect(page.locator('#mode')).toHaveText('Live');
+    await expectSelected(page, 5);
+    await capture(page, info, 'failed-home-live');
+
+    await fault(app, { searchMs: 250 });
+    await slider.press('ArrowUp'); await settled();
+    await expectSelected(page, 5);
+    await expect(slider).toHaveAttribute('aria-valuenow', '4');
+    await expect(page.locator('#mode')).toContainText('History');
+    await slider.press('Home'); await settled(); await expectSelected(page, 1);
+    await append(app, [frame({ index: 1 }), frame({ index: 2 })]);
+    await expect(page.locator('#count')).toHaveAttribute('data-arrivals', '2');
+    await fault(app, { searchMs: 0 });
+    await slider.press('End'); await settled();
+    await expect(page.locator('#notice')).toContainText('Previous selection is still shown.');
+    await expectSelected(page, 1);
+    await expect(slider).toHaveAttribute('aria-valuenow', '0');
+    await expect(page.locator('#mode')).toContainText('History');
+    await expect(page.locator('#count')).toHaveAttribute('data-arrivals', '2');
+    await capture(page, info, 'failed-live-history');
+    await fault(app, { searchMs: 250 });
+    await slider.press('ArrowDown'); await settled(); await expectSelected(page, 2);
+
+    await fault(app, { delay: 600 });
+    await slider.press('End');
+    await expect(page.locator('#entries')).toHaveAttribute('aria-busy', 'true');
+    await page.waitForTimeout(100);
+    await expectSelected(page, 2);
+    await settled(); await expectSelected(page, 7);
+    await expect(page.locator('#mode')).toHaveText('Live');
+    await expect(page.locator('#count')).toHaveAttribute('data-arrivals', '0');
+    await capture(page, info, 'delayed-live-complete');
+  } finally { await app.close(); await video.saveAs(info.outputPath('failed-navigation-walkthrough.webm')); }
+});

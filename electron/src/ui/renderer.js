@@ -12,7 +12,7 @@ let selectedId = null, selectedText = '', selectedValue = '';
 let wanted = null, loading = false, copyPending = false;
 let lastRows = 0, generation = 1, queryId = 1, targetId = 0;
 let latest = { total: 0, accepted: 0, drops: {} };
-let live = true, heldAt = 0, position = 0;
+let live = true, heldAt = 0, position = 0, displayed = null;
 let clearPending = false, clearDeadline = 0, clearTimer, activationKey = null;
 let queryFailed = false;
 let evictionNotice = '', queryNotice = '', filterPending = false, filterTimer;
@@ -95,7 +95,7 @@ function summary(value) {
   positionMarkers();
 }
 function empty(message = 'No synthetic events have arrived.', reset = false) {
-  selectedId = null; selectedText = ''; selectedValue = '';
+  selectedId = null; selectedText = ''; selectedValue = ''; displayed = null; position = 0;
   json.textContent = ''; payload.scrollTop = 0; payload.dataset.event = 'null';
   const contents = element('div', 'empty', message);
   if (reset) {
@@ -107,8 +107,9 @@ function empty(message = 'No synthetic events have arrived.', reset = false) {
   document.querySelector('#metadata').textContent = 'No payload selected';
   document.querySelector('#pin').hidden = true;
   status.textContent = ''; copy.disabled = true; copy.textContent = 'Copy JSON';
-  updateScroll(); positionMarkers();
+  updateScroll(); positionMarkers(); busy();
 }
+function busy() { entries.setAttribute('aria-busy', String(loading || filterPending)); }
 function cancelWork() {
   wanted = null;
   targetId++;
@@ -149,8 +150,13 @@ function hold() {
 }
 function render(result) {
   if (result.error) {
+    stopGesture(); reconcileTarget = 0;
+    if (displayed?.queryId === queryId) {
+      position = Math.max(0, displayed.position - Math.max(0, (activeView()?.removed ?? 0) - displayed.removed));
+      live = displayed.live; heldAt = displayed.heldAt;
+    }
     queryFailed = true;
-    queryNotice = result.error + (selectedId !== null && !activeView() ? ' Previous selection is still shown.' : '');
+    queryNotice = result.error + (selectedId !== null ? ' Previous selection is still shown.' : '');
     if (selectedId === null) empty(result.timedOut ? 'Search timed out.' : 'History could not be searched.', true);
     summary(latest);
     document.documentElement.dataset.ready = 'true';
@@ -198,6 +204,7 @@ function render(result) {
     metadata.append(identity, details); metadata.title = event.receivedAt;
   } else metadata.textContent = 'No payload selected';
   copy.disabled = !event || copyPending;
+  displayed = event ? { queryId, position, live, heldAt, removed: activeView()?.removed ?? 0 } : null;
   positionMarkers(); updateScroll(); document.documentElement.dataset.ready = 'true';
 }
 function requestInspection(id = selectedId) { return requestNavigation(id === null && live ? { kind: 'live' } : { kind: 'select', id }); }
@@ -208,7 +215,7 @@ async function requestNavigation(target) {
   lastRows = wanted.rows;
   window.scope.cancel(generation, targetId);
   if (loading) return;
-  loading = true;
+  loading = true; busy();
   try {
     while (wanted) {
       const request = wanted; wanted = null;
@@ -228,12 +235,12 @@ async function requestNavigation(target) {
       if (!result.error && !result.selected && activeView()?.count > 0) requestInspection(null);
       if (request.targetId === reconcileTarget && !result.error) { reconcileTarget = 0; requestInspection(live ? null : selectedId); }
     }
-  } finally { loading = false; }
+  } finally { loading = false; busy(); }
 }
 function changeFilter(_value, delay) {
   queryId++; heldAt = 0; evictionNotice = ''; queryNotice = 'Searching…'; queryFailed = false;
   stopGesture(); cancelWork(); clearTimeout(filterTimer);
-  filterPending = true; summary(latest);
+  filterPending = true; busy(); summary(latest);
   filterTimer = setTimeout(() => { filterPending = false; requestInspection(live ? null : selectedId); }, delay);
 }
 function seek(rank, snapshot = navigationSnapshot()) {
