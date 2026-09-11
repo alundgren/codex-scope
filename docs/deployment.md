@@ -1,6 +1,6 @@
 # Deployment
 
-Linux commands are implemented for synthetic testing; see [Linux development](../linux/README.md). Real account installation, private proxy validation, and the Mac application remain outstanding. The workflow below still describes the intended full deployment, not a completed end-to-end check.
+Start with [guided Linux installation](../linux/install.md) for a permanent collector and optional private HTTPS listener. A basic live Linux smoke test has passed; guided live deployment and private proxy validation remain outstanding. The Electron draft currently reads bundled fixtures and does not yet connect to this collector. The workflow below describes the intended full connection, not a completed end-to-end check.
 
 ## Machines and connection
 
@@ -11,18 +11,18 @@ On Linux, the collector will expose its viewer API on a configurable loopback po
 ```sh
 # Example only; first inspect existing Serve routes and choose an unused port.
 tailscale serve status
-tailscale serve --bg http://127.0.0.1:4319
+tailscale serve --bg --https=8443 http://127.0.0.1:4319
 ```
 
-Copy the HTTPS endpoint reported by Serve into local viewer configuration. A fictional example is `https://capture-host.example-tailnet.ts.net`. Do not commit the real address. Check existing routes before changing Serve configuration; do not reset unrelated services. See the [official command reference](https://tailscale.com/docs/reference/tailscale-cli/serve) for HTTPS prerequisites and route options.
+Copy the HTTPS endpoint reported by Serve into local viewer configuration. A fictional example is `https://capture-host.example-tailnet.ts.net:8443`. Do not commit the real address. Check existing routes before changing Serve configuration; do not reset unrelated services. See the [official command reference](https://tailscale.com/docs/reference/tailscale-cli/serve) for HTTPS prerequisites and route options.
 
 Configure tailnet access rules so only the intended client can reach the service. Do not use a public publishing route. The viewer connection also requires a locally configured application token. The observer ingestion interface stays local to the Linux account and is never proxied by Serve.
 
 ## Intended first-run workflow
 
-1. Clone this repository on Linux and macOS, install the pinned dependencies, and follow the implemented development commands.
-2. Start the Linux collector with local configuration. Create its connection token locally without printing it into logs or shell history.
-3. Run the observer installation command on Linux. Review the exact entries it adds and complete Codex's required hook trust flow. The installer must state whether the tested runtime needs a fresh session.
+1. Clone this repository on Linux and run `./linux/install.sh`. It copies its runtime outside the checkout, checks prerequisites and permissions, and offers private Tailscale access.
+2. Review and approve the exact observer hooks using the printed Codex CLI command and `/hooks`.
+3. Complete the two guided tasks in a fresh session in your usual Codex client. The collector remains enabled only after setup succeeds.
 4. Configure the private route and put its endpoint and token in the Mac's local configuration.
 5. Run the Mac development command to open Electron. Verify receipt of synthetic diagnostic events before using a real coding session.
 6. Close the window to end the recording and delete its history. Observers can remain installed for the next viewer run. An uninstall command removes only owned observer entries.
@@ -35,6 +35,6 @@ The repository ignore rules are a backstop, not an anonymizer. Do not add real p
 
 ## Development delivery
 
-The first Mac workflow will be a development command from a clone that opens an Electron window. It does not require signing or notarization. The Linux collector runs as a foreground local process; service-manager packaging is outside this change. Its diagnostic viewer can test the stream without Electron and does not persist events.
+The first Mac workflow will be a development command from a clone that opens an Electron window. It does not require signing or notarization. The Linux collector can run in the foreground for development or as the user service installed by guided setup. Its diagnostic viewer can test the stream without Electron and does not persist events.
 
 The setup is complete only after the smoke checks in [plan.md](../plan.md) have run on both target operating systems. Do not claim macOS validation from a Linux-only run.

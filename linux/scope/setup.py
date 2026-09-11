@@ -270,7 +270,8 @@ def new_install(home, registry, source):
         raise SetupError('Private data path is too long for a Unix socket; choose a shorter directory')
     unit = home / '.config/systemd/user' / SERVICE
     private_path(unit.parent, home, allow_writable=True)
-    if unit.exists() or unit.is_symlink() or systemctl('show', SERVICE, '--property=LoadState', '--value').strip() != 'not-found':
+    enablement = [*unit.parent.glob('*.wants/' + SERVICE), *unit.parent.glob('*.requires/' + SERVICE)]
+    if unit.exists() or unit.is_symlink() or enablement or systemctl('show', SERVICE, '--property=LoadState', '--value').strip() != 'not-found':
         raise SetupError('A codex-scope systemd service already exists; preserve it and uninstall it separately first')
     if remote and (port == https_port or listener(serve_before, https_port)):
         raise SetupError('Chosen Tailscale HTTPS port is already configured or matches the collector port')
@@ -369,13 +370,17 @@ def new_install(home, registry, source):
         show(job)
         return job
     except BaseException:
-        print('Installation did not finish. Undoing the recorded changes...')
+        print('\nInstallation did not finish. Undoing the recorded changes...')
         # A second Ctrl+C must not interrupt the cleanup half-way through.
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
-        for problem in job.rollback():
+        problems = job.rollback()
+        for problem in problems:
             print(problem)
-        print(f'Recovery and backups: {registry}. Run {registry / "manage.sh"} to inspect or retry cleanup.')
+        print('Cleanup is incomplete; review the preserved resources.' if problems else
+              'Rollback finished. Backups and credentials are retained.')
+        print('To inspect or retry cleanup, run:')
+        print(shlex.quote(str(registry / 'manage.sh')))
         raise
 
 
@@ -470,6 +475,8 @@ def main():
                 new_install(home, registry, source)
     except (SetupError, OSError, ValueError, TimeoutError, KeyboardInterrupt, EOFError) as error:
         message = str(error) if isinstance(error, (SetupError, ProbeError)) else type(error).__name__
+        if isinstance(error, (KeyboardInterrupt, EOFError)):
+            message = 'Cancelled.'
         print(f'Stopped: {message}', file=sys.stderr)
         return 1
     return 0

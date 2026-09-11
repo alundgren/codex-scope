@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -59,7 +60,8 @@ fixture.setUp()
 # These overrides restore real interactive prompts and actual collector checks.
 try:
     with patch('builtins.input', original_input), patch('sys.stdout', original_stdout), \
-            patch('pathlib.Path.home', return_value=fixture.home), patch.object(sys, 'argv', ['install.sh']), \
+            patch('pathlib.Path.home', return_value=fixture.home), \
+            patch('pwd.getpwuid', return_value=SimpleNamespace(pw_name='demo')), patch.object(sys, 'argv', ['install.sh']), \
             patch('scope.setup.choose_port', choose_port), \
             patch('scope.setup.inspect', checked_inspect), \
             patch('scope.setup.wait_http', original_wait_http), \

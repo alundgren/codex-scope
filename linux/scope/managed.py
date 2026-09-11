@@ -142,7 +142,12 @@ class Installation:
             if self.record.get('service_intent') or Path(self.record['unit']).exists():
                 if not self.unit_owned():
                     raise SetupError("Service file is missing; cannot establish ownership of the running service")
-                link = Path(self.record['unit']).parent / 'default.target.wants/codex-scope.service'
+                unit_directory = Path(self.record['unit']).parent
+                link = unit_directory / 'default.target.wants/codex-scope.service'
+                enablement = [*unit_directory.glob('*.wants/codex-scope.service'),
+                              *unit_directory.glob('*.requires/codex-scope.service')]
+                if any(candidate != link for candidate in enablement):
+                    raise SetupError('Additional service enablement exists; preserved')
                 if link.is_symlink() and link.resolve() != Path(self.record['unit']):
                     raise SetupError("Service enablement was changed; preserved")
                 if link.exists() and not link.is_symlink():

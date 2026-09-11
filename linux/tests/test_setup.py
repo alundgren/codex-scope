@@ -375,3 +375,23 @@ class GuidedTests(unittest.TestCase):
         self.assertNotIn(str(SOURCE), result.stdout)
         self.assertIn('installed', result.stdout)
         self.assertEqual(job.rollback(), [])
+
+
+    def test_preexisting_enablement_is_refused(self):
+        link = self.unit.parent / 'default.target.wants/codex-scope.service'
+        link.parent.mkdir(parents=True)
+        link.symlink_to(self.unit)
+        with self.assertRaises(SetupError):
+            self.install()
+        self.assertTrue(link.is_symlink())
+        self.assertFalse(self.registry.exists())
+
+    def test_added_service_enablement_is_preserved(self):
+        job = self.install()
+        link = self.unit.parent / 'other.target.wants/codex-scope.service'
+        link.parent.mkdir()
+        link.symlink_to(self.unit)
+        problems = job.rollback()
+        self.assertTrue(any('Additional service enablement' in p for p in problems))
+        self.assertTrue(link.is_symlink())
+        self.assertTrue((self.app / 'observer').exists())
