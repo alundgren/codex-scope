@@ -5,8 +5,8 @@ import { fakeCollector, wait, until } from './fake-collector.mjs';
 const source = (await readFile('fixtures/journal.jsonl', 'utf8')).trim().split('\n').map(JSON.parse);
 const status = app => app.evaluate(() => globalThis.scopeHistory.snapshot());
 const fault = (app, faults) => app.evaluate((_electron, faults) => globalThis.scopeHistory.call('test', { faults }), faults);
-async function launch(info, server, token = 'synthetic-test-token') {
-  const root = await mkdtemp('/tmp/scope-transport-test-');
+async function launch(info, server, token = 'synthetic-test-token', root) {
+  root ??= await mkdtemp('/tmp/scope-transport-test-');
   await writeFile(root + '/token', token, { mode: 0o600 });
   await writeFile(root + '/connection.json', JSON.stringify({ endpoint: server.endpoint, tokenFile: root + '/token' }), { mode: 0o600 });
   const app = await _electron.launch({ args: [path.resolve('dist/app'), '--history-test', `--scope-test-root=${root}`, `--connection-config=${root}/connection.json`], chromiumSandbox: true,
@@ -136,4 +136,35 @@ test('recorded stalled storage releases lease and drops old transport work befor
     expect(await page.locator('#payload').evaluate(node => node.scrollTop)).toBe(offset); await capture(page, info, 'stalled-recovered');
   } finally { await app.close(); await server.close(); }
   await video.saveAs(info.outputPath('stalled-walkthrough.webm'));
+});
+
+test('recorded worker exit disconnects capture and restart opens a fresh recording', async ({}, info) => {
+  const server = await fakeCollector(); let run = await launch(info, server);
+  const root = run.root;
+  try {
+    await expect(run.page.locator('.connection')).toHaveText('Connected');
+    server.event(source[3]); await expect(run.page.locator('#json')).toHaveText(source[3].payload);
+    await run.app.evaluate(() => globalThis.scopeHistory.worker.terminate());
+    await expect(run.page.locator('.connection')).toHaveText('Disconnected');
+    await expect(run.page.locator('#notice')).toContainText('Temporary history is unavailable. Restart the app');
+    await expect(run.page.locator('#notice')).not.toContainText('Reconnecting');
+    await expect(run.page.locator('#notice')).toContainText('across gaps is unknown');
+    expect((await status(run.app)).transport).toMatchObject({ state: 'disconnected', requiresRestart: true,
+      coverageUnknown: true, requests: 0, processing: 0, retryPending: false });
+    await until(() => server.state.stream.destroyed);
+    const requests = server.state.requestCount; await wait(2200); expect(server.state.requestCount).toBe(requests);
+    await expect(run.page.locator('#json')).toHaveText(source[3].payload);
+    await capture(run.page, info, 'worker-exit');
+    await run.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 820));
+    await capture(run.page, info, 'worker-exit-narrow');
+    await run.app.close(); await run.video.saveAs(info.outputPath('worker-exit-walkthrough.webm'));
+    run = await launch(info, server, 'synthetic-test-token', root);
+    await expect(run.page.locator('.connection')).toHaveText('Connected');
+    await expect(run.page.locator('#count')).toHaveText('0 retained');
+    await expect(run.page.locator('#json')).toBeEmpty();
+    server.event(source[1]); await expect(run.page.locator('#json')).toHaveText(source[1].payload);
+    await expect(run.page.locator('#notice')).not.toContainText('unavailable');
+    await capture(run.page, info, 'worker-restart-recovered');
+    await run.app.close(); await run.video.saveAs(info.outputPath('worker-restart-walkthrough.webm')); run = null;
+  } finally { if (run) await run.app.close(); await server.close(); }
 });
