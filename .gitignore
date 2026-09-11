@@ -3,6 +3,8 @@
 .env.*
 !.env.example
 /config.local.*
+/electron/connection.local.json
+/electron/token.local
 /config/*.local.*
 *.pem
 *.key

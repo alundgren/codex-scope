@@ -2,9 +2,9 @@
 
 The task is to see what Codex emits, find an event, and inspect its input without losing the current reading position. The selected design is the [Event journal prototype](docs/mockups/event-journal-v2.html). Open the HTML file locally in a browser. The [Electron build handoff](docs/mockups/event-journal-v2-notes.md) supplies implementation boundaries and acceptance checks. The prototype is synthetic, not a running Electron application.
 
-The [Electron implementation](electron/README.md) starts a temporary synthetic
-recording in Live, with five seed fixtures and one new synthetic event each
-second. Selecting a row holds that event, its visible neighbors, and payload
+The [Electron implementation](electron/README.md) starts a temporary recording
+in Live. With a configured collector it receives live version 1 events. Synthetic
+development mode uses five seed fixtures and one new event each second. Selecting a row holds that event, its visible neighbors, and payload
 offset while arrivals continue. The Live label resumes following. Three to five
 nearby rows fit the window, with three above the payload at narrow widths.
 Clear uses the specified two-activation lock and starts an empty new recording.
@@ -15,12 +15,18 @@ Search, full-session-ID filtering and multi-select hooks now apply to retained
 events and matching arrival counts. The journal pin is an interactive scrubber
 with a distinct Live endpoint. Filter choices page within fixed limits, and a
 query timeout keeps the previous selection visibly identified while offering
-Reset filters. The header says Synthetic data and makes no collector connection
-claim. Payloads display as original text without formatting expansion. Metadata
+Reset filters. The header reports Connecting, Connected or Disconnected for configured
+transport, and Synthetic data for fixture mode. Connection coverage stays unknown
+before the first connection and across gaps. The status area distinguishes the
+latest collector lifetime drop totals from local viewer drops. Reconnect keeps a
+held selection and payload offset; Clear starts a new recording and connection. Payloads display as original text without formatting expansion. Metadata
 and previews may use visible ellipses; the payload and Copy JSON preserve
 complete accepted text. These are the current delivery details of the experience
-below. [Recorded Linux evidence](docs/electron-navigation-validation.md) covers
-the actual app; macOS behavior and real collector compatibility remain unverified.
+below. [Navigation evidence](docs/electron-navigation-validation.md) and
+[transport evidence](docs/electron-transport-validation.md) cover the actual app
+on Linux, including a separate synthetic smoke check with the landed collector.
+Private HTTPS proxy behavior, real Codex compatibility and macOS behavior remain
+unverified.
 
 Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 

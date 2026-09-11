@@ -64,7 +64,10 @@ app.whenReady().then(async () => {
       headers: { 'content-type': asset[1], 'content-security-policy': csp, 'x-content-type-options': 'nosniff' },
     });
   });
-  history = new History({ directory: path.join(app.getPath('userData'), 'recordings'),
+  const connectionFile = process.argv.find(value => value.startsWith('--connection-config='))?.slice('--connection-config='.length);
+  const synthetic = process.argv.includes('--synthetic') || process.argv.includes('--fixtures-only');
+  history = new History({ connectionFile: synthetic ? null : connectionFile ?? path.join(app.getPath('userData'), 'connection.json'),
+    optionalConnection: !connectionFile, directory: path.join(app.getPath('userData'), 'recordings'),
     fixture: path.join(__dirname, '..', 'fixtures', 'journal.jsonl'),
     continuous: !process.argv.includes('--fixtures-only'), testMode });
   if (testMode) globalThis.scopeHistory = history;

@@ -6,6 +6,9 @@ const { randomUUID } = require('node:crypto');
 const { performance } = require('node:perf_hooks');
 const { parseRecording, loadRecording, MAX_PAYLOAD_BYTES, MAX_FRAME_BYTES } = require('./recording.cjs');
 
+const { loadConnection } = require('./connection.cjs');
+const { Transport } = require('./transport.cjs');
+
 const { Search } = require('./search.cjs');
 
 const limits = workerData.limits;
@@ -13,6 +16,7 @@ const shared = new Int32Array(workerData.shared);
 const root = workerData.directory;
 const marker = 'codex-scope-temporary-recording-v1';
 const allowed = new Set(['owner.json', 'history.sqlite', 'history.sqlite-journal', 'history.sqlite-wal', 'history.sqlite-shm']);
+let transport, connectionConfig, terminalReason = null, configError = false;
 let database, directory, statements, search, timer, templates = [], sequence = 0;
 let state = { generation: 1, total: 0, accepted: 0, retainedBytes: 0, first: null, last: null, drops: {}, evicted: 0 };
 let faults = {};
@@ -118,7 +122,7 @@ function appendEvents(events) {
     const started = performance.now();
     try {
       if (!hasRoom()) throw new Error('Storage pressure.');
-      const cost = event.bytes + Buffer.byteLength([event.hook, event.session, event.tool, event.preview, state.connectionId].join('')) + 256;
+      const cost = event.bytes + Buffer.byteLength([event.hook, event.session, event.tool, event.preview, (event.connectionId ?? state.connectionId)].join('')) + 256;
       if (state.total >= limits.retainedCount || state.retainedBytes + cost > limits.retainedBytes) {
         const old = statements.oldest.iterate(budget);
         let removedBytes = 0, count = 0, last = 0, matching = 0;
@@ -140,14 +144,14 @@ function appendEvents(events) {
       const id = state.accepted + 1;
       const localReceivedAt = new Date().toISOString();
       database.exec('BEGIN IMMEDIATE');
-      statements.insert.run(id, state.generation, state.connectionId, event.sequence, localReceivedAt,
+      statements.insert.run(id, state.generation, event.connectionId ?? state.connectionId, event.sequence, localReceivedAt,
         event.receivedAt, event.hook, event.session, event.tool, event.bytes, cost, event.preview, event.text);
       diskBytes();
       database.exec('COMMIT');
       state.accepted = id;
       state.total++;
       state.retainedBytes += cost;
-      search.accepted({ ...event, id, generation: state.generation, connectionId: state.connectionId, localReceivedAt });
+      search.accepted({ ...event, id, generation: state.generation, connectionId: event.connectionId ?? state.connectionId, localReceivedAt });
       state.pressure = false;
     } catch {
       if (database.isTransaction) database.exec('ROLLBACK');
@@ -179,6 +183,19 @@ function ingest(frames, connectionId) {
   }
   appendEvents(events);
 }
+function startInput() {
+  if (configError || terminalReason) { state.transport = { state: 'disconnected', reason: terminalReason ?? 'config', requiresRestart: true, coverageUnknown: true }; return; }
+  if (!connectionConfig) { startSynthetic(); return; }
+  const generation = state.generation;
+  transport = new Transport({ config: connectionConfig, current: () => current(generation),
+    onEvent: async (event, active) => {
+      if (faults.transportDelay) await new Promise(resolve => setTimeout(resolve, faults.transportDelay));
+      if (active() && current(generation)) appendEvents([event]);
+    },
+    onStatus: value => { if (current(generation)) { state.transport = value; if (value.requiresRestart) terminalReason = value.reason; if (value.connectionId) state.connectionId = value.connectionId; notify(); } },
+  });
+  transport.start();
+}
 function startSynthetic() {
   if (!workerData.continuous || !templates.length || !database) return;
   timer = setInterval(() => {
@@ -200,6 +217,7 @@ function inspect(id, rows) {
     selectionEvicted: id !== null && selected?.id !== id };
 }
 function closeDatabase() {
+  transport?.stop(); transport = null;
   clearInterval(timer);
   if (database) { database.close(); database = null; statements = null; search = null; }
   if (directory) { removeOwned(directory, performance.now() + limits.cleanupMs); directory = null; }
@@ -213,17 +231,24 @@ parentPort.on('message', async message => {
     if (operation === 'open') {
       prepareDirectory();
       openDatabase();
-      const fixture = await loadRecording(workerData.fixture);
-      templates = fixture.events;
-      state.drops = { ...fixture.drops };
-      appendEvents(templates);
-      sequence = Math.max(0, ...templates.map(event => event.sequence));
-      startSynthetic();
+      if (workerData.connectionFile) {
+        try { connectionConfig = await loadConnection(workerData.connectionFile, workerData.optionalConnection); }
+        catch { configError = true; }
+      }
+      if (!connectionConfig && !configError) {
+        const fixture = await loadRecording(workerData.fixture);
+        templates = fixture.events.map(event => ({ ...event, connectionId: undefined }));
+        state.drops = { ...fixture.drops };
+        appendEvents(templates);
+        sequence = Math.max(0, ...templates.map(event => event.sequence));
+      }
+      startInput();
       result = { ok: true };
     } else if (operation === 'clear' || operation === 'close') {
-      state = { generation, total: 0, accepted: 0, first: null, last: null, drops: {}, clearing: true };
+      state = { generation, total: 0, accepted: 0, first: null, last: null, drops: {}, clearing: true,
+        transport: connectionConfig || configError ? { state: 'disconnected', reason: terminalReason, coverageUnknown: true } : undefined };
       closeDatabase();
-      if (operation === 'clear') { openDatabase(); startSynthetic(); }
+      if (operation === 'clear') { openDatabase(); startInput(); }
       result = { ok: true, generation };
     } else if (operation === 'test' && workerData.testMode) {
       faults = { ...faults, ...message.faults };
@@ -247,7 +272,7 @@ parentPort.on('message', async message => {
     } else {
     state.error = operation === 'clear' || operation === 'close' ?
       'Clear failed. Temporary recording files remain. Restart the app to retry cleanup.' :
-      'The synthetic recording could not be opened. Restart the app to try again.';
+      'The recording could not be opened. Restart the app to try again.';
     state.clearing = false;
     result = { error: state.error, generation };
     }
