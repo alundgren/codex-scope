@@ -47,14 +47,15 @@ Done when the app receives and queries synthetic events on macOS, respects measu
 
 ## 4. Implement filtering and frozen history
 
-- [ ] Build the stream and payload inspector using [ux.md](ux.md) and the SVG mockup. Make the layout work at practical laptop window sizes.
+- [ ] Build the Event journal and payload inspector using [ux.md](ux.md), the [agreed prototype](docs/mockups/event-journal-v2.html), and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md). Make the layout work at practical laptop window sizes.
 - [ ] Keep roughly 500 summaries loaded and virtualize rendering. Load payloads on selection; bound formatting and expansion work.
-- [ ] Add multi-select hook filtering and literal free-text search over retained payloads and metadata. Debounce, cancel, and time-limit queries; keep search and capture independent.
-- [ ] Add stable backward and forward paging, timestamp jump, Pause, new matching-event count, and Go live. Freeze the view on inspection or scrolling back while capture continues.
+- [ ] Add the session dropdown, multi-select hook filtering, and literal free-text search over retained payloads and metadata. Debounce, cancel, and time-limit queries; keep search and capture independent.
+- [ ] Add stable backward and forward paging through the left journal pin, a new matching-event count, and the pin's Live endpoint. Freeze following during inspection or scrubbing while capture continues; keep the journal free of scrollbars.
+- [ ] Add the custom payload scrollbar and the two-click Clear lock with its three-second confirmation window. Keep the journal and payload visible together without subheadings, event numbers, or back and timestamp-jump buttons.
 - [ ] Show connection status separately from viewing mode. Handle gaps, oldest retained time, evicted selection, empty results, and resource pressure without moving the current view unexpectedly.
 - [ ] Test concurrent arrival while browsing, rapid filter changes, large JSON, matches outside previews, eviction while paused, old query responses after Clear, keyboard use, and reconnection while in history.
 
-Done when retained events can be explored in both directions without unbounded loading, and Go live follows only the currently connected stream.
+Done when retained events can be explored in both directions without unbounded loading, and the Live endpoint follows only the currently connected stream.
 
 ## 5. Validate and document the usable first version
 

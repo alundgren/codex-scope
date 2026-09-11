@@ -2,7 +2,7 @@
 
 A live inspector for Codex hook events. Capture on a Linux host, inspect on a Mac, and keep a bounded, temporary history while the viewer is open.
 
-**Status: design agreed, implementation not started.** The images describe the intended application. There is no runnable collector or viewer yet. Start with [plan.md](plan.md) when implementing.
+**Status: design agreed, implementation not started.** The Event journal prototype describes the intended viewer. There is no runnable collector or viewer yet. Start with [plan.md](plan.md) when implementing.
 
 Codex must keep working when capture fails. Missing events are acceptable; blocking a session, changing a hook decision, or exhausting the laptop's resources is not.
 
@@ -25,8 +25,6 @@ No offline recording is planned, in this or later releases. Events generated whi
 ## Explore the stream
 
 [Open the selected Event journal prototype](docs/mockups/event-journal-v2.html) in a browser. [Viewer behavior](ux.md) and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the implementation contract. All prototype data is synthetic.
-
-The [earlier static illustration](docs/diagrams/event-stream.svg) is retained for reference. The interactive Event journal and `ux.md` supersede its navigation controls.
 
 - Follow incoming events, or freeze the view while capture continues.
 - Filter by session, hook type, and free text across retained payloads.
