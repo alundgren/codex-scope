@@ -1,0 +1,12 @@
+{"hook_event_name": "SessionStart", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "SessionEnd", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "UserPromptSubmit", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "PreToolUse", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "PermissionRequest", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "PostToolUse", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "PreCompact", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "PostCompact", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "SubagentStart", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "SubagentStop", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "Stop", "session_id": "synthetic-session-a", "synthetic": true}
+{"hook_event_name": "Interrupt", "session_id": "synthetic-session-a", "synthetic": true}
