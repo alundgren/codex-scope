@@ -1,0 +1,22 @@
+{
+  "name": "codex-scope-viewer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Finite synthetic hook payload inspector",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/main.cjs",
+  "engines": { "node": ">=24.0.0" },
+  "scripts": {
+    "start": "electron .",
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/recording.test.mjs && playwright test",
+    "test:unit": "node --test test/recording.test.mjs",
+    "test:electron": "playwright test",
+    "measure": "node scripts/measure.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "electron": "44.3.0"
+  }
+}

@@ -2,7 +2,7 @@
 
 Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. This is the sole UI build target.
 
-The prototype and this document are UI deliverables only. The repository still has no Electron implementation. No macOS runtime, IPC, database, hook compatibility, or network behavior has been validated by the browser demo. Demo controls outside the window are not application controls.
+The prototype and this document are UI deliverables only. The first [Electron implementation](../../electron/README.md) now supports a finite fixture recording, original-text inspection and copying, and the custom payload scrollbar. [Linux Electron validation](../electron-validation.md) records actual-app evidence separately from this prototype. No macOS runtime, database, real hook compatibility or live network behavior is established by either the browser demo or this synthetic slice. Demo controls outside the window are not application controls.
 
 The parallel Linux handoff establishes these ownership boundaries. Preserve them when implementing or resolving branch conflicts.
 
@@ -16,7 +16,7 @@ The parallel Linux handoff establishes these ownership boundaries. Preserve them
 | `docs/architecture.md`, `docs/deployment.md` | Linux agent updates tested capture behavior and commands. Coordinate later Electron additions. |
 | `ux.md`, `docs/mockups/event-journal-v2*` | Selected UI behavior, reference prototype, and build handoff. |
 
-Linux and Electron must install, build, and test independently. Neither imports the other's implementation. Electron must offer a synthetic-data development mode without a running collector. Use the eventual `protocol/` contract and fixtures through a small input adapter; do not establish a competing transport contract from the demo's JavaScript objects. The application directories and root instructions are planned by the handoff, not created by this UI change.
+Linux and Electron must install, build, and test independently. Neither imports the other's implementation. Electron must offer a synthetic-data development mode without a running collector. Use the existing `protocol/` contract and fixtures through a small input adapter; do not establish a competing transport contract from the demo's JavaScript objects.
 
 Implement the renderer around explicit recording state: current recording generation, connection identity and health, filter query identity, Live or history mode, selected local event ID, visible summary neighborhood, payload load identity and scroll offset, retained bounds, and the clear-button deadline. Keep event IDs internal. They provide stable selection and ordering but are not displayed as event numbers. Session filtering is by full session identifier, even when a display label is shorter.
 
