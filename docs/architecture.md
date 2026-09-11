@@ -129,3 +129,25 @@ No telemetry, full payload logs, transcript reads, environment capture, public n
 One Linux host, one Mac viewer, multiple Codex sessions, event inputs only. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
 
 Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). SQLite integration, Mac resource limits, and complete real-session and proxy checks remain in [the plan](../plan.md).
+
+## Guided Linux setup
+
+`linux/install.sh` starts an interactive Python installer using only the standard
+library. It checks prerequisites, requests permission to inspect selected
+configuration, probes Codex registration in isolation, and rehearses hook
+removal before committing live changes. It copies the runtime outside the
+checkout and owns one user service and an optional dedicated Tailscale listener.
+
+A private installation record precedes each external mutation. Recovery compares
+owned file hashes and modes, directory identities, hook ownership, service
+overrides, and the complete Serve listener before removal. Edited resources are
+preserved and reported. This is recoverable sequencing across independent tools,
+not an atomic transaction across Codex, systemd, and Tailscale. Another editor
+can still race a final comparison; concurrent configuration edits are unsupported.
+
+Setup limits configuration and command output to 4 MiB each, bounds subprocess
+execution time, and uses one diagnostic viewer with a three-minute live-test
+window. These are defensive setup limits, not measured collector performance
+budgets. Runtime queues and payload limits remain those of the collector.
+The recovery copy and backups remain private until explicitly purged. No captured
+event payload is saved by setup.

@@ -114,3 +114,13 @@ the stream rather than growing pending writes. Exact results vary with load.
 
 The Linux code can be exercised independently now. Full capture acceptance
 remains incomplete until the relevant outstanding checks pass.
+
+## Guided setup validation
+
+The guided installer adds isolated transaction tests, actual Codex registration
+checks, a generated-unit parser check, and a temporary systemd service delivery
+check. [Terminal recordings and screenshots](validation/linux-install/README.md)
+cover prompts, cancellation, recovery, and conservative removal. That record
+distinguishes real subprocess checks from simulated host-service, approval, and
+Tailscale operations. The guided flow itself has not yet been run end to end
+against a live account and private HTTPS proxy.

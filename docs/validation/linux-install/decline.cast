@@ -1,0 +1,10 @@
+{"version": 2, "width": 120, "height": 42, "title": "Synthetic guided setup: decline"}
+[0.237, "o", "Synthetic walkthrough: host service/route commands and approvals are simulated.\r\nThe local collector and observer run normally; no live account files are used.\r\n"]
+[0.238, "o", "Codex Scope setup\r\n"]
+[0.24, "o", "Use Tailscale to connect from another device? [y/N]: "]
+[0.29, "o", "n\r\n"]
+[0.291, "o", "Codex configuration directory [/tmp/scope-setup-test-6nvy1_9r/.codex]: "]
+[0.341, "o", "\r\n"]
+[0.342, "o", "Read Codex config.toml and hooks.json here, and check local services? [y/N]: "]
+[0.395, "o", "n\r\n"]
+[0.395, "o", "Stopped: Cancelled.\r\n"]

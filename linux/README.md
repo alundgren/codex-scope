@@ -2,9 +2,9 @@
 
 The observer and collector build and run independently of Electron. There are
 no third-party Python packages. Use Linux, a C11 compiler, Make, and Python
-3.11 or later. The tested environment uses Python 3.14.4, pinned in
-`.python-version`, GCC 15.2.0, and Codex CLI 0.153.4. Other Codex versions need
-new compatibility evidence; the installer refuses them.
+3.11 or later. For guided installation, start with [install.md](install.md). The tested environment uses Python 3.14.4, pinned in
+`.python-version`, GCC 15.2.0, and Codex CLI 0.153.4. Setup probes the installed Codex executable for registration compatibility;
+it does not enforce an exact version. Real-session checks are still required.
 
 From the repository root:
 
@@ -39,7 +39,7 @@ python3 -m scope.collector --runtime-dir ../runtime/collector --token-file ../ru
 In another terminal, also from `linux/`:
 
 ```sh
-python3 -m scope.viewer --endpoint http://127.0.0.1:4318 --token-file ../runtime/viewer.token --seconds 10
+python3 -m scope.viewer --endpoint http://127.0.0.1:4319 --token-file ../runtime/viewer.token --seconds 10
 ```
 
 While that client is connected, send a synthetic event from a third terminal:
@@ -55,9 +55,10 @@ new collector removes only after acquiring the account-local collector lock.
 
 ## Explicit hook installation
 
-These commands are implemented and tested against isolated configuration.
-They have not been run against this account's actual Codex installation.
-Complete the real-session checks in `plan.md` before relying on capture.
+These low-level hook commands remain available for development. Prefer the
+guided installer for permanent installation, service setup, and removal. A
+basic user-reported live install/capture/stop/uninstall trial passed; broader
+real-session checks in `plan.md` remain incomplete.
 
 Use absolute paths when installing. Substitute the intended account's Codex
 configuration directory, a stable compiled observer path, and its collector

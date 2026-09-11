@@ -58,6 +58,22 @@ Done when a real supported Codex session has the same policy and output behavior
 - [x] Measure a short synthetic overload profile and verify bounded queue use.
 - [ ] Test private HTTPS proxy delivery and route isolation through Tailscale Serve.
 - [ ] Verify rejection from another OS account and measure sustained isolated collector CPU/RSS.
+- [x] Add guided Linux setup, a durable recovery record, permanent runtime copies, optional Tailscale Serve, interactive capture/collector-stop checks, and ownership-preserving uninstall. Include an install guide and recorded synthetic terminal walkthroughs.
+- [ ] Run the guided installer end to end on a live account with private HTTPS delivery; separately verify the eventual UI connection. Synthetic host-command and approval fixtures do not complete these checks.
+- [x] Change the default loopback port to 4319 and report port conflicts separately from path/token failures. Guided setup suggests an available port and preserves existing listeners.
+
+Live Linux trial, user-reported on 2026-09-11: after CLI hook approval, a
+fresh Codex client session completed a harmless command with no collector running.
+A later 60-second viewer run received 13 events totaling 6905 payload bytes,
+with all reported collector drop counters at zero. Loss outside the collector
+remains unknown. This establishes basic live delivery, not event-type coverage,
+session attribution, measured overhead, or policy coexistence. The user also
+confirmed that the same Codex client session completed another harmless command after
+the collector stopped. The user then confirmed live uninstall, verification that
+the original hook configuration survived, restoration of the configuration
+directory permissions, and a successful harmless command in a fresh Codex client
+session. This completes the basic install, capture, collector-stop, and uninstall
+smoke test. No payloads are recorded here.
 
 Done when a synthetic client can observe live events through a private proxy, but cannot retrieve events generated while disconnected, and collector resources remain bounded under overload.
 

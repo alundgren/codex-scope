@@ -2,7 +2,7 @@
 
 A live inspector for Codex hook events. Capture on a Linux host, inspect on a Mac, and keep a bounded, temporary history while the viewer is open.
 
-**Status: Linux capture implemented for synthetic testing; real-session and Mac validation remain.** The Event journal prototype describes the intended viewer. The Linux observer, collector, installer, and diagnostic viewer run independently of Electron. Start with [Linux development](linux/README.md) and [remaining work](plan.md).
+**Status: Linux capture implemented for synthetic testing; real-session and Mac validation remain.** The Event journal prototype describes the intended viewer. The Linux observer, collector, installer, and diagnostic viewer run independently of Electron. Start with [guided Linux installation](linux/install.md), [Linux development](linux/README.md) and [remaining work](plan.md).
 
 Codex must keep working when capture fails. Missing events are acceptable; blocking a session, changing a hook decision, or exhausting the laptop's resources is not.
 
@@ -18,7 +18,7 @@ One Linux capture host serves one macOS viewer. Multiple Codex sessions can appe
 
 Observers receive the payloads Codex supplies to supported hook events. They do not wrap existing hook commands, inspect their output, read transcripts, or collect environment variables. Accepted payloads retain their original fields. Oversized or excess events are dropped instead of silently truncated.
 
-An explicit install command registers account-level observers while preserving existing hooks. Uninstall removes only unchanged entries owned by codex-scope. These commands are tested against isolated configuration; actual account installation and real-session behavior remain unverified. Codex's own hook trust process still applies.
+An explicit install command registers account-level observers while preserving existing hooks. Uninstall removes only unchanged entries owned by codex-scope. A basic live install, capture, collector-stop, and uninstall trial passed; broader compatibility and performance checks remain incomplete. Codex's own hook trust process still applies.
 
 No offline recording is planned, in this or later releases. Events generated while disconnected can be lost permanently. The viewer will distinguish known drops from intervals where the loss count is unknown.
 

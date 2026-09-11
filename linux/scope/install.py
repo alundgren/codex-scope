@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 import shlex
 import stat
-import subprocess
 import tempfile
 import uuid
 
@@ -50,7 +49,7 @@ def read_config(path):
     return raw, config
 
 
-def merge(config, observer, socket_path, uninstall=False):
+def merge(config, observer, socket_path, uninstall=False, identity=None):
     result = copy.deepcopy(config)
     record = result.get(OWNER)
     if record is not None:
@@ -76,7 +75,7 @@ def merge(config, observer, socket_path, uninstall=False):
         ">/dev/null 2>&1 || :"
     )
     # A per-install label prevents claiming an identical pre-existing command.
-    identity = record.get("identity") if record else uuid.uuid4().hex
+    identity = record.get("identity") if record else identity or uuid.uuid4().hex
     entries = {}
     for event in EVENTS:
         group = {"hooks": [{"type": "command", "command": command,
@@ -118,7 +117,7 @@ def serialize(value):
     return data
 
 
-def update(config_dir, observer=None, socket_path=None, uninstall=False):
+def update(config_dir, observer=None, socket_path=None, uninstall=False, identity=None):
     directory = Path(config_dir).absolute()
     if directory.is_symlink():
         raise ValueError("refusing a symlink configuration directory")
@@ -141,7 +140,7 @@ def update(config_dir, observer=None, socket_path=None, uninstall=False):
             config[OWNER] = record
         if uninstall and not record:
             return False
-        result = merge(config, observer, socket_path, uninstall)
+        result = merge(config, observer, socket_path, uninstall, identity)
         if config == result:
             return False
         new_record = result.pop(OWNER, None)
@@ -179,12 +178,14 @@ def main():
         if len(os.fsencode(args.socket)) >= 108:
             parser.error("socket path is too long")
         try:
-            runtime = subprocess.check_output(["codex", "--version"], stderr=subprocess.DEVNULL,
-                                              timeout=5, text=True).strip()
-        except (OSError, subprocess.SubprocessError):
-            parser.error("cannot identify Codex runtime; no installation performed")
-        if runtime != "codex-cli 0.153.4":
-            parser.error("only codex-cli 0.153.4 has registration checks; validate other versions before installing")
+            import shutil
+            from .probe import compatible
+            codex = shutil.which("codex")
+            if not codex:
+                raise ValueError("Codex is not installed")
+            compatible(codex, args.observer)
+        except (OSError, ValueError, TimeoutError):
+            parser.error("Codex compatibility probe failed; no installation performed")
     try:
         changed = update(args.config_dir, args.observer, args.socket, args.action == "uninstall")
     except (OSError, ValueError) as error:
