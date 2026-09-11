@@ -13,6 +13,19 @@ Temporary implementation checklist. The design is agreed; no application code ex
 - Frozen history navigation with filters and full inspection. Capture continues while browsing. No historical playback.
 - Generic public documentation, synthetic fixtures, MIT license. No private infrastructure values, telemetry, or raw-event logs.
 
+## Validation environment
+
+The owner accepts Linux VM evidence for current development completion. Run the
+actual Electron app under Xvfb with recorded visual scenarios and screenshots,
+including side-by-side comparisons with the selected mockup. Measure resource use
+on that VM and identify its workload and environment. Browser-only prototype
+checks do not replace Electron integration checks. macOS performance, energy use,
+native window behavior, sleep, and target-platform setup remain unverified until
+later macOS validation. That later validation is not a gate for this delivery.
+See [current Electron research](docs/electron-research.md) for sources and the
+recommended approach. This changes the validation gate, not the Mac viewer target
+or the Linux agent's capture responsibilities.
+
 ## 1. Prove capture compatibility and failure behavior
 
 - [ ] Establish a small local development layout and reproducible dependency tooling. Choose the observer runtime by measured startup cost and deployment simplicity. Pin selected versions and document commands as they become real.
@@ -43,7 +56,7 @@ Done when a synthetic client can observe live events through a private proxy, bu
 - [ ] Implement one app instance, private recording directories, clear-history generation changes, normal-close deletion, and startup cleanup restricted to abandoned owned files. Keep settings separate from recordings.
 - [ ] Test disk-full and write failures, history eviction, burst traffic, renderer responsiveness, sleep, force quit, relaunch, normal close, and cleanup failure. Verify stale pending events cannot reappear after Clear.
 
-Done when the app receives and queries synthetic events on macOS, respects measured resource budgets, and removes owned recording files through the documented lifecycle. A Linux-only result cannot complete this step.
+Done when the actual Electron app receives and queries synthetic events on the Linux VM, respects measured VM resource budgets, and removes owned recording files through the lifecycle checks available there. Record macOS-only checks as unverified follow-up work.
 
 ## 4. Implement filtering and frozen history
 
@@ -66,4 +79,4 @@ Done when retained events can be explored in both directions without unbounded l
 - [ ] Review the complete code and experience against the agreed priorities. Inspect tracked files for credentials, real captures, endpoints, account-specific paths, and unrelated machine configuration.
 - [ ] Move lasting instructions and measured budgets into permanent docs, then remove this temporary plan.
 
-Done when a fresh clone can launch the Linux collector and Mac viewer using the documented development workflow, and all required failure and resource checks have evidence. Signed builds and auto-update infrastructure are not required.
+Done when a fresh Linux clone can launch the collector and Electron viewer using their independent documented development workflows, and the required Linux failure, visual, and resource checks have evidence. Keep Mac setup and macOS-only checks explicitly unverified for later validation. Signed builds and auto-update infrastructure are not required.
