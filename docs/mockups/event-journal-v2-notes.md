@@ -1,6 +1,6 @@
 # Electron build handoff
 
-Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. Earlier alternatives and static diagrams are design history, not the build target.
+Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. This is the sole UI build target.
 
 The prototype and this document are UI deliverables only. The repository still has no Electron implementation. No macOS runtime, IPC, database, hook compatibility, or network behavior has been validated by the browser demo. Demo controls outside the window are not application controls.
 
