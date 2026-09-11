@@ -7,9 +7,14 @@ row holds its neighborhood and payload offset while capture continues. The Live
 label resumes following. Clear requires two separate activations within three
 seconds and starts an empty recording with a new input connection.
 
-Search, session/hook filters and full journal scrubbing remain disabled. The
-journal pin marks the selected visible row. Clicking neighboring rows provides
-bounded paging. Copy JSON preserves the original accepted text, whitespace,
+Search matches literal text, ignoring case, across full accepted payloads and
+metadata. The session dropdown uses complete IDs; hook choices allow several
+selections. Both controls page their choices without retaining the full list.
+The vertical slider provides one logical stop per match and a separate Live
+endpoint. Pointer, touch, wheel, arrows, Page keys, Home and End navigate history.
+Arrivals preserve held rows, payload and scroll offset, and count only matches.
+A gesture freezes its matching count and retained upper bound until release.
+Eviction ends an unusable gesture with an explanation. Copy JSON preserves the original accepted text, whitespace,
 unknown fields and UTF-8 bytes. No recording is reopened after an application
 restart, and there is no replay or recovery of missed events.
 
@@ -63,6 +68,9 @@ Playwright's FFmpeg binary are excluded from the bundle.
 
 `npm test` runs the adapter checks and actual Electron integration tests after
 a build. Tests use isolated private owner directories and synthetic data.
+Search tests also cover literal punctuation, matches outside previews, full-ID
+collisions, several hooks, cancellation during SQLite execution, timed queries,
+stale filter/target replies, paging choices and gesture eviction.
 They cover original-byte retention/copy, accepted and oversized payloads,
 sandbox/IPC restrictions, custom scrollbar inputs, resize, held arrivals,
 queue/rate bounds, real SQLite write/full errors, simulated low disk headroom,
@@ -78,11 +86,13 @@ xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/reference.mjs
 Run measurements separately from recordings or other Electron tests:
 
 ```bash
+xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:navigation
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:history
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure -- baseline
 ```
 
-Results go under ignored `measurements/`. See [history validation](../docs/electron-history-validation.md)
+Results go under ignored `measurements/`. See [search and navigation validation](../docs/electron-navigation-validation.md)
+for current query/interaction budgets and evidence, [history validation](../docs/electron-history-validation.md)
 for budgets, measurements and evidence, and [initial inspector validation](../docs/electron-validation.md)
 for the original empty-window comparison. Linux synthetic checks do not
 establish real Codex compatibility or macOS performance, energy use, sleep,
@@ -96,7 +106,16 @@ owns accepted text, metadata, local event order, SQLite statements, bounded
 transactions, oldest-row eviction and file cleanup. It returns at most five
 summaries and one selected payload. No list of every retained ID or payload
 enters either UI thread. The renderer replaces only its latest pending request
-and rejects older recording generations.
+and rejects older recording generations, filter identities and requested targets.
+`search.cjs` runs literal matching inside SQLite through a JavaScript function,
+using the same predicate for accepted-arrival counts. It checks a shared
+cancellation value and a 250 ms deadline while SQLite visits rows. Rank queries
+scan at most the fixed retained history and return bounded results. There is no
+whole-recording ID index or result array. Summary paging uses stable local IDs;
+coarse slider positions use a measured, deadline-limited SQL offset.
+Session and hook indexes live inside the existing database/page/disk budgets.
+Choice pages have at most 32 values and 128 KiB of text. Filter input allows
+512 search characters, 32 selected hooks and 128 KiB total filter bytes.
 
 The SQLite file has a physical page limit, a small cache, disabled memory
 mapping, and TRUNCATE rollback journaling. The disk budget includes a full
@@ -122,8 +141,8 @@ cannot replace the current view. A failed deletion leaves the previous files
 isolated and inaccessible to inspection. Hiding or minimizing keeps capture
 running and suppresses presentation updates. Status messages allow only one unacknowledged notification per recipient; background throttling stays on.
 
-The sandboxed preload exposes only status subscription, bounded inspection,
-copying and Clear. Main validates the window, top-level frame, exact local URL
+The sandboxed preload exposes only status subscription, bounded inspection and
+filtered navigation, cancellation, paged filter choices, copying and Clear. Main validates the window, top-level frame, exact local URL
 and request arguments. There is no generic SQL/filesystem/clipboard access,
 credential exposure or remote content. One original payload text node remains
 complete and navigable, without pretty-print expansion. One clipboard write may
