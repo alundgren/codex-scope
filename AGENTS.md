@@ -1,25 +1,69 @@
 # Project principles
 
+Codex Scope is a best-effort inspector. Preserve normal Codex behavior first,
+keep host and Mac resource use bounded second, and retain events third.
+Losing events is acceptable; blocking Codex or exhausting the user's laptop
+is not.
+Every retained event and pending operation needs a limit on both machines.
+
 - Preserve normal agent behavior before capturing data. Observation must not
   alter decisions, inject context, wrap other hooks, or depend on the viewer
   to finish. Capture failure must remain independent of session success.
-- Prefer data loss to reduced Mac responsiveness or excessive resource use on
-  either machine. Every retained event and pending operation needs a limit.
-- Capture is best effort. Report known losses honestly and distinguish them
-  from intervals where loss cannot be counted. Never imply complete coverage.
-- Do not record offline, retry delivery, or replay missed events after a
-  reconnect. This applies to future releases as well as the initial version.
-- Preserve complete accepted payloads, including unknown fields. Drop data
-  that cannot be accepted safely rather than silently truncating it.
 - Observe only the supplied hook input. Do not collect transcripts,
   environment variables, or the output of other hook commands.
-- Keep recordings temporary and private. Keep payloads out of logs and
-  telemetry, and real captures and machine configuration out of Git.
+- Keep payloads out of logs and telemetry, and real captures and machine
+  configuration out of Git. Recordings must remain private.
 - Respect existing configuration and hook trust. Installation must be
   explicit, and removal must preserve unrelated or user-edited entries.
-- Keep Linux and Electron independently buildable and testable. Share the
-  data contract and fixtures, not application internals or dependency trees.
-- Keep capture independent of browsing. Filtering or pausing the view must
-  not change capture behavior or unexpectedly move the user's current view.
+- Treat the Mac viewer as a companion to the user's work. Protect interactive
+  responsiveness, memory headroom, CPU availability, and battery life. Prefer
+  dropping excess events or evicting old history to growing resource use.
+- Bound memory across the whole Electron application, including the main
+  process, renderer, workers, database caches, queues, and duplicate payload
+  copies. Moving work to another process does not remove its resource cost.
+- Memory and pending work must not grow with recording duration or total
+  retained event count. Keep only a bounded working set for visible events
+  and selected payloads. Navigation, scrubbing, search, and arrival counters
+  must not require loading the entire recording into memory.
+- Bound CPU work as well as storage. Keep expensive work off the UI thread,
+  cancel obsolete work, and coalesce updates during bursts. Avoid continuous
+  polling, redraws, or animation when nothing useful has changed. Hidden or
+  minimized windows may keep capturing without spending CPU on presentation.
+- Filtering or pausing the view must not change capture behavior.
+- A frozen history view must stay responsive and preserve the reader's event
+  and payload position while capture continues. Visual effects, formatting,
+  and update frequency must yield to that requirement.
+- Apply limits before accepting or expanding expensive input. Preserve the
+  original bytes of accepted payloads, including unknown fields. Drop oversized
+  events rather than silently truncating them and presenting them as complete.
+  Rendering and copying accepted data must also respect resource limits.
+- Disk history is temporary and bounded. Include database sidecars and
+  temporary work in the budget. Cleanup and eviction must not cause long UI
+  stalls or compete indefinitely with capture. When cleanup cannot keep up,
+  drop incoming data and explain the limitation.
+- No offline recording, delivery retries, or recovery of missed events,
+  including in future releases. Reconnection must not create a replay backlog.
+  Distinguish known drops from gaps whose loss count is unknown. Never imply
+  complete coverage or that missing history can be recovered.
 - State what validation actually proves. Synthetic checks do not establish
   real-session compatibility, and Linux checks do not establish Mac behavior.
+- Choose numeric limits from measurements, not guesses or the size of demo
+  fixtures. Validate idle use, sustained capture, bursts, large accepted
+  payloads, rapid search and scrubbing, and resource pressure on macOS. Report
+  total app memory, CPU, responsiveness, and failure behavior with the tested
+  workload. Browser or Linux checks alone do not establish Mac performance.
+- Do not add UX subheadings unless the repository owner explicitly requests
+  them. This applies to screens, dialogs, mockups, and user-facing explanatory
+  copy. Do not imitate a subheading with styled text to bypass the rule. A
+  single view title and necessary control labels are allowed. Follow `ux.md`
+  for the selected experience; convenience or a generic design convention is
+  not permission to add subheadings.
+- Keep Linux and Electron dependencies, build commands, and tests independent.
+  Electron development must work with synthetic data without a collector.
+  Neither application imports the other's implementation. Keep shared
+  protocol material limited to the wire contract and shared fixtures.
+
+Keep this file about principles. Record implementation details and measured
+budgets in the relevant application documentation, `docs/architecture.md`,
+and `ux.md`. Record progress in `plan.md`. Preserve concurrent Linux and UI
+work when reconciling changes to shared documents.
