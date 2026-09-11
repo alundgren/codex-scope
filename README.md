@@ -2,7 +2,7 @@
 
 A live inspector for Codex hook events. Capture on a Linux host, inspect on a Mac, and keep a bounded, temporary history while the viewer is open.
 
-**Status: Linux capture implemented for synthetic testing; real-session and Mac validation remain.** The Event journal prototype describes the intended viewer. The Linux observer, collector, installer, and diagnostic viewer run independently of Electron. Start with [guided Linux installation](linux/install.md), [Linux development](linux/README.md) and [remaining work](plan.md).
+**Status: Linux capture, guided installation, and a finite Electron inspector are implemented.** The Electron app inspects and copies five bundled hook fixtures independently of the collector. Live transport, database history, filters and Clear remain deferred. Broader real-session and macOS validation remain. Start with [guided Linux installation](linux/install.md), [Linux development](linux/README.md), [Electron development](electron/README.md) and [remaining work](plan.md).
 
 Codex must keep working when capture fails. Missing events are acceptable; blocking a session, changing a hook decision, or exhausting the laptop's resources is not.
 
@@ -24,7 +24,7 @@ No offline recording is planned, in this or later releases. Events generated whi
 
 ## Explore the stream
 
-[Open the selected Event journal prototype](docs/mockups/event-journal-v2.html) in a browser. [Viewer behavior](ux.md) and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the implementation contract. All prototype data is synthetic.
+[Run the finite Electron inspector](electron/README.md) to inspect original synthetic payloads. [Linux Electron evidence](docs/electron-validation.md) records the checks and limits. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the complete intended experience below. These live-history controls are not yet implemented in the Electron slice.
 
 - Follow incoming events, or freeze the view while capture continues.
 - Filter by session, hook type, and free text across retained payloads.
@@ -32,19 +32,19 @@ No offline recording is planned, in this or later releases. Events generated whi
 - Inspect and copy an event's complete accepted payload.
 - Clear history without closing the app.
 
-There is no historical playback. The viewport, loaded rows, pending work, payload sizes, and SQLite storage all have limits. Older history is evicted as necessary; the interface shows what remains available.
+There is no historical playback. The complete viewer will bound SQLite storage and evict older history as necessary. The current Electron slice bounds its fixed fixtures, visible rows, selected payload and pending operations.
 
 ## Run from a clone
 
-Run `make -C linux test` to build and test the Linux implementation without Electron. [Linux development](linux/README.md) includes synthetic capture commands and tested tool versions. The Mac application will have its own development command. Signing, notarization, automatic updates, and a Mac installer are outside the initial build.
+Run `make -C linux test` to build and test the Linux implementation without Electron. [Linux development](linux/README.md) includes synthetic capture commands and tested tool versions. [Electron development](electron/README.md) documents its independent install, build, test and launch commands, validated under Linux Xvfb. Signing, notarization, automatic updates, and a Mac installer are outside the initial build.
 
-`linux/` owns Linux code, dependencies, commands, and tests. `electron/` is reserved for the Mac application and its independent tooling. `protocol/` contains the shared wire contract and synthetic fixtures; neither application imports the other's implementation. Root `AGENTS.md` records project principles.
+`linux/` owns Linux code, dependencies, commands, and tests. `electron/` owns the viewer and its independent tooling. `protocol/` contains the shared wire contract and synthetic fixtures; neither application imports the other's implementation. Root `AGENTS.md` records project principles.
 
 See [deployment](docs/deployment.md) for the proposed setup using fictional connection details, and [architecture](docs/architecture.md) for responsibilities and failure behavior. [ux.md](ux.md) records the viewing experience.
 
 ## Data lifetime and privacy
 
-SQLite history lives on the Mac. Normal window close quits the app and deletes its recording directory, including database sidecar files. After a crash, the next launch removes abandoned recording files. Closing the window is distinct from hiding or minimizing it. Deletion is ordinary filesystem cleanup, not forensic secure erasure.
+The planned SQLite history will live on the Mac. Normal close must quit and delete its recording directory and sidecars, with abandoned-file cleanup after a crash. Those lifecycle operations remain unimplemented. The current Electron inspector keeps only bundled synthetic data in memory and quits on close. Deletion of future recordings will be ordinary filesystem cleanup, not forensic secure erasure.
 
 The Linux collector has no event files or database. It discards undelivered events when the connection ends. A dead connection may take a bounded heartbeat timeout to detect.
 

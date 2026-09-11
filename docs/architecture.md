@@ -1,6 +1,31 @@
 # Architecture
 
-The Linux observer and collector are implemented for synthetic testing. Real-session compatibility and the Mac application remain unverified. The priority order is normal Codex behavior, bounded host and laptop resource use, then event retention.
+The Linux observer and collector and a finite Electron fixture inspector are implemented for synthetic testing. Real-session compatibility, live viewer transport, database history and macOS behavior remain unverified. The priority order is normal Codex behavior, bounded host and laptop resource use, then event retention.
+
+## Current Electron delivery
+
+`electron/` runs and builds independently of Linux. The main process validates
+one bundled version 1 fixture recording and owns original payload text and
+clipboard writes. A sandboxed preload exposes only bounded event inspection
+and copying by internal ID. The isolated renderer displays neighboring event
+buttons and one complete original payload as text. It uses plain local
+HTML/CSS/JavaScript, a custom payload scrollbar and an allowlisted application
+protocol. It adds no runtime package dependency or worker process.
+
+The recording is finite, capped at 16 events and 256 KiB of original payloads.
+The shipped five-event fixture occupies 70,623 payload bytes. Each accepted
+payload is at most 61,440 bytes, as required by the shared protocol. The
+renderer holds at most five summaries, one displayed payload, one in-flight
+inspection and one replaceable next target. One native clipboard write may be
+pending. The [Electron development guide](../electron/README.md) explains the
+commands and boundaries; [Linux validation](electron-validation.md) records
+the tested budgets and whole-process measurements.
+
+The diagrams and history sections below describe the complete target system.
+This slice has no transport, credentials, SQLite, search, live arrivals, scrub
+navigation or Clear operation. It never records missed events. Root
+`AGENTS.md` already contains the owner's recorded-visual and minimal-overhead
+rules for this and later UX work.
 
 ## System context
 
