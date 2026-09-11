@@ -36,10 +36,11 @@ async function processes(root) {
 }
 async function sample(app, duration, action = async () => wait(duration)) {
   const samples = [await processes(app.process().pid)];
-  let finished = false;
-  const workload = action().finally(() => { finished = true; });
+  let finished = false, failure;
+  const workload = Promise.resolve().then(action).catch(error => { failure = error; }).finally(() => { finished = true; });
   while (!finished) { await wait(250); samples.push(await processes(app.process().pid)); }
   await workload;
+  if (failure) throw failure;
   const final = samples.at(-1);
   const metrics = await app.evaluate(({ app }) => app.getAppMetrics().map(item => ({ pid: item.pid, type: item.type })));
   for (const item of final.members) item.role = metrics.find(metric => metric.pid === item.pid)?.type ?? item.role;
@@ -53,15 +54,27 @@ async function sample(app, duration, action = async () => wait(duration)) {
       final.pssBytes = final.members.every(item => item.pssBytes !== null) ? final.members.reduce((sum, item) => sum + item.pssBytes, 0) : null;
     } catch { /* RSS remains available without a privileged measurement reader. */ }
   }
-  const cpu = [];
+  const cpu = [], roleTicks = new Map();
+  let totalTicks = 0;
   for (let index = 1; index < samples.length; index++) {
     const previous = samples[index - 1];
     const current = samples[index];
-    const delta = current.members.reduce((sum, item) => sum + Math.max(0, item.ticks - (previous.members.find(old => old.pid === item.pid)?.ticks ?? item.ticks)), 0);
+    const delta = current.members.reduce((sum, item) => {
+      const elapsed = Math.max(0, item.ticks - (previous.members.find(old => old.pid === item.pid)?.ticks ?? item.ticks));
+      const role = metrics.find(metric => metric.pid === item.pid)?.type ?? item.role;
+      roleTicks.set(role, (roleTicks.get(role) ?? 0) + elapsed);
+      return sum + elapsed;
+    }, 0);
+    totalTicks += delta;
     cpu.push(delta / ticksPerSecond / ((current.at - previous.at) / 1000) * 100);
   }
-  return { durationMs: samples.at(-1).at - samples[0].at, samples: samples.length,
-    meanCpuPercentOneCore: cpu.reduce((sum, value) => sum + value, 0) / cpu.length,
+  const durationMs = final.at - samples[0].at;
+  const settled = samples.slice(Math.floor(samples.length * 2 / 3)).map(item => item.rssBytes).sort((a, b) => a - b);
+  return { durationMs, samples: samples.length,
+    meanCpuPercentOneCore: totalTicks / ticksPerSecond / (durationMs / 1000) * 100,
+    cpuByRole: Object.fromEntries([...roleTicks].map(([role, ticks]) => [role, ticks / ticksPerSecond / (durationMs / 1000) * 100])),
+    steadyRssBytes: settled[Math.floor(settled.length / 2)],
+    peakProcesses: Math.max(...samples.map(item => item.members.length)),
     peakSampleCpuPercentOneCore: Math.max(...cpu), peakRssBytes: Math.max(...samples.map(item => item.rssBytes)),
     finalRssBytes: samples.at(-1).rssBytes, finalPssBytes: samples.at(-1).pssBytes,
     finalProcesses: samples.at(-1).members.map(({ pid, parent, group, ticks, ...item }) => item) };

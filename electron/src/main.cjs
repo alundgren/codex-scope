@@ -17,6 +17,7 @@ const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'n
 protocol.registerSchemesAsPrivileged([{ scheme: 'scope', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 app.enableSandbox();
 app.setName('Codex Scope');
+Menu.setApplicationMenu(null);
 const testMode = process.argv.includes('--history-test');
 const testRoot = testMode && process.argv.find(value => value.startsWith('--scope-test-root='))?.split('=').slice(1).join('=');
 if (testRoot) app.setPath('userData', testRoot);
@@ -51,7 +52,6 @@ app.on('before-quit', event => {
 });
 
 app.whenReady().then(async () => {
-  Menu.setApplicationMenu(null);
   const isolated = session.fromPartition('synthetic');
   isolated.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   isolated.setPermissionCheckHandler(() => false);

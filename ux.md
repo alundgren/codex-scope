@@ -25,7 +25,7 @@ complete accepted text. These are the current delivery details of the experience
 below. [Navigation evidence](docs/electron-navigation-validation.md) and
 [transport evidence](docs/electron-transport-validation.md) cover the actual app
 on Linux, including a separate synthetic smoke check with the landed collector.
-Private HTTPS proxy behavior, real Codex compatibility and macOS behavior remain
+[Integrated regression validation](docs/electron-regression-validation.md) maps the complete experience to repeatable actual-app checks and inspected synthetic evidence. Private HTTPS proxy behavior, real Codex compatibility and macOS behavior remain
 unverified.
 
 Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.

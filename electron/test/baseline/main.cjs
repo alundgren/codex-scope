@@ -1,9 +1,11 @@
 const { app, BrowserWindow, Menu, protocol, session } = require('electron');
 
 app.enableSandbox();
+Menu.setApplicationMenu(null);
+const ownerRoot = process.argv.find(value => value.startsWith('--scope-test-root='))?.slice('--scope-test-root='.length);
+if (ownerRoot) app.setPath('userData', ownerRoot);
 protocol.registerSchemesAsPrivileged([{ scheme: 'scope', privileges: { standard: true, secure: true, supportFetchAPI: true } }]);
 app.whenReady().then(async () => {
-  Menu.setApplicationMenu(null);
   const isolated = session.fromPartition('baseline');
   isolated.setPermissionRequestHandler((_contents, _permission, done) => done(false));
   isolated.setPermissionCheckHandler(() => false);

@@ -271,8 +271,11 @@ test('single owner, private files, hidden capture, crash cleanup and normal-clos
     await capture(page, info, 'hidden-resumed');
     const observed = (await state(app)).accepted;
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].minimize());
+    await expect.poll(() => app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isMinimized())).toBe(true);
+    const minimizedText = await page.locator('#count').textContent();
     await page.waitForTimeout(1500);
     expect((await state(app)).accepted).toBeGreaterThan(observed);
+    expect(await page.locator('#count').textContent()).toBe(minimizedText);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].restore());
     await capture(page, info, 'minimized-resumed');
     await writeFile(path.join(root, 'settings-sentinel'), 'unrelated settings');
