@@ -48,6 +48,7 @@ function summary(value) {
   liveButton.setAttribute('aria-pressed', String(live));
   const arrivals = live ? 0 : Math.max(0, value.accepted - heldAt);
   document.querySelector('#count').textContent = `${value.total} retained${arrivals ? ` · ${arrivals} new` : ''}`;
+  document.querySelector('#oldest').textContent = value.first ? time(value.first.receivedAt) : '';
   clear.disabled = !value.total || clearPending || !!value.clearing;
   liveButton.disabled = !!value.clearing;
 }
@@ -95,6 +96,18 @@ function element(tag, className, text) {
 }
 function rowCount() {
   return Math.max(3, Math.min(5, Math.floor((entries.clientHeight - 20) / (innerWidth <= 720 ? 70 : innerWidth <= 1050 ? 128 : 124))));
+}
+function positionMarkers() {
+  if (document.hidden) return;
+  const track = document.querySelector('.railtrack').getBoundingClientRect();
+  const ticks = document.querySelector('#ticks').children;
+  const pin = document.querySelector('#pin');
+  for (const [index, row] of [...entries.querySelectorAll('.event')].entries()) {
+    const bounds = row.getBoundingClientRect();
+    const top = `${Math.max(0, Math.min(track.height, bounds.top + bounds.height / 2 - track.top))}px`;
+    if (ticks[index]) ticks[index].style.top = top;
+    if (row.getAttribute('aria-pressed') === 'true') pin.style.top = top;
+  }
 }
 function render(result) {
   if (result.error) {
@@ -145,15 +158,10 @@ function render(result) {
     metadata.title = event.receivedAt;
   } else metadata.textContent = 'No payload selected';
   copy.disabled = !event || copyPending;
-  document.querySelector('#oldest').textContent = result.first ? time(result.first.receivedAt) : '';
   const ticks = document.querySelector('#ticks');
-  ticks.replaceChildren(...result.rows.map((item, index) => {
-    const tick = element('i', 'tick', '');
-    tick.style.top = `${index / Math.max(1, result.rows.length - 1) * 100}%`;
-    return tick;
-  }));
+  ticks.replaceChildren(...result.rows.map(() => element('i', 'tick', '')));
   document.querySelector('#pin').hidden = !event;
-  document.querySelector('#pin').style.top = `${Math.max(0, result.rows.findIndex(item => item.id === selectedId)) / Math.max(1, result.rows.length - 1) * 100}%`;
+  positionMarkers();
   updateScroll();
   document.documentElement.dataset.ready = 'true';
 }
@@ -237,6 +245,9 @@ document.addEventListener('visibilitychange', () => {
 });
 window.scope.onHidden(relock);
 liveButton.addEventListener('click', () => { live = true; heldAt = 0; evictionNotice = ''; summary(latest); requestInspection(null); });
-new ResizeObserver(() => { if (rowCount() !== lastRows && !clearPending) requestInspection(live ? null : selectedId); }).observe(entries);
+new ResizeObserver(() => {
+  positionMarkers();
+  if (rowCount() !== lastRows && !clearPending) requestInspection(live ? null : selectedId);
+}).observe(entries);
 window.scope.onStatus(receive);
 window.scope.status().then(value => { receive(value); requestInspection(null); });

@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-11T20:07:55.869Z",
+  "date": "2026-09-11T20:25:44.487Z",
   "environment": {
     "platform": "linux",
     "release": "7.0.0-31-generic",
@@ -12,103 +12,103 @@
   "method": "Actual Electron under Xvfb, no screenshots or recording. Sample all process-group members and descendants at 250 ms. Summed RSS includes shared pages; final PSS is a single aggregate snapshot. CPU 100% is one core. Workloads include test-driver serialization in main. Disk samples include the live rollback journal before commit.",
   "workloads": {
     "idle": {
-      "durationMs": 4260.6976159999995,
+      "durationMs": 4179.492696,
       "samples": 14,
-      "meanCpuPercentOneCore": 2.855040855327194,
-      "peakSampleCpuPercentOneCore": 9.679967465758416,
-      "peakRssBytes": 680337408,
-      "finalRssBytes": 679374848,
-      "finalPssBytes": 326267904,
+      "meanCpuPercentOneCore": 2.878270052542561,
+      "peakSampleCpuPercentOneCore": 8.921251860036401,
+      "peakRssBytes": 675594240,
+      "finalRssBytes": 674680832,
+      "finalPssBytes": 322910208,
       "finalProcesses": [
         {
-          "rssBytes": 184483840,
-          "pssBytes": 113245184,
+          "rssBytes": 183771136,
+          "pssBytes": 112354304,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15392768,
+          "rssBytes": 59084800,
+          "pssBytes": 15509504,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 153600,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13801472,
+          "rssBytes": 59072512,
+          "pssBytes": 13671424,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4369408,
+          "rssBytes": 14467072,
+          "pssBytes": 4354048,
           "role": "zygote"
         },
         {
-          "rssBytes": 153374720,
-          "pssBytes": 81871872,
+          "rssBytes": 150700032,
+          "pssBytes": 80819200,
           "role": "GPU"
         },
         {
-          "rssBytes": 85327872,
-          "pssBytes": 30754816,
+          "rssBytes": 85237760,
+          "pssBytes": 31136768,
           "role": "Utility"
         },
         {
-          "rssBytes": 121745408,
-          "pssBytes": 66678784,
+          "rssBytes": 120635392,
+          "pssBytes": 64906240,
           "role": "Tab"
         }
       ]
     },
     "sustainedSmall": {
-      "durationMs": 51323.779064999995,
-      "samples": 157,
-      "meanCpuPercentOneCore": 28.81299022755769,
-      "peakSampleCpuPercentOneCore": 65.09028688338985,
-      "peakRssBytes": 717557760,
-      "finalRssBytes": 717287424,
-      "finalPssBytes": 361515008,
+      "durationMs": 51300.098856000004,
+      "samples": 154,
+      "meanCpuPercentOneCore": 29.03175719237074,
+      "peakSampleCpuPercentOneCore": 66.49916813973869,
+      "peakRssBytes": 714678272,
+      "finalRssBytes": 714375168,
+      "finalPssBytes": 358951936,
       "finalProcesses": [
         {
-          "rssBytes": 203489280,
-          "pssBytes": 131564544,
+          "rssBytes": 202620928,
+          "pssBytes": 130236416,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15386624,
+          "rssBytes": 59084800,
+          "pssBytes": 15503360,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13784064,
+          "rssBytes": 59072512,
+          "pssBytes": 13668352,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4370432,
+          "rssBytes": 14467072,
+          "pssBytes": 4355072,
           "role": "zygote"
         },
         {
-          "rssBytes": 153243648,
-          "pssBytes": 81688576,
+          "rssBytes": 151486464,
+          "pssBytes": 81038336,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30764032,
+          "rssBytes": 85565440,
+          "pssBytes": 31179776,
           "role": "Utility"
         },
         {
-          "rssBytes": 140455936,
-          "pssBytes": 83802112,
+          "rssBytes": 140365824,
+          "pssBytes": 82811904,
           "role": "Tab"
         }
       ],
@@ -120,16 +120,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 10000,
-        "accepted": 13113,
+        "accepted": 13105,
         "retainedBytes": 4360000,
         "first": {
-          "id": 3114,
+          "id": 3106,
           "receivedAt": "2026-09-11T14:32:20.000Z"
         },
         "last": {
-          "id": 13113,
+          "id": 13105,
           "receivedAt": "2026-09-11T14:32:20.000Z"
         },
         "drops": {
@@ -137,67 +137,67 @@
           "oversized": 0,
           "capacity": 0
         },
-        "evicted": 3113,
+        "evicted": 3105,
         "pressure": false,
-        "maximumTransactionMs": 13.665669000001799,
+        "maximumTransactionMs": 15.710082999998122,
         "maximumDiskBytes": 2679386,
         "localDrops": 0,
-        "rateDrops": 2892,
+        "rateDrops": 2900,
         "unknownGap": false,
-        "peakQueueCount": 16,
-        "peakQueueBytes": 5424,
+        "peakQueueCount": 18,
+        "peakQueueBytes": 6102,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 29.825645000000804
+      "maximumMainTimerDelayMs": 39.55542399999831
     },
     "sustainedMaximum": {
-      "durationMs": 13302.980280999996,
+      "durationMs": 13142.921811000007,
       "samples": 40,
-      "meanCpuPercentOneCore": 41.87498253377045,
-      "peakSampleCpuPercentOneCore": 76.0752053487706,
-      "peakRssBytes": 746057728,
-      "finalRssBytes": 736440320,
-      "finalPssBytes": 379881472,
+      "meanCpuPercentOneCore": 36.18763237164646,
+      "peakSampleCpuPercentOneCore": 57.73199013801633,
+      "peakRssBytes": 742293504,
+      "finalRssBytes": 735150080,
+      "finalPssBytes": 379346944,
       "finalProcesses": [
         {
-          "rssBytes": 219017216,
-          "pssBytes": 146626560,
+          "rssBytes": 217731072,
+          "pssBytes": 144596992,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15390720,
+          "rssBytes": 59084800,
+          "pssBytes": 15506432,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13784064,
+          "rssBytes": 59072512,
+          "pssBytes": 13668352,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4373504,
+          "rssBytes": 14467072,
+          "pssBytes": 4358144,
           "role": "zygote"
         },
         {
-          "rssBytes": 153591808,
-          "pssBytes": 81730560,
+          "rssBytes": 151937024,
+          "pssBytes": 81142784,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30683136,
+          "rssBytes": 85565440,
+          "pssBytes": 31101952,
           "role": "Utility"
         },
         {
-          "rssBytes": 143732736,
-          "pssBytes": 87138304,
+          "rssBytes": 145580032,
+          "pssBytes": 88813568,
           "role": "Tab"
         }
       ],
@@ -209,16 +209,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 135,
-        "accepted": 13428,
+        "accepted": 13416,
         "retainedBytes": 8345565,
         "first": {
-          "id": 13294,
+          "id": 13282,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "last": {
-          "id": 13428,
+          "id": 13416,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "drops": {
@@ -227,67 +227,67 @@
           "capacity": 0,
           "storage": 139
         },
-        "evicted": 13293,
+        "evicted": 13281,
         "pressure": false,
-        "maximumTransactionMs": 16.299597999997786,
-        "maximumDiskBytes": 8434274,
+        "maximumTransactionMs": 17.810605999999098,
+        "maximumDiskBytes": 8442474,
         "localDrops": 0,
-        "rateDrops": 3638,
+        "rateDrops": 3650,
         "unknownGap": false,
-        "peakQueueCount": 16,
+        "peakQueueCount": 18,
         "peakQueueBytes": 185121,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 21.13577300000179
+      "maximumMainTimerDelayMs": 37.40003300000535
     },
     "repeatedMaximum": {
-      "durationMs": 12897.718397000004,
-      "samples": 39,
-      "meanCpuPercentOneCore": 43.180366865896204,
-      "peakSampleCpuPercentOneCore": 61.92125139433614,
-      "peakRssBytes": 743559168,
-      "finalRssBytes": 742187008,
-      "finalPssBytes": 380764160,
+      "durationMs": 13065.809242999996,
+      "samples": 40,
+      "meanCpuPercentOneCore": 43.931754609966085,
+      "peakSampleCpuPercentOneCore": 61.49485386950367,
+      "peakRssBytes": 739123200,
+      "finalRssBytes": 733224960,
+      "finalPssBytes": 376551424,
       "finalProcesses": [
         {
-          "rssBytes": 219668480,
-          "pssBytes": 147375104,
+          "rssBytes": 217362432,
+          "pssBytes": 144884736,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15389696,
+          "rssBytes": 59084800,
+          "pssBytes": 15506432,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13784064,
+          "rssBytes": 59072512,
+          "pssBytes": 13667328,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4373504,
+          "rssBytes": 14467072,
+          "pssBytes": 4357120,
           "role": "zygote"
         },
         {
-          "rssBytes": 153591808,
-          "pssBytes": 81705984,
+          "rssBytes": 151805952,
+          "pssBytes": 81118208,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30682112,
+          "rssBytes": 85565440,
+          "pssBytes": 31100928,
           "role": "Utility"
         },
         {
-          "rssBytes": 148828160,
-          "pssBytes": 87299072,
+          "rssBytes": 144154624,
+          "pssBytes": 85757952,
           "role": "Tab"
         }
       ],
@@ -299,16 +299,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 135,
-        "accepted": 13870,
+        "accepted": 13858,
         "retainedBytes": 8345565,
         "first": {
-          "id": 13736,
+          "id": 13724,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "last": {
-          "id": 13870,
+          "id": 13858,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "drops": {
@@ -317,67 +317,67 @@
           "capacity": 0,
           "storage": 139
         },
-        "evicted": 13735,
+        "evicted": 13723,
         "pressure": false,
-        "maximumTransactionMs": 16.299597999997786,
-        "maximumDiskBytes": 8434274,
+        "maximumTransactionMs": 17.810605999999098,
+        "maximumDiskBytes": 8442474,
         "localDrops": 0,
-        "rateDrops": 4396,
+        "rateDrops": 4408,
         "unknownGap": false,
-        "peakQueueCount": 16,
+        "peakQueueCount": 18,
         "peakQueueBytes": 185121,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 13.146298999999999
+      "maximumMainTimerDelayMs": 41.605245999991894
     },
     "extendedMaximum": {
-      "durationMs": 25519.739203999998,
+      "durationMs": 25768.531768999994,
       "samples": 79,
-      "meanCpuPercentOneCore": 42.101676037567465,
-      "peakSampleCpuPercentOneCore": 65.00173244242175,
-      "peakRssBytes": 757911552,
-      "finalRssBytes": 754769920,
-      "finalPssBytes": 398468096,
+      "meanCpuPercentOneCore": 42.17548213525218,
+      "peakSampleCpuPercentOneCore": 66.83819001265078,
+      "peakRssBytes": 754327552,
+      "finalRssBytes": 752558080,
+      "finalPssBytes": 395830272,
       "finalProcesses": [
         {
-          "rssBytes": 234639360,
-          "pssBytes": 162248704,
+          "rssBytes": 233345024,
+          "pssBytes": 160719872,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15390720,
+          "rssBytes": 59084800,
+          "pssBytes": 15506432,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13785088,
+          "rssBytes": 59072512,
+          "pssBytes": 13667328,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4373504,
+          "rssBytes": 14467072,
+          "pssBytes": 4358144,
           "role": "zygote"
         },
         {
-          "rssBytes": 153456640,
-          "pssBytes": 81707008,
+          "rssBytes": 151797760,
+          "pssBytes": 81118208,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30682112,
+          "rssBytes": 85565440,
+          "pssBytes": 31100928,
           "role": "Utility"
         },
         {
-          "rssBytes": 146575360,
-          "pssBytes": 90126336,
+          "rssBytes": 147513344,
+          "pssBytes": 89200640,
           "role": "Tab"
         }
       ],
@@ -389,16 +389,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 135,
-        "accepted": 14742,
+        "accepted": 14734,
         "retainedBytes": 8345565,
         "first": {
-          "id": 14608,
+          "id": 14600,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "last": {
-          "id": 14742,
+          "id": 14734,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "drops": {
@@ -407,67 +407,67 @@
           "capacity": 0,
           "storage": 139
         },
-        "evicted": 14607,
+        "evicted": 14599,
         "pressure": false,
-        "maximumTransactionMs": 16.299597999997786,
-        "maximumDiskBytes": 8434274,
+        "maximumTransactionMs": 17.810605999999098,
+        "maximumDiskBytes": 8442474,
         "localDrops": 0,
-        "rateDrops": 5924,
+        "rateDrops": 5932,
         "unknownGap": false,
-        "peakQueueCount": 16,
+        "peakQueueCount": 18,
         "peakQueueBytes": 185121,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 18.878805000000284
+      "maximumMainTimerDelayMs": 35.833814999990864
     },
     "longMaximum": {
-      "durationMs": 51904.47252699999,
-      "samples": 152,
-      "meanCpuPercentOneCore": 46.59041321713782,
-      "peakSampleCpuPercentOneCore": 148.04345298335605,
-      "peakRssBytes": 760115200,
-      "finalRssBytes": 760115200,
-      "finalPssBytes": 396762112,
+      "durationMs": 51335.08254999999,
+      "samples": 153,
+      "meanCpuPercentOneCore": 42.047378479245936,
+      "peakSampleCpuPercentOneCore": 77.51264330525433,
+      "peakRssBytes": 755970048,
+      "finalRssBytes": 754565120,
+      "finalPssBytes": 398286848,
       "finalProcesses": [
         {
-          "rssBytes": 235438080,
-          "pssBytes": 162971648,
+          "rssBytes": 234381312,
+          "pssBytes": 161846272,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15388672,
+          "rssBytes": 59084800,
+          "pssBytes": 15505408,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13782016,
+          "rssBytes": 59072512,
+          "pssBytes": 13666304,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4372480,
+          "rssBytes": 14467072,
+          "pssBytes": 4357120,
           "role": "zygote"
         },
         {
-          "rssBytes": 153718784,
-          "pssBytes": 81881088,
+          "rssBytes": 152305664,
+          "pssBytes": 81321984,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30650368,
+          "rssBytes": 85565440,
+          "pssBytes": 31049728,
           "role": "Utility"
         },
         {
-          "rssBytes": 150859776,
-          "pssBytes": 87561216,
+          "rssBytes": 147976192,
+          "pssBytes": 90381312,
           "role": "Tab"
         }
       ],
@@ -479,16 +479,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 135,
-        "accepted": 16502,
+        "accepted": 16477,
         "retainedBytes": 8345565,
         "first": {
-          "id": 16368,
+          "id": 16343,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "last": {
-          "id": 16502,
+          "id": 16477,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "drops": {
@@ -497,67 +497,67 @@
           "capacity": 0,
           "storage": 139
         },
-        "evicted": 16367,
+        "evicted": 16342,
         "pressure": false,
-        "maximumTransactionMs": 38.64626800001133,
-        "maximumDiskBytes": 8434274,
+        "maximumTransactionMs": 17.810605999999098,
+        "maximumDiskBytes": 8442474,
         "localDrops": 0,
-        "rateDrops": 8964,
+        "rateDrops": 8989,
         "unknownGap": false,
-        "peakQueueCount": 16,
+        "peakQueueCount": 18,
         "peakQueueBytes": 185121,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 56.80829899999662
+      "maximumMainTimerDelayMs": 66.57439900000463
     },
     "burstMaximum": {
-      "durationMs": 1680.5038389999827,
+      "durationMs": 1602.316439999995,
       "samples": 6,
-      "meanCpuPercentOneCore": 47.35208489869105,
-      "peakSampleCpuPercentOneCore": 68.0208602876121,
-      "peakRssBytes": 774012928,
-      "finalRssBytes": 774012928,
-      "finalPssBytes": 416455680,
+      "meanCpuPercentOneCore": 51.45422393707762,
+      "peakSampleCpuPercentOneCore": 73.10172586628268,
+      "peakRssBytes": 761360384,
+      "finalRssBytes": 758079488,
+      "finalPssBytes": 400776192,
       "finalProcesses": [
         {
-          "rssBytes": 250937344,
-          "pssBytes": 178376704,
+          "rssBytes": 238907392,
+          "pssBytes": 166048768,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15388672,
+          "rssBytes": 59084800,
+          "pssBytes": 15504384,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13782016,
+          "rssBytes": 59072512,
+          "pssBytes": 13666304,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4372480,
+          "rssBytes": 14467072,
+          "pssBytes": 4357120,
           "role": "zygote"
         },
         {
-          "rssBytes": 153718784,
-          "pssBytes": 81881088,
+          "rssBytes": 152305664,
+          "pssBytes": 81321984,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30650368,
+          "rssBytes": 85565440,
+          "pssBytes": 31049728,
           "role": "Utility"
         },
         {
-          "rssBytes": 149258240,
-          "pssBytes": 91849728,
+          "rssBytes": 146964480,
+          "pssBytes": 88669184,
           "role": "Tab"
         }
       ],
@@ -569,16 +569,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 135,
-        "accepted": 16554,
+        "accepted": 16528,
         "retainedBytes": 8345565,
         "first": {
-          "id": 16420,
+          "id": 16394,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "last": {
-          "id": 16554,
+          "id": 16528,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "drops": {
@@ -587,67 +587,67 @@
           "capacity": 0,
           "storage": 139
         },
-        "evicted": 16419,
+        "evicted": 16393,
         "pressure": false,
-        "maximumTransactionMs": 38.64626800001133,
-        "maximumDiskBytes": 8434274,
+        "maximumTransactionMs": 17.810605999999098,
+        "maximumDiskBytes": 8442474,
         "localDrops": 0,
-        "rateDrops": 9912,
+        "rateDrops": 9938,
         "unknownGap": false,
-        "peakQueueCount": 16,
-        "peakQueueBytes": 555363,
+        "peakQueueCount": 18,
+        "peakQueueBytes": 493656,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 92.14486699999543
+      "maximumMainTimerDelayMs": 45.04823200000101
     },
     "hiddenCapture": {
-      "durationMs": 4596.363055000023,
+      "durationMs": 4652.671009999991,
       "samples": 15,
-      "meanCpuPercentOneCore": 25.67842946718196,
-      "peakSampleCpuPercentOneCore": 41.91706064673046,
-      "peakRssBytes": 794513408,
-      "finalRssBytes": 793165824,
-      "finalPssBytes": 435789824,
+      "meanCpuPercentOneCore": 19.29334490326457,
+      "peakSampleCpuPercentOneCore": 27.028295652436306,
+      "peakRssBytes": 765112320,
+      "finalRssBytes": 761438208,
+      "finalPssBytes": 405705728,
       "finalProcesses": [
         {
-          "rssBytes": 265961472,
-          "pssBytes": 193543168,
+          "rssBytes": 238530560,
+          "pssBytes": 165878784,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15388672,
+          "rssBytes": 59084800,
+          "pssBytes": 15504384,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13783040,
+          "rssBytes": 59072512,
+          "pssBytes": 13666304,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4372480,
+          "rssBytes": 14467072,
+          "pssBytes": 4357120,
           "role": "zygote"
         },
         {
-          "rssBytes": 153718784,
-          "pssBytes": 81064960,
+          "rssBytes": 152305664,
+          "pssBytes": 81994752,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30650368,
+          "rssBytes": 85565440,
+          "pssBytes": 31048704,
           "role": "Utility"
         },
         {
-          "rssBytes": 153387008,
-          "pssBytes": 96832512,
+          "rssBytes": 150700032,
+          "pssBytes": 93096960,
           "role": "Tab"
         }
       ],
@@ -659,16 +659,16 @@
       },
       "history": {
         "generation": 1,
-        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
         "total": 135,
-        "accepted": 16705,
+        "accepted": 16681,
         "retainedBytes": 8345565,
         "first": {
-          "id": 16571,
+          "id": 16547,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "last": {
-          "id": 16705,
+          "id": 16681,
           "receivedAt": "2026-09-11T14:32:32.000Z"
         },
         "drops": {
@@ -677,73 +677,73 @@
           "capacity": 0,
           "storage": 139
         },
-        "evicted": 16570,
+        "evicted": 16546,
         "pressure": false,
-        "maximumTransactionMs": 38.64626800001133,
-        "maximumDiskBytes": 8434274,
+        "maximumTransactionMs": 17.810605999999098,
+        "maximumDiskBytes": 8442474,
         "localDrops": 0,
-        "rateDrops": 10161,
+        "rateDrops": 10185,
         "unknownGap": false,
-        "peakQueueCount": 16,
-        "peakQueueBytes": 555363,
+        "peakQueueCount": 18,
+        "peakQueueBytes": 493656,
         "queuedCount": 0,
         "queuedBytes": 0
       },
-      "maximumMainTimerDelayMs": 19.027158000011696
+      "maximumMainTimerDelayMs": 46.096489999996265
     },
     "settledIdle": {
-      "durationMs": 8261.961959999986,
-      "samples": 26,
-      "meanCpuPercentOneCore": 4.514561673469447,
-      "peakSampleCpuPercentOneCore": 25.84637442309142,
-      "peakRssBytes": 795746304,
-      "finalRssBytes": 708714496,
-      "finalPssBytes": 354438144,
+      "durationMs": 8284.934405000007,
+      "samples": 27,
+      "meanCpuPercentOneCore": 3.88086566847258,
+      "peakSampleCpuPercentOneCore": 27.027629578808128,
+      "peakRssBytes": 763654144,
+      "finalRssBytes": 704446464,
+      "finalPssBytes": 349337600,
       "finalProcesses": [
         {
-          "rssBytes": 187052032,
-          "pssBytes": 114456576,
+          "rssBytes": 187772928,
+          "pssBytes": 113222656,
           "role": "Browser"
         },
         {
-          "rssBytes": 59101184,
-          "pssBytes": 15387648,
+          "rssBytes": 59084800,
+          "pssBytes": 15504384,
           "role": "zygote"
         },
         {
           "rssBytes": 1712128,
-          "pssBytes": 154624,
+          "pssBytes": 158720,
           "role": "zygote"
         },
         {
-          "rssBytes": 59334656,
-          "pssBytes": 13782016,
+          "rssBytes": 59072512,
+          "pssBytes": 13666304,
           "role": "zygote"
         },
         {
-          "rssBytes": 14295040,
-          "pssBytes": 4372480,
+          "rssBytes": 14467072,
+          "pssBytes": 4357120,
           "role": "zygote"
         },
         {
-          "rssBytes": 150507520,
-          "pssBytes": 80084992,
+          "rssBytes": 148365312,
+          "pssBytes": 79343616,
           "role": "GPU"
         },
         {
-          "rssBytes": 85655552,
-          "pssBytes": 30650368,
+          "rssBytes": 85565440,
+          "pssBytes": 31045632,
           "role": "Utility"
         },
         {
-          "rssBytes": 151056384,
-          "pssBytes": 95549440,
+          "rssBytes": 148406272,
+          "pssBytes": 92039168,
           "role": "Tab"
         }
       ]
     }
   },
-  "startupMs": 2392.427886,
+  "startupMs": 1792.459461,
   "versions": {
     "electron": "44.3.0",
     "node": "24.20.0",
@@ -751,11 +751,11 @@
     "chrome": "152.0.7977.78"
   },
   "inspectionMs": {
-    "maximum": 26.276968999998644,
-    "p95": 25.812043000012636,
+    "maximum": 25.074453999986872,
+    "p95": 25.058568000007654,
     "operations": 30
   },
-  "appBytes": 132109,
+  "appBytes": 132467,
   "runtimeBytes": 295827900,
   "final": {
     "ok": true,
@@ -780,16 +780,16 @@
       "evictionCount": 64
     },
     "generation": 1,
-    "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+    "connectionId": "764eb726-c0eb-40f0-a1cb-1f2bfc2e89a5",
     "total": 135,
-    "accepted": 16705,
+    "accepted": 16681,
     "retainedBytes": 8345565,
     "first": {
-      "id": 16571,
+      "id": 16547,
       "receivedAt": "2026-09-11T14:32:32.000Z"
     },
     "last": {
-      "id": 16705,
+      "id": 16681,
       "receivedAt": "2026-09-11T14:32:32.000Z"
     },
     "drops": {
@@ -798,9 +798,9 @@
       "capacity": 0,
       "storage": 139
     },
-    "evicted": 16570,
+    "evicted": 16546,
     "pressure": false,
-    "maximumTransactionMs": 38.64626800001133,
-    "maximumDiskBytes": 8434274
+    "maximumTransactionMs": 17.810605999999098,
+    "maximumDiskBytes": 8442474
   }
 }

@@ -27,13 +27,17 @@ xvfb-run -a -s '-screen 0 1600x1000x24' npm test
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:history
 ```
 
-The complete suite passed seven adapter tests and eleven actual Electron tests.
-The Electron suite took 2.1 minutes. Visual inspection then found that a timed-out
-query could leave the original payload under an empty selection label. The
-correction preserves the complete displayed selection on query failure. The
-timeout/retry test and empty/unreadable/restart test passed again after that
-change. The main history walkthrough also passed again with refreshed captures.
-Recordings of those cases were replaced and inspected again.
+Before review, the complete suite passed seven adapter tests and eleven actual
+Electron tests. After the review fixes, all eleven existing Electron cases
+passed again. The new held-retention case initially stopped on an ambiguous
+test locator that matched both the event button and payload region. Restricting
+the locator to the button resolved it; its recorded rerun passed. All twelve
+current Electron cases have passed across that full run and focused rerun.
+
+Visual inspection corrected a query-timeout state that retained payload text
+under an empty selection label. Review also corrected the oldest-retained time
+during held reading and aligned the static markers with actual visible rows.
+Affected scenarios were recorded and inspected again after the corrections.
 
 The Electron install, build and tests use no Linux application package or
 collector. Shared protocol material is limited to its contract and synthetic
@@ -48,7 +52,7 @@ through renderer IPC.
 | --- | --- |
 | Original bytes and metadata | SQLite inspection and native clipboard round trips retain accepted whitespace, Unicode, unknown fields and hostile markup as text. A selected maximum payload retains all 61,440 bytes. Full session, optional tool, both receive times, connection/sequence, local ID, generation and byte count are stored. Local IDs control order. |
 | Admission and working set | Oversized payloads are dropped whole. Frame bytes are checked before cloning/parsing. Delayed worker input and a burst exceed rate/queue limits without growth beyond the fixed limits. Queries return at most five summaries and one selected payload. |
-| Held arrivals | Twelve arrivals leave the selected maximum payload, nonzero scroll offset and visible rows unchanged; only the new-arrival count advances. Live explicitly follows the newest retained event. |
+| Held arrivals | Twelve arrivals leave the selected maximum payload, nonzero scroll offset and visible rows unchanged. A separate distinct-timestamp case evicts earlier rows while the selection survives: earliest retained time advances without replacing held content. Live explicitly follows the newest retained event. |
 | Storage errors | Actual SQLite read-only and SQLITE_FULL errors drop input while available history remains readable. Low free-space pressure is separately simulated. Restoring writes and headroom resumes intake and clears the pressure notice. |
 | Eviction | A sustained maximum-payload feed evicts the selected old row, states what happened and selects the nearest retained row. Longer measurements reach the row cap and payload-accounting cap independently and reuse database pages. |
 | Timed Clear | First activation unlocks without deleting. Expiry after 3,000 ms, Escape and hiding relock. Held Enter repeats do not confirm. Reduced motion retains the same deadline. Two separate activations clear once; empty/in-flight Clear is disabled. |
@@ -96,8 +100,9 @@ Ordinary deletion is not forensic erasure.
 
 [Raw measurements](evidence/electron-history/measurements.json) record each
 workload, process role, queue counter and version. [Initial experiment](evidence/electron-history/initial-measurements.json)
-records the earlier synchronized-write behavior. Runs use the actual Electron
-app under Xvfb without video or screenshots. All process-group members and
+records the earlier synchronized-write behavior. The final run includes the
+retained-bound and marker corrections. It uses the actual Electron app
+under Xvfb without video or screenshots. All process-group members and
 descendants are sampled every 250 ms. The worker is included in the main
 process; the app adds no OS process. Playwright and the external sampler are
 excluded. Test-driver JSON serialization in main is included, so overload CPU
@@ -112,49 +117,53 @@ samples. These VM workloads establish tested limits, not Mac energy claims.
 
 | Workload | Seconds | Mean CPU | Peak summed RSS, MiB | Final total PSS, MiB |
 | --- | --- | --- | --- | --- |
-| Idle before intake | 4.3 | 2.9% | 648.8 | 311.2 |
-| 16,000 small inputs | 51.3 | 28.8% | 684.3 | 344.8 |
-| 1,200 maximum inputs | 13.3 | 41.9% | 711.5 | 362.3 |
-| 1,200 more maximum inputs | 12.9 | 43.2% | 709.1 | 363.1 |
-| 2,400 more maximum inputs | 25.5 | 42.1% | 722.8 | 380.0 |
-| 4,800 more maximum inputs | 51.9 | 46.6% | 724.9 | 378.4 |
-| 1,000 maximum inputs in bursts | 1.7 | 47.4% | 738.2 | 397.2 |
-| 400 maximum inputs while hidden | 4.6 | 25.7% | 757.7 | 415.6 |
-| Idle after intake and interaction | 8.3 | 4.5% | 758.9 | 338.0 |
+| Idle before intake | 4.2 | 2.9% | 644.3 | 308.0 |
+| 16,000 small inputs | 51.3 | 29.0% | 681.6 | 342.3 |
+| 1,200 maximum inputs | 13.1 | 36.2% | 707.9 | 361.8 |
+| 1,200 more maximum inputs | 13.1 | 43.9% | 704.9 | 359.1 |
+| 2,400 more maximum inputs | 25.8 | 42.2% | 719.4 | 377.5 |
+| 4,800 more maximum inputs | 51.3 | 42.0% | 720.9 | 379.8 |
+| 1,000 maximum inputs in bursts | 1.6 | 51.5% | 726.1 | 382.2 |
+| 400 maximum inputs while hidden | 4.7 | 19.3% | 729.7 | 386.9 |
+| Idle after intake and interaction | 8.3 | 3.9% | 728.3 | 333.2 |
 
-After reaching the retention cap, the extra 51.9-second maximum-input segment
+After reaching the retention cap, the extra 51.3-second maximum-input segment
 kept 135 rows, the same accounted retained bytes and the same file-size peak.
-Its final PSS was 378.4 MiB versus 380.0 MiB before that segment. After bursts
-and inspection, the idle settle returned PSS to 338.0 MiB. RSS retained reusable
-allocated pages, with a peak of 758.9 MiB across the run. This is a short
-repeated-retention demonstration, not an hours-long endurance claim.
+Its final PSS was 379.8 MiB versus 377.5 MiB before that segment.
+After bursts and inspection, the idle settle ended at 333.2 MiB PSS.
+RSS retains reusable allocated pages; its peak across the run was
+729.7 MiB. This is a short repeated-retention demonstration, not an
+hours-long endurance claim.
 
-Across the run, 16,705 events were accepted and 16,570 oldest rows evicted.
-Admission recorded 10,161 rate drops and no queue-capacity drops. The worker
-recorded 139 storage/cleanup-capacity drops while replacing many small rows with
-large rows; it recovered without relaxing its 64-row cleanup limit. The earlier
-delayed-worker test separately exercises queue-capacity rejection. Peak pending
-intake was 16 frames and 555,363 bytes, below both fixed caps;
+Across 27,000 offered inputs plus five seed events, 16,681 events were
+accepted and 16,546 oldest rows evicted. Admission recorded
+10,185 rate drops and 0 queue-capacity drops. The worker recorded
+139 storage/cleanup-capacity drops while replacing many small rows with large
+rows; it recovered without relaxing its 64-row cleanup limit. The delayed-worker
+functional test separately exercises queue-capacity rejection. Peak pending
+intake was 18 frames and 493,656 bytes, below both fixed caps;
 all queues drained between measured segments.
 
-The database, owner file and active rollback journal peaked at 8,434,274 bytes;
-accounted retained data plateaued at 8,345,565 bytes. Maximum worker ingestion
-step time, including file accounting and an optional bounded eviction, was
-38.7 ms. Main's 20 ms timer recorded a maximum extra delay of 92.1 ms during the
-1,000-event serialization burst; sustained segments stayed below 56.9 ms.
-Thirty five-summary inspection requests after saturation had p95 25.8 ms and
-maximum 26.3 ms, including debugger/IPC round trips. These are query timings;
-the recorded interaction tests separately prove displayed payload behavior.
+The database, owner file and active rollback journal peaked at
+8,442,474 bytes; accounted retained data plateaued at
+8,345,565 bytes. Maximum worker ingestion step time, including file
+accounting and an optional bounded eviction, was 17.8 ms.
+Main's 20 ms timer recorded 45.0 ms maximum extra delay during the
+1,000-event serialization burst. Sustained segments recorded at most
+66.6 ms extra delay. Thirty five-summary inspection requests after saturation
+had p95 25.1 ms and maximum 25.1 ms, including debugger/IPC round trips.
+These are query timings; recorded interaction tests separately prove displayed
+payload behavior.
 
-Startup to ready content was 2,392 ms in this run (1,154 ms in the preceding
-run). These are individual warm-filesystem launches, not a startup distribution.
-The original same-environment empty-window run used 274.8 MiB final PSS versus
-311.2 MiB idle here; the 36.4 MiB difference includes the inspector, synthetic
-seeds, worker and SQLite. It is not a controlled estimate of SQLite alone.
-See [initial inspector measurements](electron-validation.md#resource-measurements)
+Startup to ready content was 1,792 ms in this run. Earlier individual
+launches took 1,154 and 2,392 ms. These are warm-filesystem launches, not a
+startup distribution. The original same-environment empty-window run used
+274.8 MiB final PSS versus 308.0 MiB idle here. The difference includes the
+inspector, synthetic seeds, worker and SQLite; it is not a controlled estimate
+of SQLite alone. See [initial inspector measurements](electron-validation.md#resource-measurements)
 for that baseline's methods and limits.
 
-The application bundle is 132,109 bytes, compared with the stock Electron
+The application bundle is 132,467 bytes, compared with the stock Electron
 runtime's 295,827,900 bytes. The dependency lock is unchanged. All npm
 packages, measurement/test scripts, reference assets, screenshots and videos
 remain development inputs and are excluded from the application bundle.
@@ -164,8 +173,9 @@ remain development inputs and are excluded from the application bundle.
 The implementation screenshots and recordings were inspected directly. Recorded
 frames were sampled every half second, alongside full-size screenshots of the
 reference comparisons, held arrivals, errors, eviction and Clear. The timeout
-mismatch found during that inspection was corrected and its affected states
-were recorded and inspected again.
+mismatch found during that inspection was corrected. After review, the retained
+bound label and static marker alignment were corrected, recorded and inspected
+again in held-reading, eviction, one-event recovery and resize states.
 
 | Reference, 1180 × 760 | Actual Electron, 1180 × 760 |
 | --- | --- |
@@ -185,6 +195,7 @@ and enabled Clear/Live. These partial-delivery differences follow [ux.md](../ux.
 | Recording | Scenarios |
 | --- | --- |
 | [History walkthrough](evidence/electron-history/history-walkthrough.webm) | Matching desktop/narrow states, held maximum payload during arrivals, oversized drop, read-only/full-database/low-headroom pressure and recovery, selected-event eviction, Live, Clear unlock/expiry/Escape/held key/reduced motion/confirmation, empty and fresh input. |
+| [Retained bounds](evidence/electron-history/retained-bound.webm) | Older rows are evicted while the selected event, its neighbors and nonzero payload offset stay fixed; earliest retained time advances. |
 | [Late work](evidence/electron-history/late-work.webm) | Intake drops, delayed requests, Clear generation change, rejection of old work, fresh-session recovery. |
 | [Cleanup failure](evidence/electron-history/cleanup-failure.webm), [restart recovery](evidence/electron-history/cleanup-recovery.webm) | Explicit failed deletion, inaccessible old payload, bounded close, successful startup cleanup. |
 | [Lifecycle](evidence/electron-history/lifecycle.webm), [crash recovery](evidence/electron-history/crash-recovery.webm) | Second instance, hidden/minimized capture, relocking on hide, force kill, restart and owned-file cleanup. |

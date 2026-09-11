@@ -18,12 +18,13 @@ async function launch(info, { root, continuous = false } = {}) {
 }
 const state = app => app.evaluate(() => globalThis.scopeHistory.snapshot());
 const fault = (app, faults) => app.evaluate((_electron, faults) => globalThis.scopeHistory.call('test', { faults }), faults);
-async function append(app, count, template = 1, { burst = false, oversized = false } = {}) {
-  await app.evaluate(async (_electron, { message, count, burst, oversized }) => {
+async function append(app, count, template = 1, { burst = false, oversized = false, receivedStart = null } = {}) {
+  await app.evaluate(async (_electron, { message, count, burst, oversized, receivedStart }) => {
     const history = globalThis.scopeHistory;
     let next = globalThis.syntheticSequence ?? history.status.accepted + 100;
     for (let index = 0; index < count; index++) {
       const frame = { ...message, connection_id: history.status.connectionId, sequence: next++, received_at: '2026-09-11T14:00:00.000Z' };
+      if (receivedStart !== null) frame.received_at = new Date(receivedStart + index * 1000).toISOString();
       if (oversized) { frame.payload += ' '; frame.payload_bytes++; }
       history.append(history.generation, history.status.connectionId, JSON.stringify(frame));
       if (!burst && index % 4 === 3) {
@@ -36,7 +37,15 @@ async function append(app, count, template = 1, { burst = false, oversized = fal
     const deadline = performance.now() + 10000;
     while (history.sending && performance.now() < deadline) await new Promise(resolve => setTimeout(resolve, 5));
     if (history.sending) throw new Error('Intake did not settle.');
-  }, { message: source[template], count, burst, oversized });
+  }, { message: source[template], count, burst, oversized, receivedStart });
+}
+async function expectAlignedPin(page) {
+  const distance = await page.evaluate(() => {
+    const pin = document.querySelector('#pin').getBoundingClientRect();
+    const row = document.querySelector('.event[aria-pressed="true"]').getBoundingClientRect();
+    return Math.abs(pin.top + pin.height / 2 - row.top - row.height / 2);
+  });
+  expect(distance).toBeLessThanOrEqual(1);
 }
 async function clear(page) {
   await page.locator('#clear').click();
@@ -55,6 +64,7 @@ test('recorded history: arrivals hold rows and offset, boundaries, pressure reco
     await capture(page, info, 'history-desktop');
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 820));
     await capture(page, info, 'history-narrow');
+    await expectAlignedPin(page);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(1180, 760));
     await page.locator('[data-event="4"]').click();
     await page.locator('#scrollbar').press('PageDown');
@@ -101,6 +111,7 @@ test('recorded history: arrivals hold rows and offset, boundaries, pressure reco
     expect(evicted.retainedBytes).toBeLessThanOrEqual(8 * 1024 * 1024);
     expect(evicted.maximumDiskBytes).toBeLessThanOrEqual(33 * 1024 * 1024);
     await capture(page, info, 'eviction');
+    await expectAlignedPin(page);
     await page.locator('#live').click();
     await expect(page.locator('#mode')).toHaveText('Live');
     await expect(page.locator('#payload')).toHaveAttribute('data-event', String(evicted.last.id));
@@ -137,11 +148,40 @@ test('recorded history: arrivals hold rows and offset, boundaries, pressure reco
     await expect(page.locator('#count')).toHaveText('1 retained');
     await expect(page.locator('#json')).toHaveText(source[3].payload);
     await capture(page, info, 'clear-recovered');
+    await expectAlignedPin(page);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 820));
     await capture(page, info, 'clear-narrow');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect(errors).toEqual([]);
   } finally { await app.close(); await video.saveAs(info.outputPath('history-walkthrough.webm')); }
+});
+
+test('retained bounds advance while the selected event and reading position survive eviction', async ({}, info) => {
+  const { app, page, video } = await launch(info);
+  try {
+    await append(app, 130, 4, { receivedStart: Date.parse('2026-09-11T15:00:00.000Z') });
+    const before = await state(app);
+    const id = before.last.id;
+    await page.locator(`button[data-event="${id}"]`).click();
+    await page.locator('#scrollbar').press('PageDown');
+    const offset = await page.locator('#payload').evaluate(node => node.scrollTop);
+    expect(offset).toBeGreaterThan(0);
+    const rows = await page.locator('#entries').textContent();
+    const text = await page.locator('#json').textContent();
+    await capture(page, info, 'retained-bound-before');
+    await append(app, 12, 4, { receivedStart: Date.parse('2026-09-11T15:03:00.000Z') });
+    const after = await state(app);
+    expect(after.first.id).toBeGreaterThan(before.first.id);
+    expect(after.first.id).toBeLessThan(id);
+    expect(after.first.receivedAt).not.toBe(before.first.receivedAt);
+    await expect(page.locator('#oldest')).toHaveText(after.first.receivedAt.slice(11, 19));
+    await expect(page.locator('#payload')).toHaveAttribute('data-event', String(id));
+    expect(await page.locator('#entries').textContent()).toBe(rows);
+    expect(await page.locator('#json').textContent()).toBe(text);
+    expect(await page.locator('#payload').evaluate(node => node.scrollTop)).toBe(offset);
+    await expectAlignedPin(page);
+    await capture(page, info, 'retained-bound-after');
+  } finally { await app.close(); await video.saveAs(info.outputPath('retained-bound.webm')); }
 });
 
 test('Clear rejects delayed input and query results; intake queue is bounded', async ({}, info) => {
