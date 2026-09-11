@@ -9,7 +9,7 @@ Temporary implementation checklist. Linux code and synthetic tests are implement
 - [x] Run Linux synthetic failure tests, installed-runtime registration probe, startup benchmark, and short overload check. Evidence and limitations are in `docs/linux-validation.md`.
 - [x] Complete independent Plan, technical, and CLI review. Fix the input-timing test race and numeric-overflow validation finding; reviewer independently confirms all 33 tests pass.
 - [ ] Validate real-session policy behavior before approving capture for actual use. This work deliberately does not install account hooks or change trust. Collector tests can run synthetically, but do not complete this acceptance gate.
-- [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Live transport, filters, scrub navigation, Clear and SQLite remain separate work.
+- [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Later deliveries below add filters, scrubbing, Clear, SQLite and live transport.
 - [x] Complete issue #5's recorded Electron tests, visual inspection, clean-checkout validation and measured empty-window comparison. Evidence and Linux-only limits are in `docs/electron-validation.md`.
 - [x] Complete issue #5's independent Plan, technical and UX review. The reviewer reported no findings.
 
@@ -68,14 +68,14 @@ Done when a synthetic client can observe live events through a private proxy, bu
 
 - [x] Add Electron with a development command that opens the finite fixture inspector from a clone. Keep bundled UI isolated from Node, with narrow IPC and text-only payload rendering. Pin and test the runtime independently of Linux.
 - [x] Select and validate SQLite integration with the pinned runtime for temporary history.
-- [x] Put synthetic input and database work outside the renderer. Run SQLite and payload parsing in one bounded worker. Limit pending batches and acknowledged UI notifications. Real transport remains separate work; literal search now runs in the same worker.
+- [x] Put synthetic input and database work outside the renderer. Run SQLite and payload parsing in one bounded worker. Limit pending batches and acknowledged UI notifications. Literal search and live transport run in that same worker.
 - [x] Store original accepted payloads and the small envelope defined in the architecture. Define stable recording IDs and connection identities; do not order solely by remote timestamps.
 - [x] Choose and measure SQLite size, cache, journal, transaction, queue, and disk-headroom limits. Budget sidecars too. Evict oldest rows in small batches and reuse space without full compaction during capture. Reject more input if cleanup cannot keep pace.
 - [x] Implement one app instance, private recording directories, clear-history generation changes, normal-close deletion, and startup cleanup restricted to abandoned owned files. Keep settings separate from recordings.
 - [x] Test actual SQLite full/read-only failures, simulated low disk headroom, selected-event eviction, bounded burst intake, delayed Clear work, cleanup failure, second instances, force kill/relaunch, normal close and hidden/minimized capture in Electron on Linux.
 - [ ] Validate macOS sleep, native window lifecycle, energy use and performance. Linux results do not complete these checks.
 
-Electron temporary history is implemented. [History validation](docs/electron-history-validation.md) records the Linux synthetic checks, measured limits, inspected recordings and remaining macOS limits. Filtered navigation is implemented below; real transport remains separate.
+Electron temporary history is implemented. [History validation](docs/electron-history-validation.md) records the Linux synthetic checks, measured limits, inspected recordings and remaining macOS limits. Filtered navigation and version 1 live transport are implemented below.
 
 ## 4. Implement filtering and frozen history
 
@@ -86,11 +86,11 @@ Electron temporary history is implemented. [History validation](docs/electron-hi
 - [x] Add the custom payload scrollbar with pointer, wheel, touch and keyboard input. Keep the journal and payload visible together without subheadings, event numbers, or back and timestamp-jump buttons.
 - [x] Add the two-click Clear lock with its three-second confirmation window and atomic recording deletion.
 - [x] Handle oldest retained time, evicted selection and gestures, empty results, timeout recovery, and resource pressure while preserving held reading. Keep Synthetic data separate from Live/history.
-- [ ] Add authenticated connection status and unknown-loss gaps through the real transport issue.
+- [x] Add version 1 authenticated transport, connection status, collector lifetime totals and unknown-loss gaps. Keep local drops separate.
 - [x] Test concurrent arrivals, full-ID and hook filters, nonzero held offsets, rapid delayed queries, full-payload matches, every scrub input, frozen gesture mapping, eviction, timeout/reset, old replies after Clear, and bounded option paging in actual Electron on Linux.
-- [ ] Verify reconnection while in history after real transport is implemented.
+- [x] Verify held reconnection, payload offsets, counter reset, delayed Clear, heartbeat stalls and hidden/minimized capture in actual Electron on Linux. Run the separate landed-collector smoke with synthetic input and isolated configuration.
 
-[Navigation validation](docs/electron-navigation-validation.md) records current synthetic evidence and measured query/working-set bounds. macOS behavior remains unverified.
+[Navigation validation](docs/electron-navigation-validation.md) records query bounds. [Transport validation](docs/electron-transport-validation.md) records the independent fake-server suite, landed-collector smoke, inspected recordings and resource measurements. Private proxy, real-session and macOS checks remain unverified.
 
 Done when retained events can be explored in both directions without unbounded loading, and the Live endpoint follows only the currently connected stream.
 

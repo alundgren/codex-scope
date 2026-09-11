@@ -1,0 +1,11 @@
+{
+  "date": "2026-09-11T22:54:12.909Z",
+  "environment": "Actual Electron/Xvfb and landed Linux collector, loopback HTTP, synthetic datagram only",
+  "collectorRevision": "32cc8e172b6d0bd37e42fbbee7cb67c5a00f5995",
+  "checks": [
+    "Landed collector hello and synthetic datagram accepted with exact original bytes",
+    "Stream survives beyond six-second lease through separate heartbeat requests",
+    "Collector close preserves retained history and reports unknown coverage"
+  ],
+  "result": "pass"
+}

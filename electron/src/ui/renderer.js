@@ -66,6 +66,31 @@ function summary(value) {
   if (!gesture && oldView && value.view?.queryId === queryId) position = Math.max(0, position - Math.max(0, value.view.removed - oldView.removed));
   latest = value;
   const parts = [];
+  const transport = value.transport;
+  const connectionLabels = { connecting: 'Connecting…', connected: 'Connected', disconnected: 'Disconnected' };
+  const connection = document.querySelector('.connection');
+  const connectionText = transport ? connectionLabels[transport.state] ?? 'Disconnected' : value.starting ? 'Starting…' : 'Synthetic data';
+  if (connection.textContent !== connectionText) connection.textContent = connectionText;
+  const connectionReasons = {
+    auth: 'Authentication failed. Check the token file and restart the app.',
+    version: 'Unsupported collector version. Update the collector or viewer, then restart the app.',
+    config: 'Connection settings could not be read. Check the endpoint and private token file, then restart the app.',
+    tls: 'Secure connection failed. Check the certificate and endpoint, then restart the app.',
+    endpoint: 'Collector endpoint rejected the request. Check the connection settings and restart the app.',
+    conflict: 'Another viewer is connected or this connection expired. Retrying.',
+    busy: 'Collector is busy. Retrying.',
+    protocol: 'Collector sent invalid stream data. Reconnecting.',
+    frame: 'Collector sent an oversized stream frame. Reconnecting.',
+    rate: 'Stream exceeded the intake rate limit. Reconnecting.',
+    stalled: 'Intake stopped making progress. Reconnecting when processing finishes.',
+    disconnected: 'Connection lost. Reconnecting.',
+  };
+  if (transport?.reason && connectionReasons[transport.reason]) parts.push(connectionReasons[transport.reason]);
+  if (transport?.coverageUnknown) parts.push('Coverage before connection and across gaps is unknown. Missing events cannot be recovered.');
+  if (transport?.collectorTotals) {
+    const totals = Object.entries(transport.collectorTotals).filter(([, count]) => count).map(([reason, count]) => `${count} ${reason}`);
+    if (totals.length) parts.push(`Collector lifetime drops: ${totals.join(', ')}.`);
+  }
   if (value.error) parts.push(value.error);
   if (value.pressure) parts.push('Storage pressure. Incoming events are being dropped. Available history remains readable.');
   if (evictionNotice) parts.push(evictionNotice);
@@ -76,9 +101,15 @@ function summary(value) {
   if (value.rateDrops) reasons.push(`${value.rateDrops} intake rate`);
   if (reasons.length) parts.push(`Known local drops: ${reasons.join(', ')}.`);
   const notice = document.querySelector('#notice');
-  notice.textContent = parts.join(' ');
-  if (queryFailed) { const reset = element('button', '', 'Reset filters'); reset.addEventListener('click', filters.reset); notice.append(reset); }
-  document.querySelector('#mode').textContent = live ? 'Live' : 'History · position held';
+  const noticeText = parts.join(' ');
+  if (notice.dataset.message !== noticeText || notice.dataset.failed !== String(queryFailed)) {
+    notice.dataset.message = noticeText; notice.dataset.failed = String(queryFailed);
+    notice.textContent = noticeText;
+    if (queryFailed) { const reset = element('button', '', 'Reset filters'); reset.addEventListener('click', filters.reset); notice.append(reset); }
+    notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;
+  }
+  const mode = document.querySelector('#mode'), modeText = live ? 'Live' : 'History · position held';
+  if (mode.textContent !== modeText) mode.textContent = modeText;
   liveButton.setAttribute('aria-pressed', String(live));
   const view = activeView();
   const count = view?.count ?? (hasFilters() ? null : value.total);
@@ -89,12 +120,12 @@ function summary(value) {
   countNode.dataset.arrivals = String(arrivals);
   const oldestMatch = gesture?.first ?? view?.first;
   document.querySelector('#oldest').textContent = hasFilters() ? oldestMatch ? time(oldestMatch.receivedAt) : count ? 'Oldest match' : '' : value.first ? time(value.first.receivedAt) : '';
-  document.querySelector('#retention').textContent = value.first ? `Retained from ${time(value.first.receivedAt)} UTC · Deleted when the app closes.` : 'Temporary synthetic recording · Waiting for events.';
+  document.querySelector('#retention').textContent = value.first ? `Retained from ${time(value.first.receivedAt)} UTC · Deleted when the app closes.` : transport || value.starting ? 'Temporary recording · Waiting for events.' : 'Temporary synthetic recording · Waiting for events.';
   clear.disabled = !value.total || clearPending || !!value.clearing;
   liveButton.disabled = !count || filterPending || !!value.clearing;
   positionMarkers();
 }
-function empty(message = 'No synthetic events have arrived.', reset = false) {
+function empty(message = latest.transport ? 'No events have arrived.' : 'No synthetic events have arrived.', reset = false) {
   selectedId = null; selectedText = ''; selectedValue = ''; displayed = null; position = 0;
   json.textContent = ''; payload.scrollTop = 0; payload.dataset.event = 'null';
   const contents = element('div', 'empty', message);
@@ -130,7 +161,14 @@ function receive(value) {
     stopGesture(); cancelWork(); relock(); empty(); filters.refresh();
   }
   const changed = value.accepted !== latest.accepted || value.total !== latest.total;
+  if (value.error) { queryNotice = ''; queryFailed = false; }
   summary(value);
+  if (value.error) {
+    cancelWork();
+    if (selectedId === null) empty('Temporary history is unavailable.');
+    document.documentElement.dataset.ready = 'true';
+    return;
+  }
   if (document.hidden || clearPending || value.clearing || filterPending) return;
   if (gesture && value.view?.queryId === queryId && value.view.removed !== gesture.snapshot.removed) {
     stopGesture(); cancelWork();
@@ -169,7 +207,7 @@ function render(result) {
   summary(current);
   position = Math.max(0, result.position - Math.max(0, (activeView()?.removed ?? 0) - result.snapshot.removed));
   const selectedIndex = result.rows.findIndex(item => item.id === result.selected?.id);
-  if (!result.selected) empty(result.total ? 'No matching events.' : 'No synthetic events have arrived.', !!result.total);
+  if (!result.selected) empty(result.total ? 'No matching events.' : latest.transport ? 'No events have arrived.' : 'No synthetic events have arrived.', !!result.total);
   else entries.replaceChildren(...result.rows.map((item, index) => {
     const button = element('button', 'event', '');
     button.dataset.event = String(item.id);
@@ -209,7 +247,7 @@ function render(result) {
 }
 function requestInspection(id = selectedId) { return requestNavigation(id === null && live ? { kind: 'live' } : { kind: 'select', id }); }
 async function requestNavigation(target) {
-  if (filterPending || clearPending) return;
+  if (filterPending || clearPending || latest.error) return;
   targetId++;
   wanted = { generation, queryId, targetId, filter: filters.value(), target, rows: rowCount() };
   lastRows = wanted.rows;
@@ -235,7 +273,10 @@ async function requestNavigation(target) {
       if (!result.error && !result.selected && activeView()?.count > 0) requestInspection(null);
       if (request.targetId === reconcileTarget && !result.error) { reconcileTarget = 0; requestInspection(live ? null : selectedId); }
     }
-  } finally { loading = false; busy(); }
+  } finally {
+    loading = false; busy();
+    if (rowCount() !== lastRows && !queryFailed && !clearPending && !gesture && !filterPending) requestInspection(live ? null : selectedId);
+  }
 }
 function changeFilter(_value, delay) {
   queryId++; heldAt = 0; evictionNotice = ''; queryNotice = 'Searching…'; queryFailed = false;
@@ -359,8 +400,10 @@ document.addEventListener('visibilitychange', () => {
 window.scope.onHidden(() => { relock(); stopGesture(); });
 liveButton.addEventListener('click', () => { stopGesture(); live = true; heldAt = 0; evictionNotice = ''; summary(latest); requestInspection(null); });
 new ResizeObserver(() => {
+  const notice = document.querySelector('#notice');
+  notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;
   positionMarkers();
-  if (rowCount() !== lastRows && !clearPending && !gesture && !filterPending) requestInspection(live ? null : selectedId);
+  if (rowCount() !== lastRows && !loading && !queryFailed && !clearPending && !gesture && !filterPending) requestInspection(live ? null : selectedId);
 }).observe(entries);
 window.scope.onStatus(receive);
 window.scope.status().then(value => { receive(value); requestInspection(null); filters.refresh(); });

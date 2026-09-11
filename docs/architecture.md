@@ -1,14 +1,15 @@
 # Architecture
 
 The Linux observer and collector and an Electron viewer with temporary SQLite
-history are implemented for synthetic testing. Real-session compatibility,
-live viewer transport and macOS behavior remain unverified. The priority order
+history and version 1 transport are implemented for synthetic testing.
+Real-session compatibility, private proxy delivery and macOS behavior remain
+unverified. The priority order
 is normal Codex behavior, bounded host and laptop resource use, then event retention.
 
 ## Current Electron delivery
 
 `electron/` runs and builds independently of Linux. The main process limits
-incoming synthetic frames, owns one database worker and validates narrow IPC
+incoming synthetic frames, owns one database/transport worker and validates narrow IPC
 for inspection, copying, status and Clear. The worker parses accepted input,
 stores original payload text and metadata in local recording order, and evicts
 oldest rows within fixed limits. The sandboxed, isolated renderer displays at
@@ -16,8 +17,8 @@ most five neighboring summaries and one complete original payload as text.
 Plain local HTML/CSS/JavaScript supplies the selected journal and custom payload
 scrollbar. No runtime package or extra OS process is added.
 
-Each application recording starts in Live with synthetic seed events and
-continued arrivals. Selecting a row holds its neighborhood and payload offset
+Each application recording starts in Live. A configured collector supplies live
+events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
 while capture continues. Retained bounds and arrival counts stay current.
 Literal search covers complete accepted payloads and metadata. Full session IDs
 and several hook selections filter history and matching-arrival counters equally.
@@ -38,8 +39,19 @@ records storage budgets and actual Electron lifecycle checks.
 [Navigation validation](electron-navigation-validation.md) records inspected
 search/scrub flows, bounded queries and whole-application measurements.
 
-The diagrams below describe the complete target system. Authenticated viewer
-transport and credentials remain separate work.
+The existing worker also owns authenticated HTTP NDJSON transport. Local private
+settings contain an HTTPS origin and token-file location; literal loopback HTTP
+is accepted for same-host tests. Node HTTP APIs use separate connections for the
+stream and heartbeat, strict certificate checks, fixed deadlines and one retry
+timer. No redirects or replay requests are followed. Stream parsing uses a fixed
+frame buffer and awaits one storage operation, so stalled intake cannot retain
+an independent heartbeat loop. Collector lifetime totals are replaced by each
+health report; local drops and unknown coverage remain separate. Clear changes
+the shared generation before closing old transport and deleting its recording.
+[Transport validation](electron-transport-validation.md) records protocol limits,
+measured working sets, sources and actual-app failure/recovery evidence.
+
+The diagrams below describe the complete target system.
 There is no recording of missed events, replay or offline recovery. macOS
 performance, energy use, sleep, setup and native lifecycle remain unverified.
 
@@ -186,4 +198,4 @@ No telemetry, full payload logs, transcript reads, environment capture, public n
 
 One Linux host, one Mac viewer, multiple Codex sessions, event inputs only. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
 
-Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). SQLite integration, Mac resource limits, and complete real-session and proxy checks remain in [the plan](../plan.md).
+Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). Native Mac resource validation and complete real-session and proxy checks remain in [the plan](../plan.md).

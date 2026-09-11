@@ -9,7 +9,7 @@
 </head>
 <body>
   <main>
-    <header><h1>Event journal</h1><span class="connection">Synthetic data</span></header>
+    <header><h1>Event journal</h1><span class="connection" role="status">Starting…</span></header>
     <div class="toolbar">
       <input id="search" class="search" aria-label="Search retained payloads and metadata" placeholder="Search payloads…" maxlength="512">
       <select id="session" aria-label="Filter by session"><option value="">All sessions</option></select>
@@ -25,7 +25,7 @@
         <div id="entries" aria-label="Journal events"></div>
       </div>
       <section class="inspector" aria-label="Accepted payload">
-        <div class="payloadmeta"><div id="metadata">Opening synthetic recording…</div><button id="copy" disabled>Copy JSON</button></div>
+        <div class="payloadmeta"><div id="metadata">Opening temporary recording…</div><button id="copy" disabled>Copy JSON</button></div>
         <div class="payloadbody">
           <div id="payload" tabindex="0" role="region" aria-label="Complete original JSON payload"><pre id="json"></pre></div>
           <div id="scrollbar" role="scrollbar" aria-label="Scroll payload" aria-controls="payload" aria-orientation="vertical"
@@ -34,7 +34,7 @@
         <div id="copy-status" role="status"></div>
       </section>
     </div>
-    <footer><span id="retention">Temporary synthetic recording · Deleted when the app closes.</span><button class="clear" id="clear" aria-label="Unlock Clear history" disabled>
+    <footer><span id="retention">Temporary recording · Deleted when the app closes.</span><button class="clear" id="clear" aria-label="Unlock Clear history" disabled>
       <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 9V6a4 4 0 0 1 8 0v3"/><rect x="4" y="9" width="12" height="9" rx="2"/><path d="M10 12v3"/></svg><span id="clear-label">Clear</span>
     </button></footer>
   </main>

@@ -164,7 +164,8 @@ class History extends EventEmitter {
     this.localDrops = 0;
     this.rateDrops = 0;
     this.unknownGap = false;
-    this.status = { generation: this.generation, total: 0, accepted: 0, first: null, last: null, drops: {}, clearing: true };
+    const transport = this.status.transport ? { state: 'disconnected', reason: null, coverageUnknown: true, collectorTotals: null } : undefined;
+    this.status = { generation: this.generation, total: 0, accepted: 0, first: null, last: null, drops: {}, clearing: true, transport };
     this.emit('status', this.snapshot());
     const result = await this.call('clear');
     if (result.error) {

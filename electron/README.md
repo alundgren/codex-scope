@@ -1,7 +1,8 @@
 # Electron development
 
-The viewer runs independently with synthetic data and no collector or
-credentials. It opens five seed events in a fresh temporary SQLite recording,
+The viewer accepts the collector's version 1 live stream. It also runs
+independently with synthetic data and no collector or credentials. In synthetic
+mode, it opens five seed events in a fresh temporary SQLite recording,
 starts in Live, and generates one new synthetic event each second. Selecting a
 row holds its neighborhood and payload offset while capture continues. The Live
 label resumes following. Clear requires two separate activations within three
@@ -52,11 +53,49 @@ xvfb-run -a -s '-screen 0 1600x1000x24' npm test
 xvfb-run -a npm start
 ```
 
-On a desktop with a display, use `npm start`. Use `npm start -- --fixtures-only`
+On a desktop with a display, use `npm start`. With no connection settings,
+startup uses synthetic mode. `npm start -- --synthetic` selects it explicitly. Use `npm start -- --fixtures-only`
 to keep the initial recording finite while exercising inspection. The
 `--history-test` switch exposes fault injection only to the Electron main-process
 debugger and accepts `--scope-test-root` for an isolated owner directory. It
 adds no renderer data injection or filesystem API. These switches are for automated development checks.
+
+## Collector connection
+
+Create a private JSON configuration outside Git with two fields:
+
+```json
+{"endpoint":"https://collector.example.net","tokenFile":"/absolute/private/viewer.token"}
+```
+
+The configuration and token must be regular files owned by the current account,
+readable only by that account. Use mode `0600`; symlinks are rejected. The config
+is limited to 4096 bytes and the token to 256 ASCII bearer characters plus a
+terminal newline. The token value never enters a command line or renderer.
+The default configuration is `connection.json` in Electron's application user
+data directory, separate from temporary recordings. To use another private file:
+
+```bash
+npm start -- --connection-config=/absolute/private/connection.json
+```
+
+The endpoint is an origin only, optionally followed by `/`. Credentials, paths,
+queries, fragments, redirects and invalid TLS certificates are rejected. Only
+literal loopback IPs may use HTTP for same-host testing. `localhost` is not a
+plaintext exception because its name resolution is external to the URL.
+The repository ignores `electron/connection.local.json` and `electron/token.local`
+for local development, but app settings should normally remain outside the clone.
+Restart after editing settings or token files. Authentication, version, endpoint
+and certificate failures stop retrying until restart. Transient failures use one
+retry timer with backoff from 500 ms to 8 seconds. Existing history remains
+available, and a held selection stays in place through reconnect.
+
+The status area reports the latest collector process-lifetime totals and their
+reasons. It replaces those totals on each health message and clears them until
+a new connection supplies its first report. Local storage drops remain separate.
+Coverage before connection and across every gap is unknown; no missing event
+can be recovered. Clear stops the old stream and heartbeat, invalidates delayed
+work and starts a new recording and connection only after successful cleanup.
 
 ## Build and validation
 
@@ -66,16 +105,29 @@ runtime package dependency, embedded server, formatter, framework or extra
 OS process. One bounded Node worker owns SQLite and ingestion. Tests and
 Playwright's FFmpeg binary are excluded from the bundle.
 
-`npm test` runs the adapter checks and actual Electron integration tests after
+`npm test` runs the adapter and fake-server transport checks and actual Electron integration tests after
 a build. Tests use isolated private owner directories and synthetic data.
 Search tests also cover literal punctuation, matches outside previews, full-ID
 collisions, several hooks, cancellation during SQLite execution, timed queries,
 stale filter/target replies, paging choices and gesture eviction.
-They cover original-byte retention/copy, accepted and oversized payloads,
+Transport tests cover each byte split, bytewise UTF-8, strict hello/field limits,
+original bytes, invalid TLS, status failures, heartbeat deadlines, stalled
+processing, bounded retries, collector restarts and delayed Clear. OpenSSL is a
+development test prerequisite for the generated self-signed certificate check.
+They also cover original-byte retention/copy, accepted and oversized payloads,
 sandbox/IPC restrictions, custom scrollbar inputs, resize, held arrivals,
 queue/rate bounds, real SQLite write/full errors, simulated low disk headroom,
 eviction, delayed Clear work, timed keyboard confirmation, cleanup failure,
 second instances, hide/minimize, force kill/relaunch and normal close.
+
+The real collector check is a separate command and is never part of `npm test`.
+It needs Python and this clone's landed Linux collector, starts isolated
+loopback configuration, sends one synthetic datagram and removes the temporary
+files. It does not install hooks, change trust or configure a proxy:
+
+```bash
+xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:collector
+```
 
 Capture the unchanged visual reference separately:
 
@@ -86,12 +138,14 @@ xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/reference.mjs
 Run measurements separately from recordings or other Electron tests:
 
 ```bash
+xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:transport
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:navigation
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:history
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure -- baseline
 ```
 
-Results go under ignored `measurements/`. See [search and navigation validation](../docs/electron-navigation-validation.md)
+Results go under ignored `measurements/`. [Transport validation](../docs/electron-transport-validation.md)
+records current protocol and resource evidence. See [search and navigation validation](../docs/electron-navigation-validation.md)
 for current query/interaction budgets and evidence, [history validation](../docs/electron-history-validation.md)
 for budgets, measurements and evidence, and [initial inspector validation](../docs/electron-validation.md)
 for the original empty-window comparison. Linux synthetic checks do not
@@ -102,7 +156,7 @@ native lifecycle or setup.
 
 `history.cjs` is the main-process broker. It caps frame bytes, rate, queue count,
 queue bytes and requests before passing work to `history-worker.cjs`. The worker
-owns accepted text, metadata, local event order, SQLite statements, bounded
+owns the authenticated transport, accepted text, metadata, local event order, SQLite statements, bounded
 transactions, oldest-row eviction and file cleanup. It returns at most five
 summaries and one selected payload. No list of every retained ID or payload
 enters either UI thread. The renderer replaces only its latest pending request
@@ -135,7 +189,7 @@ retries cleanup. Quit has a deadline and emits only a fixed cleanup-error messag
 if deletion fails. Ordinary deletion is not forensic erasure.
 
 Clear updates a shared generation before old work can start another transaction, stops the
-old synthetic input timer, clears pending batches and the view, closes/deletes
+old input stream, heartbeat or synthetic timer, clears pending batches and the view, closes/deletes
 the old database, and only then creates a new connection. Late query replies
 cannot replace the current view. A failed deletion leaves the previous files
 isolated and inaccessible to inspection. Hiding or minimizing keeps capture

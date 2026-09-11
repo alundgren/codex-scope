@@ -2,20 +2,24 @@
   "name": "codex-scope-viewer",
   "version": "0.1.0",
   "private": true,
-  "description": "Temporary synthetic hook event history inspector",
+  "description": "Temporary live hook event history inspector",
   "license": "MIT",
   "type": "module",
   "main": "src/main.cjs",
-  "engines": { "node": ">=24.0.0" },
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "start": "electron .",
     "build": "node scripts/build.mjs",
-    "test": "node --test test/recording.test.mjs test/search.test.mjs && playwright test",
-    "test:unit": "node --test test/recording.test.mjs test/search.test.mjs",
+    "test": "npm run test:unit && playwright test",
+    "test:unit": "node --test test/recording.test.mjs test/search.test.mjs test/transport.test.mjs",
     "test:electron": "playwright test",
     "measure": "node scripts/measure.mjs",
     "measure:history": "node scripts/measure-history.mjs",
-    "measure:navigation": "node scripts/measure-navigation.mjs"
+    "measure:navigation": "node scripts/measure-navigation.mjs",
+    "test:collector": "node scripts/collector-smoke.mjs",
+    "measure:transport": "node scripts/measure-transport.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
