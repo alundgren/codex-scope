@@ -9,6 +9,9 @@ Temporary implementation checklist. Linux code and synthetic tests are implement
 - [x] Run Linux synthetic failure tests, installed-runtime registration probe, startup benchmark, and short overload check. Evidence and limitations are in `docs/linux-validation.md`.
 - [x] Complete independent Plan, technical, and CLI review. Fix the input-timing test race and numeric-overflow validation finding; reviewer independently confirms all 33 tests pass.
 - [ ] Validate real-session policy behavior before approving capture for actual use. This work deliberately does not install account hooks or change trust. Collector tests can run synthetically, but do not complete this acceptance gate.
+- [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Live transport, filters, scrub navigation, Clear and SQLite remain separate work.
+- [x] Complete issue #5's recorded Electron tests, visual inspection, clean-checkout validation and measured empty-window comparison. Evidence and Linux-only limits are in `docs/electron-validation.md`.
+- [x] Complete issue #5's independent Plan, technical and UX review. The reviewer reported no findings.
 
 ## Fixed requirements
 
@@ -63,7 +66,8 @@ Done when a synthetic client can observe live events through a private proxy, bu
 
 ## 3. Build the Mac app and temporary history
 
-- [ ] Add Electron with a development command that opens the app from a clone. Keep bundled UI isolated from Node, with narrow IPC and text-only payload rendering. Pin a supported runtime and SQLite integration tested together.
+- [x] Add Electron with a development command that opens the finite fixture inspector from a clone. Keep bundled UI isolated from Node, with narrow IPC and text-only payload rendering. Pin and test the runtime independently of Linux.
+- [ ] Select and validate SQLite integration with the pinned runtime for temporary history.
 - [ ] Put connection and credentials outside the renderer. Run database writes and searches off the UI thread. Limit pending batches and UI notifications.
 - [ ] Store original accepted payloads and the small envelope defined in the architecture. Define stable recording IDs and connection identities; do not order solely by remote timestamps.
 - [ ] Choose and measure SQLite size, cache, journal, transaction, queue, and disk-headroom limits. Budget sidecars too. Evict oldest rows in small batches and reuse space without full compaction during capture. Reject more input if cleanup cannot keep pace.
@@ -74,11 +78,12 @@ Done when the actual Electron app receives and queries synthetic events on the L
 
 ## 4. Implement filtering and frozen history
 
-- [ ] Build the Event journal and payload inspector using [ux.md](ux.md), the [agreed prototype](docs/mockups/event-journal-v2.html), and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md). Make the layout work at practical laptop window sizes.
+- [x] Build the finite Event journal and payload inspector using [ux.md](ux.md), the [agreed prototype](docs/mockups/event-journal-v2.html), and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md), with desktop and narrow layouts.
 - [ ] Keep roughly 500 summaries loaded and virtualize rendering. Load payloads on selection; bound formatting and expansion work.
 - [ ] Add the session dropdown, multi-select hook filtering, and literal free-text search over retained payloads and metadata. Debounce, cancel, and time-limit queries; keep search and capture independent.
 - [ ] Add stable backward and forward paging through the left journal pin, a new matching-event count, and the pin's Live endpoint. Freeze following during inspection or scrubbing while capture continues; keep the journal free of scrollbars.
-- [ ] Add the custom payload scrollbar and the two-click Clear lock with its three-second confirmation window. Keep the journal and payload visible together without subheadings, event numbers, or back and timestamp-jump buttons.
+- [x] Add the custom payload scrollbar with pointer, wheel, touch and keyboard input. Keep the journal and payload visible together without subheadings, event numbers, or back and timestamp-jump buttons.
+- [ ] Add the two-click Clear lock with its three-second confirmation window and atomic recording deletion.
 - [ ] Show connection status separately from viewing mode. Handle gaps, oldest retained time, evicted selection, empty results, and resource pressure without moving the current view unexpectedly.
 - [ ] Test concurrent arrival while browsing, rapid filter changes, large JSON, matches outside previews, eviction while paused, old query responses after Clear, keyboard use, and reconnection while in history.
 
