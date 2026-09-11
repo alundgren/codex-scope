@@ -17,7 +17,7 @@ and native lifecycle remain unverified.
 The existing SQLite worker also owns Node HTTP/HTTPS transport. The renderer
 retains its sandbox, context isolation and `connect-src 'none'` policy. Endpoint
 and token files stay outside it. No runtime dependency or extra OS process was
-added. The current application bundle is 181,630 bytes; the stock Electron runtime is
+added. The current application bundle is 181,867 bytes; the stock Electron runtime is
 295,827,900 bytes. Tests, screenshots, recordings and measurement tools stay out
 of the bundle.
 
@@ -75,14 +75,17 @@ and types, private settings, invalid TLS, 401/409/503/redirects, response
 headers/deadlines, heartbeat failures, silent input, stuck processing, bounded
 retries, counter reset and no replay requests.
 
-The actual Electron suite passes 21 tests across history, inspection, navigation
-and transport. It exercises held reconnect at a nonzero offset, authentication
+The full Electron run passed 21 tests across history, inspection, navigation
+and transport. A later focused run passed all four transport scenarios, including
+the added worker-exit and restart regression. It exercises held reconnect at a nonzero offset, authentication
 and second-viewer errors, distinct collector/local drops, counter reset,
 Clear with delayed input and queries, explicit cleanup failure, recovery, copying, hidden/minimized
 capture and the prior filtering, storage-pressure, eviction and lifecycle flows.
 After visual inspection corrected opening-screen wording and duplicate cleanup
 errors, the six affected recorded scenarios passed again. No browser-only result
-substitutes for these Electron checks.
+substitutes for these Electron checks. Unexpected worker exit changes the header
+to Disconnected, stops requests and explains that restart is required; restart
+cleans the abandoned recording and begins fresh capture.
 
 The [separate collector result](evidence/electron-transport/result.json) records
 exact synthetic byte retention, connection survival beyond the six-second lease,
@@ -95,10 +98,9 @@ private HTTPS proxy behavior. The independent Electron suite never starts Linux.
 [Raw measurements](evidence/electron-transport/measurements.json) record all
 segments, versions and process roles. The successful run used an isolated
 process session with no recording or other application tests. Its 181,038-byte
-application preceded 592 bytes of Clear-status and opening-screen corrections; the stream, parser,
-storage and retry code measured here is unchanged. The complete suite then
-passed before those corrections; six affected recorded scenarios passed again
-on the current bundle. An earlier run
+application preceded 829 bytes of opening/Clear display and worker-exit status corrections; the stream, parser,
+storage and retry code measured here is unchanged. The complete suite passed before those corrections; affected recorded
+scenarios and the added worker-exit case passed again afterward. An earlier run
 terminated with exit status 143 before writing a complete report; its cause is
 unproven and its partial observations are excluded.
 
@@ -171,6 +173,8 @@ reply test resizes during eviction and checks the intended retained target.
 | [Second viewer](evidence/electron-transport/conflict-walkthrough.webm) | Conflict at desktop/narrow widths, bounded retry and recovery after the lease becomes available; later authentication failure remains terminal after Clear. |
 | [Stalled processing](evidence/electron-transport/stalled-walkthrough.webm) | Held payload offset during a storage stall, stopped heartbeats, discarded old input and successful reconnect. |
 | [Delayed navigation](evidence/electron-transport/late-target-walkthrough.webm) | Pending Home request, resize during retention eviction, discarded old result and correct retained target. |
+| [Worker exit](evidence/electron-transport/worker-exit-walkthrough.webm) | Unexpected worker exit stops capture and reports Disconnected with restart guidance at desktop/narrow widths; the last visible text remains readable. |
+| [Worker restart](evidence/electron-transport/worker-restart-walkthrough.webm) | Restart with the same recording owner removes abandoned history and receives fresh events. |
 | [Landed collector](evidence/electron-transport/real-collector-walkthrough.webm) | Actual Linux collector with synthetic input, lease renewal, collector stop and retained history. |
 
 Full-size failure and recovery states include [held disconnect](evidence/electron-transport/disconnected-held.png),
@@ -184,5 +188,7 @@ Full-size failure and recovery states include [held disconnect](evidence/electro
 [Clear recovery](evidence/electron-transport/clear-recovered.png),
 [Clear failure](evidence/electron-transport/clear-cleanup-failed.png),
 [authentication after Clear](evidence/electron-transport/authentication-clear.png),
-[resized late navigation](evidence/electron-transport/late-evicted-target.png) and
+[resized late navigation](evidence/electron-transport/late-evicted-target.png),
+[worker exit](evidence/electron-transport/worker-exit.png),
+[worker restart](evidence/electron-transport/worker-restart-recovered.png) and
 [real collector](evidence/electron-transport/real-collector.png).

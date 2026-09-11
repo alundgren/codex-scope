@@ -65,7 +65,9 @@ class History extends EventEmitter {
     this.closed = true;
     this.queue = [];
     this.queueBytes = 0;
-    this.status = { ...this.status, error: 'Temporary history is unavailable. Restart the app to try again.', starting: false };
+    const transport = this.status.transport ? { ...this.status.transport, state: 'disconnected', reason: null,
+      requiresRestart: true, coverageUnknown: true, retryPending: false, requests: 0, processing: 0 } : undefined;
+    this.status = { ...this.status, transport, error: 'Temporary history is unavailable. Restart the app to try again.', starting: false };
     for (const request of this.pending.values()) { clearTimeout(request.timer); request.resolve({ error: this.status.error }); }
     this.pending.clear();
     this.emit('status', this.snapshot());
