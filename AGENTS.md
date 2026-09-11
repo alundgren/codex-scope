@@ -35,15 +35,39 @@ is not.
   is unknown, and never imply that missing history can be recovered.
 - Choose numeric limits from measurements, not guesses or the size of demo
   fixtures. Validate idle use, sustained capture, bursts, large accepted
-  payloads, rapid search and scrubbing, and resource pressure on macOS. Report
+  payloads, rapid search and scrubbing, and resource pressure. Report
   total app memory, CPU, responsiveness, and failure behavior with the tested
-  workload. Browser or Linux checks alone do not establish Mac performance.
+  workload. Linux VM evidence is sufficient for current development acceptance,
+  including actual Electron visual runs under a virtual display. Browser-only
+  checks do not replace Electron integration checks. Keep untested macOS
+  performance, energy use, and native lifecycle behavior explicitly unverified;
+  Linux results do not establish those claims.
 - Do not add UX subheadings unless the repository owner explicitly requests
   them. This applies to screens, dialogs, mockups, and user-facing explanatory
   copy. Do not imitate a subheading with styled text to bypass the rule. A
   single view title and necessary control labels are allowed. Follow `ux.md`
   for the selected experience; convenience or a generic design convention is
   not permission to add subheadings.
+- After every UX change, run the changed app and inspect it visually with
+  Playwright or an equivalent browser or desktop automation tool. Record a
+  walkthrough of all important scenarios agreed in the issue, plan, or
+  handoff, including relevant failure and recovery states. Inspect the
+  recording and screenshots yourself, fix discrepancies, and rerun affected
+  scenarios before reporting completion. Automated assertions alone are not
+  visual verification.
+- Include screenshots in the PR description and link the recorded walkthrough
+  with the scenarios covered and the tested environment. When an issue supplies
+  a mockup or another visual guide, include labeled side-by-side images of the
+  reference and implementation at matching states and comparable window sizes.
+  Explain any agreed differences. Evidence must come from the actual changed
+  app. If visual execution or recording is blocked, report the blocker and
+  incomplete scenarios explicitly; do not claim the UX change is verified.
+- Keep Electron overhead minimal. Justify added runtime dependencies and
+  processes with a concrete need and measured cost. Prefer built-in platform
+  capabilities, load optional work on demand, and exclude development tools
+  and unused assets from the shipped app. Consult current primary-source
+  Electron guidance when choosing or changing the runtime architecture;
+  record sources and measurements in the application documentation.
 - Keep Linux and Electron dependencies, build commands, and tests independent.
   Electron development must work with synthetic data without a collector.
   Neither application imports the other's implementation. Keep shared
