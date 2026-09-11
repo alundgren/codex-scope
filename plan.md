@@ -1,6 +1,14 @@
 # Build plan
 
-Temporary implementation checklist. The design is agreed; no application code exists yet. Work through these steps in order, keeping each change runnable or independently verifiable. Move lasting decisions into the architecture, deployment, and UX documents as they are implemented. Delete this file once the build is complete and its useful information lives in those documents.
+Temporary implementation checklist. Linux code and synthetic tests are implemented under issue #1; real-session acceptance remains pending. Electron work proceeds independently. Move lasting decisions into the architecture, deployment, and UX documents as they are implemented. Delete this file once the build is complete and its useful information lives in those documents.
+
+## Current work
+
+- [x] Separate `linux/`, reserved `electron/`, and shared `protocol/` tooling and fixtures; add principles-only root `AGENTS.md`.
+- [x] Implement Linux observer, collector, isolated installer, and synthetic viewer.
+- [x] Run Linux synthetic failure tests, installed-runtime registration probe, startup benchmark, and short overload check. Evidence and limitations are in `docs/linux-validation.md`.
+- [x] Complete independent Plan, technical, and CLI review. Fix the input-timing test race and numeric-overflow validation finding; reviewer independently confirms all 33 tests pass.
+- [ ] Validate real-session policy behavior before approving capture for actual use. This work deliberately does not install account hooks or change trust. Collector tests can run synthetically, but do not complete this acceptance gate.
 
 ## Fixed requirements
 
@@ -15,22 +23,28 @@ Temporary implementation checklist. The design is agreed; no application code ex
 
 ## 1. Prove capture compatibility and failure behavior
 
-- [ ] Establish a small local development layout and reproducible dependency tooling. Choose the observer runtime by measured startup cost and deployment simplicity. Pin selected versions and document commands as they become real.
-- [ ] Build synthetic hook fixtures and a compatibility probe for the installed Codex runtime. Verify all supported event registrations, tool coverage, trust, and neutral return behavior. Record tested versions and clients without private machine details.
-- [ ] Implement the minimal observer and a local test receiver. Cap input bytes and processing time; make one local handoff, then exit without stdout or decisions. Avoid detached subprocesses and retries.
-- [ ] Implement explicit account-level install and uninstall with atomic configuration edits, exact ownership, idempotence, and preservation of unrelated or edited hooks. Do not automatically trust hooks.
-- [ ] Verify absent receiver, full receiver, malformed and oversized input, timeout, broken pipe, concurrent invocations, and existing hook coexistence. Test an existing denying hook to prove the observer does not override it.
-- [ ] Measure baseline and observed hook latency under normal load and receiver failure. Record the observer's startup and delivery budgets and the limits of the claim. Test removed installation and absent collector paths too.
+- [x] Establish independent Linux development tooling. Choose the observer runtime using startup measurements; record tested tool versions and commands.
+- [x] Add synthetic fixtures and an isolated Codex CLI 0.153.4 registration probe. All twelve registrations are recognized and untrusted, without warnings.
+- [ ] Verify actual event emission, tool coverage, trust behavior in use, and neutral return behavior in real sessions. Registration recognition alone does not complete compatibility validation.
+- [x] Implement the minimal observer and local receiver. Bound input and processing time; make one local handoff, exit silently, and avoid retries or detached delivery.
+- [x] Implement explicit install/uninstall with atomic configuration replacement, ownership recovery, idempotence, and preservation of unrelated or edited hooks. Test against isolated configuration without granting trust.
+- [x] Test absent/full receivers, malformed/oversized input, open-input timeout, closed output pipes, concurrent failures, and a removed executable. Preserve an existing denying-hook entry in configuration tests.
+- [ ] Test a real existing denying hook to prove the observer does not override its decision, including collector absence and removed installation.
+- [x] Measure synthetic baseline, observer delivery/failure, and Python startup; document the internal timer and its limits.
+- [ ] Measure real hook invocation latency under representative normal load and failure.
 
 Done when a real supported Codex session has the same policy and output behavior with capture working and failing, and measured overhead stays within the published budget. No capture feature proceeds by weakening this requirement.
 
 ## 2. Build the Linux collector and connection
 
-- [ ] Keep observer ingestion local to the intended account and separate from the viewer API. Bind the viewer API to loopback and require a token outside URLs and logs.
-- [ ] Choose and document a simple live stream protocol. Support one viewer, connection identities, event sequence numbers, heartbeat expiry, and explicit rejection of a second viewer.
-- [ ] Bound ingress rate, message size, queue bytes and count, pending writes, and connection lifetime checks. Drop without a viewer, drop under pressure, and discard the queue on disconnect. Create no event files.
-- [ ] Emit only bounded health and known-drop counters. Never log payloads or claim exact counts for intervals the service could not observe.
-- [ ] Test slow and dead viewers, reconnects, invalid credentials, excess traffic, collector restart, and event ordering from concurrent sessions. Verify ingestion cannot be reached through the viewer route.
+- [x] Separate account-private Unix datagram ingestion from the authenticated loopback viewer API.
+- [x] Document the NDJSON stream and heartbeat contract, one viewer, connection identities, ordering, and second-viewer rejection.
+- [x] Bound parsing rate, messages, queue bytes/count, pending writes, HTTP clients, and deadlines. Drop disconnected/over-capacity events and discard queues on disconnect; create no event files.
+- [x] Emit bounded health and known-drop counters with explicit unknown loss coverage.
+- [x] Test slow/dead viewers, reconnects, invalid credentials, overload, restart, concurrent session ordering, and HTTP ingestion-route rejection.
+- [x] Measure a short synthetic overload profile and verify bounded queue use.
+- [ ] Test private HTTPS proxy delivery and route isolation through Tailscale Serve.
+- [ ] Verify rejection from another OS account and measure sustained isolated collector CPU/RSS.
 
 Done when a synthetic client can observe live events through a private proxy, but cannot retrieve events generated while disconnected, and collector resources remain bounded under overload.
 

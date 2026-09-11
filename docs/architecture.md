@@ -1,6 +1,6 @@
 # Architecture
 
-This is the agreed initial design, not a description of a running implementation. The priority order is normal Codex behavior, bounded host and laptop resource use, then event retention.
+The Linux observer and collector are implemented for synthetic testing. Real-session compatibility and the Mac application remain unverified. The priority order is normal Codex behavior, bounded host and laptop resource use, then event retention.
 
 ## System context
 
@@ -28,8 +28,8 @@ C4Container
     System_Ext(codex, "Codex on Linux", "Runs supported hook events")
     System_Ext(serve, "Tailscale Serve", "Proxies the collector's loopback endpoint")
     System_Boundary(scope, "codex-scope") {
-        Container(observer, "Observer helper on Linux", "Executable, runtime to be measured", "Attempts one bounded local payload handoff")
-        Container(collector, "Collector on Linux", "Local service", "Forwards events to one connected viewer with bounded buffering")
+        Container(observer, "Observer helper on Linux", "C executable", "Attempts one bounded local payload handoff")
+        Container(collector, "Collector on Linux", "Python local service", "Forwards events to one connected viewer with bounded buffering")
         Container(viewer, "Viewer on macOS", "Electron", "Owns the connection, history lifecycle, and inspection UI")
         ContainerDb(history, "Recording on macOS", "SQLite", "Stores a bounded temporary history for this app run")
     }
@@ -41,7 +41,9 @@ C4Container
     Rel(developer, viewer, "Filters, inspects, clears, and closes")
 ```
 
-The [network illustration](diagrams/topology.svg) shows the physical placement. The observer's local ingestion endpoint must not be exposed by the viewer route. Use separate local listeners or equivalent routing isolation.
+The [network illustration](diagrams/topology.svg) shows the physical placement. Linux ingestion uses a Unix datagram socket with account credentials in a private directory. The viewer uses a separate loopback HTTP listener. Only that HTTP listener may be proxied.
+
+`linux/` and `electron/` own independent application tooling and tests. The shared [protocol](../protocol/README.md) defines an authenticated NDJSON stream and separate heartbeat requests, with synthetic fixtures for Mac development without the collector. The observer has no Python startup dependency; Python runs only in the collector and management tools.
 
 ## Capture contract
 
@@ -126,4 +128,4 @@ No telemetry, full payload logs, transcript reads, environment capture, public n
 
 One Linux host, one Mac viewer, multiple Codex sessions, event inputs only. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
 
-Remaining implementation choices are the observer runtime and local transport, stream protocol, exact dependency versions, SQLite driver and journal mode, and measured resource defaults. They do not change the agreed deployment or product behavior. Resolve them in the relevant plan step and record the evidence here.
+Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). SQLite integration, Mac resource limits, and complete real-session and proxy checks remain in [the plan](../plan.md).

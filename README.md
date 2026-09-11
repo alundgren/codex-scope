@@ -2,7 +2,7 @@
 
 A live inspector for Codex hook events. Capture on a Linux host, inspect on a Mac, and keep a bounded, temporary history while the viewer is open.
 
-**Status: design agreed, implementation not started.** The Event journal prototype describes the intended viewer. There is no runnable collector or viewer yet. Start with [plan.md](plan.md) when implementing.
+**Status: Linux capture implemented for synthetic testing; real-session and Mac validation remain.** The Event journal prototype describes the intended viewer. The Linux observer, collector, installer, and diagnostic viewer run independently of Electron. Start with [Linux development](linux/README.md) and [remaining work](plan.md).
 
 Codex must keep working when capture fails. Missing events are acceptable; blocking a session, changing a hook decision, or exhausting the laptop's resources is not.
 
@@ -18,7 +18,7 @@ One Linux capture host serves one macOS viewer. Multiple Codex sessions can appe
 
 Observers receive the payloads Codex supplies to supported hook events. They do not wrap existing hook commands, inspect their output, read transcripts, or collect environment variables. Accepted payloads retain their original fields. Oversized or excess events are dropped instead of silently truncated.
 
-An explicit install command will register account-level observers while preserving existing hooks. Uninstall will remove only entries owned by codex-scope. Codex's own hook trust process still applies.
+An explicit install command registers account-level observers while preserving existing hooks. Uninstall removes only unchanged entries owned by codex-scope. These commands are tested against isolated configuration; actual account installation and real-session behavior remain unverified. Codex's own hook trust process still applies.
 
 No offline recording is planned, in this or later releases. Events generated while disconnected can be lost permanently. The viewer will distinguish known drops from intervals where the loss count is unknown.
 
@@ -36,7 +36,9 @@ There is no historical playback. The viewport, loaded rows, pending work, payloa
 
 ## Run from a clone
 
-The first implementation will support a development command that opens Electron on macOS from this repository. Signing, notarization, automatic updates, and an installer are outside the initial build. Dependency versions and exact commands will be added when they are implemented and tested, rather than documented as working ahead of time.
+Run `make -C linux test` to build and test the Linux implementation without Electron. [Linux development](linux/README.md) includes synthetic capture commands and tested tool versions. The Mac application will have its own development command. Signing, notarization, automatic updates, and a Mac installer are outside the initial build.
+
+`linux/` owns Linux code, dependencies, commands, and tests. `electron/` is reserved for the Mac application and its independent tooling. `protocol/` contains the shared wire contract and synthetic fixtures; neither application imports the other's implementation. Root `AGENTS.md` records project principles.
 
 See [deployment](docs/deployment.md) for the proposed setup using fictional connection details, and [architecture](docs/architecture.md) for responsibilities and failure behavior. [ux.md](ux.md) records the viewing experience.
 

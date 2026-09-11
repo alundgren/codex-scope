@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","session_id":"synthetic-session-a","tool_name":"Bash","tool_input":{"command":"echo synthetic"},"future_field":{"preserve":true}}

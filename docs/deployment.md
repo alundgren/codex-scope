@@ -1,6 +1,6 @@
 # Deployment
 
-This is a setup design. codex-scope has no runnable application commands yet. Implementation must replace the lifecycle descriptions below with commands tested from clean Linux and macOS clones.
+Linux commands are implemented for synthetic testing; see [Linux development](../linux/README.md). Real account installation, private proxy validation, and the Mac application remain outstanding. The workflow below still describes the intended full deployment, not a completed end-to-end check.
 
 ## Machines and connection
 
@@ -29,12 +29,12 @@ Configure tailnet access rules so only the intended client can reach the service
 
 ## Local configuration
 
-The implementation will provide placeholder-only configuration examples and document their actual schema. Machine names, account names, paths, endpoint URLs, credentials, and resource overrides belong in ignored local files or the OS configuration directory. Never put them into committed defaults or diagrams.
+Linux commands accept explicit runtime-directory and private token-file paths. The collector uses loopback port 4318 by default; `--port` selects another port. `python3 -m scope.token PATH` creates a private token without printing it. Run commands from `linux/`; complete local examples are in its README. Machine names, account names, paths, endpoint URLs, and credentials belong in ignored local files or the OS configuration directory. Never put them into committed defaults or diagrams.
 
 The repository ignore rules are a backstop, not an anonymizer. Do not add real payloads to tests, diagnostic logs, issues, screenshots, or examples. The UI intentionally displays original accepted payloads, which may themselves include sensitive text.
 
 ## Development delivery
 
-The first Mac workflow is a development command from a clone that opens an Electron window. It does not require signing or notarization. The Linux collector runs as a local process initially; service-manager packaging can be documented separately if needed.
+The first Mac workflow will be a development command from a clone that opens an Electron window. It does not require signing or notarization. The Linux collector runs as a foreground local process; service-manager packaging is outside this change. Its diagnostic viewer can test the stream without Electron and does not persist events.
 
 The setup is complete only after the smoke checks in [plan.md](../plan.md) have run on both target operating systems. Do not claim macOS validation from a Linux-only run.
