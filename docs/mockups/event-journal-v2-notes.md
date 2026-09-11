@@ -2,7 +2,7 @@
 
 Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. This is the sole UI build target.
 
-The prototype and this document are UI deliverables only. The first [Electron implementation](../../electron/README.md) now supports a finite fixture recording, original-text inspection and copying, and the custom payload scrollbar. [Linux Electron validation](../electron-validation.md) records actual-app evidence separately from this prototype. No macOS runtime, database, real hook compatibility or live network behavior is established by either the browser demo or this synthetic slice. Demo controls outside the window are not application controls.
+The prototype and this document are UI deliverables only. The [Electron implementation](../../electron/README.md) now supports bounded temporary SQLite history, continuous synthetic arrivals, held reading, original-text inspection and copying, the custom payload scrollbar and timed Clear. [History validation](../electron-history-validation.md) records actual-app evidence separately from this prototype. Full filters and scrubbing, live network input, real hook compatibility and macOS behavior remain unverified or deferred. Demo controls outside the window are not application controls.
 
 The parallel Linux handoff establishes these ownership boundaries. Preserve them when implementing or resolving branch conflicts.
 
@@ -55,6 +55,6 @@ Implement in reviewable stages: establish an independently runnable Electron she
 | Clear while requests are pending | Old rows, payloads, counts, and late incoming batches cannot reappear. |
 | Lose and restore the connection | Retained history survives, gap losses remain unknown, no replay is requested, history inspection stays held. |
 | Evict, time out, or fill storage | Explain the condition and keep bounded, responsive navigation through available history. |
-| Close, hide, minimize, crash | Close quits and cleans up; hide/minimize keep capture; next launch cleans abandoned recordings. Verify on macOS. |
+| Close, hide, minimize, crash | Close quits and cleans up; hide/minimize keep capture; next launch cleans abandoned recordings. Linux VM evidence completes current delivery; macOS native checks remain later refinement. |
 
 Browser validation of the prototype covered drag and keyboard scrubbing, custom thumb dragging and keyboard scrolling, payload-position preservation during arrivals, session and text filtering, three-second automatic relocking, two-click clearing, recovery after clear, reconnection notices, and desktop and narrow layouts. No browser errors or narrow-window horizontal overflow were observed. These results do not complete production acceptance checks for the collector, SQLite, security isolation, bounded resource use, or macOS lifecycle.

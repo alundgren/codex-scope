@@ -121,9 +121,19 @@ Both processes need limits on incoming bytes, event rate, queue bytes, queue cou
 
 Use a configurable recording size budget and evict the oldest rows in small transactions. Account for the database, journal or WAL, temporary search files, and SQLite cache, not just payload lengths. Set physical growth limits and leave disk headroom. If eviction cannot keep up or a write fails, discard incoming events and keep the app responsive. Avoid full database compaction during capture. Freed pages can be reused without shrinking the file on every eviction. See [SQLite pragmas](https://sqlite.org/pragma.html) for the controls to evaluate; a database page limit alone does not bound every sidecar file.
 
-The initial viewport should load about 500 summaries, render only visible rows, and request a full accepted payload only on selection. Page with stable event IDs rather than increasingly large offsets. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured.
+The current viewer loads at most five visible summaries and one selected payload, with no whole-recording ID array or summary cache. Page with stable event IDs rather than increasingly large offsets. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured.
 
 Numeric defaults for bytes, timeouts, rates, and storage are implementation decisions to establish with measured overload checks in step 1 and step 3 of [the plan](../plan.md). The agreed behavior at every limit is to shed work, not expand capacity indefinitely.
+
+The current Electron implementation uses built-in SQLite in one worker thread.
+A main-process broker caps incoming frame bytes/count and outstanding requests;
+only a bounded neighborhood and one payload cross into the renderer. The worker
+stores both local and remote receive times and orders by local increasing IDs.
+A shared generation counter stops old batches before another transaction; every
+query reply also carries its generation. Clear changes that counter before
+waiting for database deletion, and creates a new input connection only after
+successful cleanup. Its numeric budgets and measured costs are in
+[Electron history validation](electron-history-validation.md).
 
 ## Recording lifetime
 

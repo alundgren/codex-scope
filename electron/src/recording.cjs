@@ -40,7 +40,7 @@ function parseRecording(bytes) {
       drops.capacity++;
       continue;
     }
-    const boundedText = value => typeof value === 'string' && value.length <= MAX_PAYLOAD_BYTES;
+    const boundedText = value => typeof value === 'string' && value.length <= MAX_PAYLOAD_BYTES && value.isWellFormed();
     if (!connection || message.connection_id !== connection || !Number.isSafeInteger(message.sequence) ||
         message.sequence <= lastSequence || !boundedText(message.hook_type) ||
         !(message.session_id === null || boundedText(message.session_id)) ||
@@ -75,6 +75,8 @@ function parseRecording(bytes) {
       .find(value => typeof value === 'string') ?? 'Inspect the complete accepted payload';
     events.push(Object.freeze({
       id: events.length + 1,
+      connectionId: connection,
+      sequence: message.sequence,
       receivedAt: new Date(message.received_at).toISOString(),
       hook: message.hook_type,
       session: message.session_id,
