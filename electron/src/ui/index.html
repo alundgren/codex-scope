@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codex Scope</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="renderer.js"></script>
+</head>
+<body>
+  <main>
+    <header><h1>Event journal</h1><span class="connection">Synthetic data</span></header>
+    <div class="toolbar" title="Search and filters are unavailable in this finite fixture recording">
+      <input class="search" aria-label="Search payloads, unavailable" placeholder="Search payloads…" disabled>
+      <select aria-label="Filter by session, unavailable" disabled><option>All sessions</option></select>
+      <button disabled>All hooks</button>
+    </div>
+    <div class="mode"><span>History · position held</span><span id="count"></span></div>
+    <div id="notice" role="status"></div>
+    <div class="workspace">
+      <div class="journal">
+        <div class="rail" aria-hidden="true">
+          <time id="oldest"></time><div class="railtrack"><div id="ticks"></div><div id="pin"></div></div><span class="live">Live</span>
+        </div>
+        <div id="entries" aria-label="Journal events"></div>
+      </div>
+      <section class="inspector" aria-label="Accepted payload">
+        <div class="payloadmeta"><div id="metadata">Opening synthetic recording…</div><button id="copy" disabled>Copy JSON</button></div>
+        <div class="payloadbody">
+          <div id="payload" tabindex="0" role="region" aria-label="Complete original JSON payload"><pre id="json"></pre></div>
+          <div id="scrollbar" role="scrollbar" aria-label="Scroll payload" aria-controls="payload" aria-orientation="vertical"
+            aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="-1" hidden><div id="thumb"></div></div>
+        </div>
+        <div id="copy-status" role="status"></div>
+      </section>
+    </div>
+    <footer><span>Fixed synthetic recording · Search, filters, Live and Clear unavailable.</span><button class="clear" disabled>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 9V6a4 4 0 0 1 8 0v3"/><rect x="4" y="9" width="12" height="9" rx="2"/><path d="M10 12v3"/></svg>Clear
+    </button></footer>
+  </main>
+</body>
+</html>
