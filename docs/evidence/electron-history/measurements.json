@@ -1,0 +1,806 @@
+{
+  "date": "2026-09-11T20:07:55.869Z",
+  "environment": {
+    "platform": "linux",
+    "release": "7.0.0-31-generic",
+    "cpus": [
+      "DO-Regular",
+      "DO-Regular"
+    ],
+    "memory": 4100694016
+  },
+  "method": "Actual Electron under Xvfb, no screenshots or recording. Sample all process-group members and descendants at 250 ms. Summed RSS includes shared pages; final PSS is a single aggregate snapshot. CPU 100% is one core. Workloads include test-driver serialization in main. Disk samples include the live rollback journal before commit.",
+  "workloads": {
+    "idle": {
+      "durationMs": 4260.6976159999995,
+      "samples": 14,
+      "meanCpuPercentOneCore": 2.855040855327194,
+      "peakSampleCpuPercentOneCore": 9.679967465758416,
+      "peakRssBytes": 680337408,
+      "finalRssBytes": 679374848,
+      "finalPssBytes": 326267904,
+      "finalProcesses": [
+        {
+          "rssBytes": 184483840,
+          "pssBytes": 113245184,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15392768,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 153600,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13801472,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4369408,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153374720,
+          "pssBytes": 81871872,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85327872,
+          "pssBytes": 30754816,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 121745408,
+          "pssBytes": 66678784,
+          "role": "Tab"
+        }
+      ]
+    },
+    "sustainedSmall": {
+      "durationMs": 51323.779064999995,
+      "samples": 157,
+      "meanCpuPercentOneCore": 28.81299022755769,
+      "peakSampleCpuPercentOneCore": 65.09028688338985,
+      "peakRssBytes": 717557760,
+      "finalRssBytes": 717287424,
+      "finalPssBytes": 361515008,
+      "finalProcesses": [
+        {
+          "rssBytes": 203489280,
+          "pssBytes": 131564544,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15386624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13784064,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4370432,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153243648,
+          "pssBytes": 81688576,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30764032,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 140455936,
+          "pssBytes": 83802112,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 16000,
+        "payloadBytes": 98,
+        "batch": 16,
+        "delayMs": 50
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 10000,
+        "accepted": 13113,
+        "retainedBytes": 4360000,
+        "first": {
+          "id": 3114,
+          "receivedAt": "2026-09-11T14:32:20.000Z"
+        },
+        "last": {
+          "id": 13113,
+          "receivedAt": "2026-09-11T14:32:20.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0
+        },
+        "evicted": 3113,
+        "pressure": false,
+        "maximumTransactionMs": 13.665669000001799,
+        "maximumDiskBytes": 2679386,
+        "localDrops": 0,
+        "rateDrops": 2892,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 5424,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 29.825645000000804
+    },
+    "sustainedMaximum": {
+      "durationMs": 13302.980280999996,
+      "samples": 40,
+      "meanCpuPercentOneCore": 41.87498253377045,
+      "peakSampleCpuPercentOneCore": 76.0752053487706,
+      "peakRssBytes": 746057728,
+      "finalRssBytes": 736440320,
+      "finalPssBytes": 379881472,
+      "finalProcesses": [
+        {
+          "rssBytes": 219017216,
+          "pssBytes": 146626560,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15390720,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13784064,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4373504,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153591808,
+          "pssBytes": 81730560,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30683136,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 143732736,
+          "pssBytes": 87138304,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 1200,
+        "payloadBytes": 61440,
+        "batch": 4,
+        "delayMs": 40
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 135,
+        "accepted": 13428,
+        "retainedBytes": 8345565,
+        "first": {
+          "id": 13294,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "last": {
+          "id": 13428,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0,
+          "storage": 139
+        },
+        "evicted": 13293,
+        "pressure": false,
+        "maximumTransactionMs": 16.299597999997786,
+        "maximumDiskBytes": 8434274,
+        "localDrops": 0,
+        "rateDrops": 3638,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 185121,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 21.13577300000179
+    },
+    "repeatedMaximum": {
+      "durationMs": 12897.718397000004,
+      "samples": 39,
+      "meanCpuPercentOneCore": 43.180366865896204,
+      "peakSampleCpuPercentOneCore": 61.92125139433614,
+      "peakRssBytes": 743559168,
+      "finalRssBytes": 742187008,
+      "finalPssBytes": 380764160,
+      "finalProcesses": [
+        {
+          "rssBytes": 219668480,
+          "pssBytes": 147375104,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15389696,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13784064,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4373504,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153591808,
+          "pssBytes": 81705984,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30682112,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 148828160,
+          "pssBytes": 87299072,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 1200,
+        "payloadBytes": 61440,
+        "batch": 4,
+        "delayMs": 40
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 135,
+        "accepted": 13870,
+        "retainedBytes": 8345565,
+        "first": {
+          "id": 13736,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "last": {
+          "id": 13870,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0,
+          "storage": 139
+        },
+        "evicted": 13735,
+        "pressure": false,
+        "maximumTransactionMs": 16.299597999997786,
+        "maximumDiskBytes": 8434274,
+        "localDrops": 0,
+        "rateDrops": 4396,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 185121,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 13.146298999999999
+    },
+    "extendedMaximum": {
+      "durationMs": 25519.739203999998,
+      "samples": 79,
+      "meanCpuPercentOneCore": 42.101676037567465,
+      "peakSampleCpuPercentOneCore": 65.00173244242175,
+      "peakRssBytes": 757911552,
+      "finalRssBytes": 754769920,
+      "finalPssBytes": 398468096,
+      "finalProcesses": [
+        {
+          "rssBytes": 234639360,
+          "pssBytes": 162248704,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15390720,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13785088,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4373504,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153456640,
+          "pssBytes": 81707008,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30682112,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 146575360,
+          "pssBytes": 90126336,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 2400,
+        "payloadBytes": 61440,
+        "batch": 4,
+        "delayMs": 40
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 135,
+        "accepted": 14742,
+        "retainedBytes": 8345565,
+        "first": {
+          "id": 14608,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "last": {
+          "id": 14742,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0,
+          "storage": 139
+        },
+        "evicted": 14607,
+        "pressure": false,
+        "maximumTransactionMs": 16.299597999997786,
+        "maximumDiskBytes": 8434274,
+        "localDrops": 0,
+        "rateDrops": 5924,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 185121,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 18.878805000000284
+    },
+    "longMaximum": {
+      "durationMs": 51904.47252699999,
+      "samples": 152,
+      "meanCpuPercentOneCore": 46.59041321713782,
+      "peakSampleCpuPercentOneCore": 148.04345298335605,
+      "peakRssBytes": 760115200,
+      "finalRssBytes": 760115200,
+      "finalPssBytes": 396762112,
+      "finalProcesses": [
+        {
+          "rssBytes": 235438080,
+          "pssBytes": 162971648,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15388672,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13782016,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4372480,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153718784,
+          "pssBytes": 81881088,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30650368,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 150859776,
+          "pssBytes": 87561216,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 4800,
+        "payloadBytes": 61440,
+        "batch": 4,
+        "delayMs": 40
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 135,
+        "accepted": 16502,
+        "retainedBytes": 8345565,
+        "first": {
+          "id": 16368,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "last": {
+          "id": 16502,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0,
+          "storage": 139
+        },
+        "evicted": 16367,
+        "pressure": false,
+        "maximumTransactionMs": 38.64626800001133,
+        "maximumDiskBytes": 8434274,
+        "localDrops": 0,
+        "rateDrops": 8964,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 185121,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 56.80829899999662
+    },
+    "burstMaximum": {
+      "durationMs": 1680.5038389999827,
+      "samples": 6,
+      "meanCpuPercentOneCore": 47.35208489869105,
+      "peakSampleCpuPercentOneCore": 68.0208602876121,
+      "peakRssBytes": 774012928,
+      "finalRssBytes": 774012928,
+      "finalPssBytes": 416455680,
+      "finalProcesses": [
+        {
+          "rssBytes": 250937344,
+          "pssBytes": 178376704,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15388672,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13782016,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4372480,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153718784,
+          "pssBytes": 81881088,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30650368,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 149258240,
+          "pssBytes": 91849728,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 1000,
+        "payloadBytes": 61440,
+        "batch": 100,
+        "delayMs": 100
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 135,
+        "accepted": 16554,
+        "retainedBytes": 8345565,
+        "first": {
+          "id": 16420,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "last": {
+          "id": 16554,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0,
+          "storage": 139
+        },
+        "evicted": 16419,
+        "pressure": false,
+        "maximumTransactionMs": 38.64626800001133,
+        "maximumDiskBytes": 8434274,
+        "localDrops": 0,
+        "rateDrops": 9912,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 555363,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 92.14486699999543
+    },
+    "hiddenCapture": {
+      "durationMs": 4596.363055000023,
+      "samples": 15,
+      "meanCpuPercentOneCore": 25.67842946718196,
+      "peakSampleCpuPercentOneCore": 41.91706064673046,
+      "peakRssBytes": 794513408,
+      "finalRssBytes": 793165824,
+      "finalPssBytes": 435789824,
+      "finalProcesses": [
+        {
+          "rssBytes": 265961472,
+          "pssBytes": 193543168,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15388672,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13783040,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4372480,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 153718784,
+          "pssBytes": 81064960,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30650368,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 153387008,
+          "pssBytes": 96832512,
+          "role": "Tab"
+        }
+      ],
+      "input": {
+        "count": 400,
+        "payloadBytes": 61440,
+        "batch": 4,
+        "delayMs": 40
+      },
+      "history": {
+        "generation": 1,
+        "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+        "total": 135,
+        "accepted": 16705,
+        "retainedBytes": 8345565,
+        "first": {
+          "id": 16571,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "last": {
+          "id": 16705,
+          "receivedAt": "2026-09-11T14:32:32.000Z"
+        },
+        "drops": {
+          "invalid": 0,
+          "oversized": 0,
+          "capacity": 0,
+          "storage": 139
+        },
+        "evicted": 16570,
+        "pressure": false,
+        "maximumTransactionMs": 38.64626800001133,
+        "maximumDiskBytes": 8434274,
+        "localDrops": 0,
+        "rateDrops": 10161,
+        "unknownGap": false,
+        "peakQueueCount": 16,
+        "peakQueueBytes": 555363,
+        "queuedCount": 0,
+        "queuedBytes": 0
+      },
+      "maximumMainTimerDelayMs": 19.027158000011696
+    },
+    "settledIdle": {
+      "durationMs": 8261.961959999986,
+      "samples": 26,
+      "meanCpuPercentOneCore": 4.514561673469447,
+      "peakSampleCpuPercentOneCore": 25.84637442309142,
+      "peakRssBytes": 795746304,
+      "finalRssBytes": 708714496,
+      "finalPssBytes": 354438144,
+      "finalProcesses": [
+        {
+          "rssBytes": 187052032,
+          "pssBytes": 114456576,
+          "role": "Browser"
+        },
+        {
+          "rssBytes": 59101184,
+          "pssBytes": 15387648,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 1712128,
+          "pssBytes": 154624,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 59334656,
+          "pssBytes": 13782016,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 14295040,
+          "pssBytes": 4372480,
+          "role": "zygote"
+        },
+        {
+          "rssBytes": 150507520,
+          "pssBytes": 80084992,
+          "role": "GPU"
+        },
+        {
+          "rssBytes": 85655552,
+          "pssBytes": 30650368,
+          "role": "Utility"
+        },
+        {
+          "rssBytes": 151056384,
+          "pssBytes": 95549440,
+          "role": "Tab"
+        }
+      ]
+    }
+  },
+  "startupMs": 2392.427886,
+  "versions": {
+    "electron": "44.3.0",
+    "node": "24.20.0",
+    "sqlite": "3.53.4",
+    "chrome": "152.0.7977.78"
+  },
+  "inspectionMs": {
+    "maximum": 26.276968999998644,
+    "p95": 25.812043000012636,
+    "operations": 30
+  },
+  "appBytes": 132109,
+  "runtimeBytes": 295827900,
+  "final": {
+    "ok": true,
+    "limits": {
+      "queueCount": 32,
+      "queueBytes": 1048576,
+      "batchCount": 4,
+      "batchBytes": 524288,
+      "eventsPerSecond": 256,
+      "bytesPerSecond": 2097152,
+      "requests": 4,
+      "requestMs": 2500,
+      "cleanupMs": 1500,
+      "rows": 5,
+      "retainedBytes": 8388608,
+      "retainedCount": 10000,
+      "databaseBytes": 16777216,
+      "diskBytes": 34603008,
+      "headroomBytes": 35651584,
+      "cacheKiB": 2048,
+      "sqliteHeapBytes": 8388608,
+      "evictionCount": 64
+    },
+    "generation": 1,
+    "connectionId": "6fb6d2f8-362e-49c0-a9cb-5f36f09d734c",
+    "total": 135,
+    "accepted": 16705,
+    "retainedBytes": 8345565,
+    "first": {
+      "id": 16571,
+      "receivedAt": "2026-09-11T14:32:32.000Z"
+    },
+    "last": {
+      "id": 16705,
+      "receivedAt": "2026-09-11T14:32:32.000Z"
+    },
+    "drops": {
+      "invalid": 0,
+      "oversized": 0,
+      "capacity": 0,
+      "storage": 139
+    },
+    "evicted": 16570,
+    "pressure": false,
+    "maximumTransactionMs": 38.64626800001133,
+    "maximumDiskBytes": 8434274
+  }
+}

@@ -67,23 +67,24 @@ Done when a synthetic client can observe live events through a private proxy, bu
 ## 3. Build the Mac app and temporary history
 
 - [x] Add Electron with a development command that opens the finite fixture inspector from a clone. Keep bundled UI isolated from Node, with narrow IPC and text-only payload rendering. Pin and test the runtime independently of Linux.
-- [ ] Select and validate SQLite integration with the pinned runtime for temporary history.
-- [ ] Put connection and credentials outside the renderer. Run database writes and searches off the UI thread. Limit pending batches and UI notifications.
-- [ ] Store original accepted payloads and the small envelope defined in the architecture. Define stable recording IDs and connection identities; do not order solely by remote timestamps.
-- [ ] Choose and measure SQLite size, cache, journal, transaction, queue, and disk-headroom limits. Budget sidecars too. Evict oldest rows in small batches and reuse space without full compaction during capture. Reject more input if cleanup cannot keep pace.
-- [ ] Implement one app instance, private recording directories, clear-history generation changes, normal-close deletion, and startup cleanup restricted to abandoned owned files. Keep settings separate from recordings.
-- [ ] Test disk-full and write failures, history eviction, burst traffic, renderer responsiveness, sleep, force quit, relaunch, normal close, and cleanup failure. Verify stale pending events cannot reappear after Clear.
+- [x] Select and validate SQLite integration with the pinned runtime for temporary history.
+- [x] Put synthetic input and database work outside the renderer. Run SQLite and payload parsing in one bounded worker. Limit pending batches and acknowledged UI notifications. Real transport and searches remain separate work.
+- [x] Store original accepted payloads and the small envelope defined in the architecture. Define stable recording IDs and connection identities; do not order solely by remote timestamps.
+- [x] Choose and measure SQLite size, cache, journal, transaction, queue, and disk-headroom limits. Budget sidecars too. Evict oldest rows in small batches and reuse space without full compaction during capture. Reject more input if cleanup cannot keep pace.
+- [x] Implement one app instance, private recording directories, clear-history generation changes, normal-close deletion, and startup cleanup restricted to abandoned owned files. Keep settings separate from recordings.
+- [x] Test actual SQLite full/read-only failures, simulated low disk headroom, selected-event eviction, bounded burst intake, delayed Clear work, cleanup failure, second instances, force kill/relaunch, normal close and hidden/minimized capture in Electron on Linux.
+- [ ] Validate macOS sleep, native window lifecycle, energy use and performance. Linux results do not complete these checks.
 
-Done when the actual Electron app receives and queries synthetic events on the Linux VM, respects measured VM resource budgets, and removes owned recording files through the lifecycle checks available there. Record macOS-only checks as unverified follow-up work.
+Electron temporary history is implemented. [History validation](docs/electron-history-validation.md) records the Linux synthetic checks, measured limits, inspected recordings and remaining macOS limits. Full filtering/scrubbing and real transport remain below.
 
 ## 4. Implement filtering and frozen history
 
 - [x] Build the finite Event journal and payload inspector using [ux.md](ux.md), the [agreed prototype](docs/mockups/event-journal-v2.html), and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md), with desktop and narrow layouts.
-- [ ] Keep roughly 500 summaries loaded and virtualize rendering. Load payloads on selection; bound formatting and expansion work.
+- [x] Load at most five visible summaries and one selected payload. Page by local IDs, without a whole-recording cache. Preserve original text with no formatting expansion.
 - [ ] Add the session dropdown, multi-select hook filtering, and literal free-text search over retained payloads and metadata. Debounce, cancel, and time-limit queries; keep search and capture independent.
 - [ ] Add stable backward and forward paging through the left journal pin, a new matching-event count, and the pin's Live endpoint. Freeze following during inspection or scrubbing while capture continues; keep the journal free of scrollbars.
 - [x] Add the custom payload scrollbar with pointer, wheel, touch and keyboard input. Keep the journal and payload visible together without subheadings, event numbers, or back and timestamp-jump buttons.
-- [ ] Add the two-click Clear lock with its three-second confirmation window and atomic recording deletion.
+- [x] Add the two-click Clear lock with its three-second confirmation window and atomic recording deletion.
 - [ ] Show connection status separately from viewing mode. Handle gaps, oldest retained time, evicted selection, empty results, and resource pressure without moving the current view unexpectedly.
 - [ ] Test concurrent arrival while browsing, rapid filter changes, large JSON, matches outside previews, eviction while paused, old query responses after Clear, keyboard use, and reconnection while in history.
 
