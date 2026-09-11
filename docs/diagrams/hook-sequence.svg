@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="990" viewBox="0 0 1440 990" role="img" aria-labelledby="title desc">
+<title id="title">From hook input to the event stream</title>
+<desc id="desc">The observer waits only for a bounded local attempt. The Mac is never on its completion path.</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9" fill="#3D5D71"/></marker></defs>
+<style>text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-weight:400}.mono{font-family:ui-monospace,"SFMono-Regular",Consolas,monospace}</style>
+<rect x="0" y="0" width="1440" height="990" rx="0" fill="#F2EADE"/>
+<text x="48" y="68" font-size="36" style="font-weight:600" fill="#604939" text-anchor="start">From hook input to the event stream</text>
+<text x="48" y="105" font-size="18" style="font-weight:400" fill="#66574D" text-anchor="start">The observer waits only for a bounded local attempt. The Mac is never on its completion path.</text>
+<rect x="25" y="165" width="200" height="64" rx="16" fill="#EADFCD"/>
+<text x="125" y="205" font-size="21" style="font-weight:600" fill="#604939" text-anchor="middle">Codex</text>
+<line x1="125" y1="240" x2="125" y2="835" stroke="#C1AF9A" stroke-width="2" stroke-dasharray="6 7"/>
+<rect x="295" y="165" width="200" height="64" rx="16" fill="#EADFCD"/>
+<text x="395" y="205" font-size="21" style="font-weight:600" fill="#604939" text-anchor="middle">Observer</text>
+<line x1="395" y1="240" x2="395" y2="835" stroke="#C1AF9A" stroke-width="2" stroke-dasharray="6 7"/>
+<rect x="575" y="165" width="200" height="64" rx="16" fill="#EADFCD"/>
+<text x="675" y="205" font-size="21" style="font-weight:600" fill="#604939" text-anchor="middle">Collector</text>
+<line x1="675" y1="240" x2="675" y2="835" stroke="#C1AF9A" stroke-width="2" stroke-dasharray="6 7"/>
+<rect x="885" y="165" width="200" height="64" rx="16" fill="#EADFCD"/>
+<text x="985" y="205" font-size="21" style="font-weight:600" fill="#604939" text-anchor="middle">Mac viewer</text>
+<line x1="985" y1="240" x2="985" y2="835" stroke="#C1AF9A" stroke-width="2" stroke-dasharray="6 7"/>
+<rect x="1170" y="165" width="200" height="64" rx="16" fill="#EADFCD"/>
+<text x="1270" y="205" font-size="21" style="font-weight:600" fill="#604939" text-anchor="middle">SQLite</text>
+<line x1="1270" y1="240" x2="1270" y2="835" stroke="#C1AF9A" stroke-width="2" stroke-dasharray="6 7"/>
+<line x1="125" y1="300" x2="395" y2="300" stroke="#3D5D71" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="260" y="279" font-size="18" style="font-weight:400" fill="#604939" text-anchor="middle">Hook input</text>
+<line x1="395" y1="382" x2="675" y2="382" stroke="#3D5D71" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="535" y="361" font-size="18" style="font-weight:400" fill="#604939" text-anchor="middle">One local handoff</text>
+<line x1="395" y1="460" x2="125" y2="460" stroke="#3D5D71" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="260" y="438" font-size="18" style="font-weight:400" fill="#604939" text-anchor="middle">Neutral exit; no output</text>
+<rect x="42" y="492" width="433" height="92" rx="16" fill="#E0D2BD"/>
+<text x="65" y="529" font-size="22" style="font-weight:600" fill="#604939" text-anchor="start">Codex continues</text>
+<text x="65" y="559" font-size="17" style="font-weight:400" fill="#604939" text-anchor="start">No remote delivery acknowledgment needed.</text>
+<line x1="675" y1="542" x2="985" y2="542" stroke="#3D5D71" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="830" y="519" font-size="17" style="font-weight:400" fill="#604939" text-anchor="middle">If connected and within limits</text>
+<line x1="985" y1="620" x2="1270" y2="620" stroke="#3D5D71" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1127" y="597" font-size="17" style="font-weight:400" fill="#604939" text-anchor="middle">Bounded append batch</text>
+<rect x="555" y="677" width="835" height="132" rx="16" fill="#EADFCD"/>
+<text x="580" y="716" font-size="22" style="font-weight:600" fill="#604939" text-anchor="start">Disconnected, oversized, or over capacity</text>
+<text x="580" y="749" font-size="18" style="font-weight:400" fill="#604939" text-anchor="start">Drop the event. Do not retry, record offline, or grow a queue.</text>
+<text x="580" y="780" font-size="17" style="font-weight:400" fill="#604939" text-anchor="start">Report known drops when possible; missed intervals can have unknown counts.</text>
+<text x="48" y="883" font-size="24" style="font-weight:600" fill="#604939" text-anchor="start">Pausing the view does not pause capture.</text>
+<text x="48" y="922" font-size="18" style="font-weight:400" fill="#66574D" text-anchor="start">Reconnect starts with new live events. Closing the Mac window ends and deletes the recording.</text>
+<text x="48" y="960" font-size="16" style="font-weight:400" fill="#66574D" text-anchor="start">Proposed event sequence · Failures must not change Codex decisions or add context</text>
+</svg>

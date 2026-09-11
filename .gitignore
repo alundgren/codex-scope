@@ -1,0 +1,39 @@
+# Local machine configuration and credentials
+.env
+.env.*
+!.env.example
+/config.local.*
+/config/*.local.*
+*.pem
+*.key
+
+# Recordings, runtime state, and diagnostic output
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+/captures/
+/recordings/
+/runtime/
+/tmp/
+/local/
+
+# Dependencies and generated output
+node_modules/
+dist/
+out/
+build/
+release/
+coverage/
+.cache/
+.vite/
+*.tsbuildinfo
+
+# Editor and operating system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
