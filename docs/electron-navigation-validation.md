@@ -31,15 +31,15 @@ xvfb-run -a -s '-screen 0 1600x1000x24' npm test
 xvfb-run -a -s '-screen 0 1600x1000x24' npm run measure:navigation
 ```
 
-The complete earlier run passed ten unit tests and fifteen Electron tests.
-After adding cancellation during a running SQLite scan, all four search unit
-tests passed. The final five navigation cases passed after the last runtime
-changes, including a delayed result whose requested event had since been
-evicted. Together these runs cover eleven current unit tests and seventeen
-current actual Electron cases. The existing inspector/history cases cover
-byte-preserving copy, payload scrolling, admission/storage failures, Clear,
-cleanup, hidden capture and the sandbox. No Linux application package,
-collector, hook installation or private proxy is needed.
+All eleven unit tests passed, including cancellation during an executing
+SQLite scan. After the review corrections, all six navigation cases passed.
+They cover delayed eviction replies and failed moves followed by arrow and
+Live recovery. The twelve inspector/history cases passed in the earlier full
+run. All eighteen current actual Electron cases have passed across those full
+and focused runs. Existing cases cover byte-preserving copy, payload scrolling,
+admission/storage failures, Clear, cleanup, hidden capture and the sandbox.
+No Linux application package, collector, hook installation or private proxy
+is needed.
 
 ## Acceptance evidence
 
@@ -52,6 +52,7 @@ collector, hook installation or private proxy is needed.
 | Scrub inputs | Pointer and emulated touch move in both directions. Journal wheel, row buttons, all arrows, Page Up/Down by five, Home and End work. Newest history remains held; the separate Live stop follows arrivals. Named slider values and focus reflect selection. |
 | Frozen gestures | The matching count, retained upper ID and pixel endpoints stay fixed during a gesture. New arrivals do not alter its mapping. Matching eviction ends an unusable gesture with an explanation, then resolves the nearest retained match. |
 | Stale results | Recording generation, query and target identities reject obsolete replies. A late successful query cannot display a now-evicted selected event or neighborhood. Clear discards older pending work and starts a new recording. |
+| Failed navigation | A timed-out Home or End move restores the last successfully displayed rank and viewing mode. The retained payload is explicitly identified. Arrow recovery starts from that event, and a failed Live request preserves the held matching-arrival count. A delayed request keeps the journal busy until its selected payload has updated. |
 | Cancellation and timeout | A separate worker changes the shared target during an executing 10,000-row SQLite scan and interrupts it. A forced query deadline shows an editable query, identifies the retained previous selection and offers Reset filters. Reset recovers at desktop and narrow sizes. |
 | Retention and pressure | Selected-event eviction explains the loss, updates the earliest retained time and leaves navigation usable. Simulated disk pressure drops incoming events while history remains readable. Restoring headroom resumes capture. |
 
@@ -92,11 +93,12 @@ policy, with fixed queue and drop counts.
 ## Resource measurements
 
 [Raw measurements](evidence/electron-navigation/measurements.json) include every
-segment, process role, timing and version. The final run used the actual app
-under Xvfb without recording or concurrent tests. All Electron process-group
-members and descendants were sampled every 250 ms, including the database
-worker inside main. Playwright and the sampler are excluded. Main includes the
-synthetic input generator's serialization work.
+segment, process role, timing and version. This run includes the review fixes
+and corrected completion checks. It used the actual app under Xvfb without
+recording or concurrent tests. All Electron process-group members and
+descendants were sampled every 250 ms, including the database worker inside
+main. Playwright and the sampler are excluded. Main includes synthetic input
+serialization.
 
 Summed RSS counts shared pages more than once. PSS apportions shared pages and
 is one aggregate snapshot at each segment's end, not its peak. The existing
@@ -106,64 +108,66 @@ energy behavior.
 
 | Workload | Seconds | Mean CPU | Peak summed RSS, MiB | Final PSS, MiB |
 | --- | --- | --- | --- | --- |
-| Idle before intake | 4.1 | 3.5% | 644.5 | 312.1 |
-| 1,000 small inputs | 5.9 | 29.8% | 662.8 | 326.4 |
-| Navigation after 1,000 | 11.9 | 81.7% | 757.3 | 416.2 |
-| 2,000 more small inputs | 11.6 | 23.2% | 758.5 | 337.0 |
-| Navigation after 3,000 | 12.9 | 83.2% | 709.0 | 367.4 |
-| 7,000 more small inputs | 40.3 | 22.3% | 709.6 | 361.6 |
-| Navigation at 10,000 rows | 12.3 | 90.5% | 713.7 | 367.5 |
-| 10,000 more small inputs | 57.8 | 39.2% | 711.8 | 368.4 |
-| Navigation after capped repeat | 12.1 | 91.3% | 715.3 | 372.7 |
-| 240 maximum inputs | 16.1 | 30.7% | 725.9 | 382.3 |
-| Navigation through maximum payloads | 18.9 | 86.7% | 779.7 | 398.3 |
-| Settled idle | 6.2 | 0.2% | 742.5 | 391.1 |
+| Idle before intake | 4.3 | 3.5% | 646.8 | 312.4 |
+| 1,000 small inputs | 5.8 | 27.2% | 663.9 | 327.0 |
+| Navigation after 1,000 | 12.0 | 82.2% | 760.5 | 417.0 |
+| 2,000 more small inputs | 11.7 | 24.9% | 760.3 | 337.9 |
+| Navigation after 3,000 | 15.2 | 74.5% | 711.8 | 369.4 |
+| 7,000 more small inputs | 40.5 | 23.1% | 713.4 | 365.0 |
+| Navigation at 10,000 rows | 13.0 | 90.3% | 715.4 | 371.8 |
+| 10,000 more small inputs | 58.1 | 40.3% | 716.2 | 372.5 |
+| Navigation after capped repeat | 13.8 | 91.5% | 719.3 | 375.7 |
+| 240 maximum inputs | 16.3 | 29.0% | 727.5 | 382.8 |
+| Navigation through maximum payloads | 19.6 | 88.7% | 778.0 | 392.5 |
+| Settled idle | 6.3 | 0.2% | 737.3 | 385.1 |
 
 Each navigation segment performs ten search changes, ten keyboard moves and
 240 pointer moves. Search timings include the 180 ms debounce and driver/IPC
-costs. Keyboard timings include driver/IPC and completion at the displayed
-slider value. With ten observations, the reported p95 is also the maximum.
+costs. Keyboard timings include driver/IPC, the expected selected ID, a
+completed journal update and the next animation frame. The initial Home
+request settles before the measured keys begin. Every operation checks for
+successful completion. With ten observations, the reported p95 is also the
+maximum. The earlier optimistic-slider timing was invalid and is replaced here.
 
 | Retained population | Longest displayed search | Longest keyboard move | Worker navigation maximum so far |
 | --- | --- | --- | --- |
-| 1,005 rows | 347.8 ms | 91.5 ms | 20.1 ms |
-| 3,005 rows | 294.7 ms | 99.1 ms | 45.2 ms |
-| 10,000 rows | 370.2 ms | 163.3 ms | 131.7 ms |
-| 10,000 after another retention cycle | 350.4 ms | 132.1 ms | 131.7 ms |
-| 135 maximum-payload rows | 418.6 ms | 125.5 ms | 168.1 ms |
+| 1,005 rows | 368.4 ms | 139.9 ms | 22.6 ms |
+| 3,005 rows | 404.8 ms | 147.5 ms | 84.1 ms |
+| 10,000 rows | 444.5 ms | 150.6 ms | 91.9 ms |
+| 10,000 after another retention cycle | 402.6 ms | 200.5 ms | 129.1 ms |
+| 135 maximum-payload rows | 470.6 ms | 176.1 ms | 165.0 ms |
 
-The longest complete worker navigation was 168.1 ms, below the 250 ms deadline.
-Rapid input canceled 287 obsolete targets; there were no natural search
-timeouts. The fault tests separately prove timeout behavior. Peak pending
-broker requests were two of four allowed, with no pending requests or intake
-remaining between segments. The UI contained three or four event summaries and
-64 sampled tick nodes throughout navigation.
+The longest complete worker navigation was 165.0 ms, below the 250 ms
+deadline. Rapid input canceled 281 obsolete targets; there were
+0 natural search timeouts. Fault tests separately prove timeout behavior.
+Peak pending broker requests were 2 of four allowed, with no pending requests
+or intake remaining between segments. The UI contained three or four event
+summaries and 64 sampled tick nodes throughout navigation.
 
 After a second 10,000-input cycle, history still had 10,000 rows. Final PSS
-after navigation was 372.7 MiB, compared with 367.5 MiB before that cycle.
-Maximum-payload replacement retained 135 rows and 8,345,565 accounted bytes.
-The database, owner file and active journal peaked at 8,471,202 bytes. Across
-20,240 offered inputs plus five seeds, 20,159 events were accepted and 20,024
-rows evicted. The worker dropped 86 inputs during the small-to-large transition
-because the fixed 64-row cleanup step could not immediately free enough space.
-There were no rate or queue-capacity drops, and pressure recovered.
+after navigation was 375.7 MiB, compared with
+371.8 MiB before that cycle. Maximum-payload replacement retained
+135 rows and 8,345,565 accounted bytes. The database, owner file and
+active journal peaked at 8,471,202 bytes. Across 20,240 offered inputs
+plus five seeds, 20,159 events were accepted and 20,024 rows evicted. The
+worker dropped 86 inputs during the small-to-large transition because the fixed
+64-row cleanup step could not immediately free enough space. There were no
+rate or queue-capacity drops, and pressure recovered.
 
-The main 20 ms timer recorded at most 37.0 ms extra delay. The renderer timer
-recorded 156.0 ms during the 7,000-input growth segment and 99.6 ms during
-maximum-payload capture; navigation segments peaked at 93.6 ms. These isolated
-pauses are included in the result, not hidden behind average latency. Maximum
-worker intake time was 28.0 ms. The settled idle segment used 0.2% of one core.
-No long-duration, hardware-GPU, macOS or battery test is claimed.
+The main 20 ms timer recorded at most 170.9 ms extra delay. The renderer timer
+recorded at most 155.0 ms; navigation segments peaked at 155.0 ms. These pauses
+are included in the result, not hidden behind average latency. Maximum worker
+intake time was 32.9 ms. Settled idle used
+0.2% of one core. No long-duration, hardware-GPU, macOS or battery test is
+claimed.
 
-Startup to ready content was 1181 ms in this warm-filesystem run.
-The application bundle is 161,494 bytes, compared with the stock
+Startup to ready content was 1359 ms in this warm-filesystem run.
+The application bundle is 162,091 bytes, compared with the stock
 Electron runtime's 295,827,900 bytes. The dependency lock is unchanged.
-The final bundle adds 82 bytes for the singular hook-choice label after this
-measurement; the recorded narrow scenario was rerun for that copy correction.
 Test tools, measurements, reference assets and recordings are excluded from
 the shipped app. The earlier [history measurements](electron-history-validation.md#resource-results)
-provide the prior delivery's resource context; these separate runs do not
-isolate the exact cost of search alone.
+provide the prior delivery's resource context; separate runs do not isolate the
+exact cost of search alone.
 
 ## Recorded experience
 
@@ -172,7 +176,11 @@ Visual inspection found an incorrect oldest-time label after filtering; the
 rail now uses the earliest matching event while the footer always reports the
 earliest retained event. The affected recordings passed again. A later race
 check found that a successful query could arrive after its target was evicted;
-the renderer now resolves current retained rows before display.
+the renderer now resolves current retained rows before display. Review also
+found optimistic slider movement persisting after a timeout and an early
+keyboard timing endpoint. Failed moves now restore the displayed position and
+mode. The corrected timing script waits for the selected payload and completed
+journal update, and its isolated workload was rerun.
 
 | Reference, 1180 × 760 | Actual Electron, 1180 × 760 |
 | --- | --- |
@@ -198,6 +206,7 @@ layout remain intact.
 | [Scrubber](evidence/electron-navigation/scrubber-walkthrough.webm) | All keyboard, pointer, touch, wheel and row inputs in both directions; newest history versus Live; arrivals during a frozen drag; selected/gesture eviction, pressure and narrow recovery. |
 | [Queries](evidence/electron-navigation/queries-walkthrough.webm) | Delayed rapid filters, obsolete target rejection, cancellation, timeout/reset, pending Clear generations, paged sessions and the first later matching arrival. |
 | [Narrow failures](evidence/electron-navigation/narrow-walkthrough.webm) | Long full-ID choice pages, a held filtered payload at nonzero offset, timeout/reset, selected-event eviction, storage pressure and recovery at 440 × 820. |
+| [Failed navigation](evidence/electron-navigation/failed-navigation-walkthrough.webm) | Timed-out Home and End restore the displayed event, rank, mode and held arrival count; arrow and Live recover; a delayed Live request finishes only when its payload is displayed. |
 | [Late eviction](evidence/electron-navigation/late-target-walkthrough.webm) | A completed database query is delayed while its requested target is evicted; the UI explains the loss and displays only retained rows. |
 
 Full-size states include [held filtered arrivals](evidence/electron-navigation/held-filtered-arrivals.png),
