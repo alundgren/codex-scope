@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { extractCall, sessionEvidence } from "../src/analysis-evidence.ts";
 import { SessionAnalysis, parseFindings, exportRecommendations } from "../src/analysis.ts";
+import { parseHandoff } from "../src/analysis-cli.ts";
 import { ANALYSIS_LIMITS } from "../src/analysis-types.ts";
 import type { AnalysisSnapshot } from "../src/analysis-types.ts";
 import type { StoredEvent, HistoryStatus } from "../src/types.ts";
@@ -238,4 +239,55 @@ test("cancellation and clear reject stale completion and prevent overlapping exe
   assert.equal(analysis.list().runs.length, 0);
   assert.equal(analysis.list().activeRunId, null);
   await analysis.close();
+});
+
+test("handoff uses the run model and kept findings without recapture, and rejects stale completion", async () => {
+  let captures = 0;
+  let finish: ((value: ReturnType<typeof result>) => void) | undefined;
+  const analysis = new SessionAnalysis(
+    1,
+    async () => {
+      captures++;
+      return snapshot();
+    },
+    async (options) => {
+      if (!options.purpose) return result();
+      assert.equal(options.model, "original-model");
+      assert.match(options.prompt, /Review current-directory search/);
+      assert.match(options.prompt, /Captured call IDs: 2/);
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    },
+  );
+  const id = (await analysis.start("session-a", "original-model", null)).runs[0].id;
+  await tick();
+  await assert.rejects(analysis.handoff(id), /Keep a recommendation/);
+  analysis.decide(id, "narrow", "kept");
+  const handoff = analysis.handoff(id);
+  assert.equal(analysis.list().handoffRunId, id);
+  await assert.rejects(analysis.handoff(id), /already running/);
+  await assert.rejects(analysis.start("session-a", "other-model", null), /already running/);
+  finish!({ text: JSON.stringify({ handoff: "Try a task directory first." }), usage: null });
+  assert.match(await handoff, /Session analysis handoff for session-a/);
+  assert.equal(captures, 1);
+  assert.equal(analysis.get(id)!.state, "completed");
+  const stale = analysis.handoff(id);
+  analysis.reset(2);
+  finish!({ text: JSON.stringify({ handoff: "stale" }), usage: null });
+  await assert.rejects(stale, /cancelled/);
+  assert.equal(analysis.list().handoffRunId, null);
+  await analysis.close();
+});
+
+test("handoff output rejects empty, oversized and unexpected fields", () => {
+  assert.equal(parseHandoff('{"handoff":"Check the current task."}'), "Check the current task.");
+  for (const value of [
+    { handoff: "" },
+    { handoff: " " },
+    { handoff: "x".repeat(12001) },
+    { handoff: "valid", extra: true },
+    { handoff: 42 },
+  ])
+    assert.throws(() => parseHandoff(JSON.stringify(value)));
 });

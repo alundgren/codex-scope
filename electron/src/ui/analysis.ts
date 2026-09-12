@@ -73,6 +73,7 @@ export function attachAnalysis(
     choiceRequest = 0,
     payloadRequest = 0;
   let setupExpanded = true;
+  let handoffPending = false;
   let loading = false,
     dirty = true,
     busy = false;
@@ -99,14 +100,21 @@ export function attachAnalysis(
       call.order < history.first.id ||
       run?.snapshot.generation !== history.generation);
   const report = (error: unknown) => {
-    message = error instanceof Error ? error.message : "Analysis request failed. Try again.";
+    message =
+      error instanceof Error
+        ? error.message.replace(/^Error invoking remote method '[^']+': Error: /, "")
+        : "Analysis request failed. Try again.";
     drawStatus();
   };
   function drawStatus() {
     if (!visible()) return;
     const active = state?.runs.find((value) => value.id === state?.activeRunId);
+    const handoff = handoffPending || !!state?.handoffRunId;
     status.textContent =
       message ||
+      (handoff
+        ? "Preparing a handoff from kept suggestions. You can keep browsing or cancel."
+        : "") ||
       (active
         ? `Analyzing with ${active.model}. ${run && run.id !== active.id ? "Your selected run remains open." : "You can keep browsing or cancel."}`
         : run?.error ||
@@ -116,18 +124,27 @@ export function attachAnalysis(
     start.disabled =
       busy ||
       !!active ||
+      handoff ||
       !selectedSession ||
       !model.value.trim() ||
       !!history?.error ||
       !!history?.clearing;
-    cancel.hidden = !active;
+    cancel.textContent = handoff ? "Cancel handoff" : "Cancel analysis";
+    cancel.hidden = !active && !handoff;
     cancel.disabled = busy;
     const compactCancel = requiredElement<HTMLButtonElement>("#analysis-cancel-compact");
     compactCancel.hidden =
-      !active || !matchMedia("(max-width: 720px)").matches || setupExpanded || !run;
+      (!active && !handoff) || !matchMedia("(max-width: 720px)").matches || setupExpanded || !run;
     compactCancel.disabled = busy;
+    compactCancel.textContent = cancel.textContent;
     fresh.disabled = !run || busy;
-    requiredElement("#analysis-source").textContent =
+    exportButton.disabled =
+      handoff ||
+      !!active ||
+      !run ||
+      run.state !== "completed" ||
+      !Object.values(run.decisions).includes("kept");
+    requiredElement("#analysis-fresh").title =
       run && !fresh.checked
         ? "Next analysis uses this run's snapshot."
         : "Next analysis captures a new bounded snapshot.";
@@ -408,7 +425,7 @@ export function attachAnalysis(
         );
       else
         actions.append(
-          node("span", decision === "kept" ? "Kept for export" : "Dismissed"),
+          node("span", decision === "kept" ? "Kept for handoff" : "Dismissed"),
           button("Undo", () => void decide(finding.id, "unreviewed")),
         );
       item.append(links, actions);
@@ -604,7 +621,12 @@ export function attachAnalysis(
     content.scrollTop = current.views[view].scroll;
     exportButton.hidden = view !== "recommendations";
     exportButton.disabled =
-      !run || run.state !== "completed" || !Object.values(run.decisions).includes("kept");
+      handoffPending ||
+      !!state?.handoffRunId ||
+      !!state?.activeRunId ||
+      !run ||
+      run.state !== "completed" ||
+      !Object.values(run.decisions).includes("kept");
   }
   function drawSetup() {
     const compact = matchMedia("(max-width: 720px)").matches && !!run;
@@ -769,16 +791,24 @@ export function attachAnalysis(
     draw();
   });
   exportButton.addEventListener("click", async () => {
-    if (!history || !run) return;
+    if (!history || !run || exportButton.disabled) return;
     const generation = history.generation,
       runId = run.id;
+    handoffPending = true;
+    message = "";
+    drawStatus();
     try {
       const exported = await api.analysisExport(generation, runId);
       if (history?.generation !== generation || run?.id !== runId) return;
-      message = exported ? "Kept suggestions exported." : "Export cancelled.";
+      message = exported
+        ? "Handoff copied. Paste it into the source session."
+        : "Handoff cancelled.";
       drawStatus();
     } catch (error) {
       if (history?.generation === generation && run?.id === runId) report(error);
+    } finally {
+      handoffPending = false;
+      drawStatus();
     }
   });
   function receive(value: HistoryStatus) {

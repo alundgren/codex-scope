@@ -1,8 +1,8 @@
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron";
 import type { ChoiceField, Direction, NavigationRequest } from "./types.ts";
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, protocol, session } from "electron";
-import { readFile, writeFile } from "node:fs/promises";
-import { SessionAnalysis, exportRecommendations, validSession, validModel } from "./analysis.ts";
+import { app, BrowserWindow, clipboard, ipcMain, Menu, protocol, session } from "electron";
+import { readFile } from "node:fs/promises";
+import { SessionAnalysis, validSession, validModel } from "./analysis.ts";
 import type { AnalysisDecision } from "./analysis-types.ts";
 import * as path from "node:path";
 import { validNavigation, positive, QUERY_LIMITS } from "./search.ts";
@@ -251,26 +251,42 @@ app
       },
     );
     let exporting = false;
+    let handoffCopyPending = false;
     ipcMain.handle("scope:analysis-export", async (event, generation: number, id: string) => {
       analysisRequest(event, generation);
-      if (!runId(id) || exporting) return false;
-      const run = analysis.get(id);
-      if (!run) throw new Error("That analysis run is no longer retained.");
-      const text = exportRecommendations(run);
+      if (!runId(id) || exporting || handoffCopyPending)
+        throw new Error("A handoff is still being prepared or copied.");
       exporting = true;
       try {
-        const choice = testRoot
-          ? { canceled: false, filePath: path.join(testRoot, "analysis-export.md") }
-          : await dialog.showSaveDialog(window, {
-              title: "Save recommendations",
-              defaultPath: "session-recommendations.md",
-              filters: [{ name: "Markdown", extensions: ["md"] }],
-            });
-        if (choice.canceled || !choice.filePath || history.generation !== generation) return false;
-        await writeFile(choice.filePath, text, { mode: 0o600 });
-        return true;
-      } catch {
-        throw new Error("Recommendations could not be saved. Choose another location.");
+        const text = await analysis.handoff(id);
+        if (history.generation !== generation) return false;
+        handoffCopyPending = true;
+        let timer: NodeJS.Timeout | undefined;
+        const write = Promise.resolve()
+          .then(() => clipboard.writeText(text))
+          .catch(() => {
+            throw new Error("The handoff could not be copied. Try again.");
+          })
+          .finally(() => {
+            handoffCopyPending = false;
+          });
+        try {
+          await Promise.race([
+            write,
+            new Promise<never>((_, reject) => {
+              timer = setTimeout(
+                () =>
+                  reject(
+                    new Error("The clipboard has not confirmed the copy. It may still finish."),
+                  ),
+                COPY_TIMEOUT_MS,
+              );
+            }),
+          ]);
+          return true;
+        } finally {
+          clearTimeout(timer);
+        }
       } finally {
         exporting = false;
       }

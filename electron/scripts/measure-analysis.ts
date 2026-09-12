@@ -271,6 +271,15 @@ try {
   if (real) {
     verify(first.usage !== null, "Native CLI returned usage; no fixture fallback was used.");
   } else {
+    await record("clipboardHandoff", async () => {
+      await page.evaluate(async (id) => {
+        const status = await window.scope.status();
+        const run = await window.scope.analysisRun(status.generation, id);
+        await window.scope.analysisDecide(status.generation, id, run!.findings[0].id, "kept");
+        if (!(await window.scope.analysisExport(status.generation, id)))
+          throw new Error("Synthetic handoff did not copy.");
+      }, first.id);
+    });
     await expect(page.locator(".analysis-call")).toHaveCount(3);
     await page.locator(".analysis-call").first().click();
     const focused = await page

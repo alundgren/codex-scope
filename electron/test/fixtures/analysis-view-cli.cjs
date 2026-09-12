@@ -21,6 +21,27 @@ process.stdin.on("end", () => {
     process.exitCode = 1;
     return;
   }
+  if (input.includes("KEPT_FINDINGS\n")) {
+    if (model === "test-handoff-slow") {
+      setTimeout(() => process.exit(0), 60000);
+      return;
+    }
+    const handoff =
+      model === "test-handoff-invalid"
+        ? ""
+        : "Review these findings against your current task before changing your approach.\n" +
+          input.split("KEPT_FINDINGS\n")[1];
+    setTimeout(() => {
+      process.stdout.write(
+        JSON.stringify({
+          type: "item.completed",
+          item: { type: "agent_message", text: JSON.stringify({ handoff }) },
+        }) + "\n",
+      );
+      process.stdout.write(JSON.stringify({ type: "turn.completed" }) + "\n");
+    }, 500);
+    return;
+  }
   const snapshot = JSON.parse(input.split("EVIDENCE_JSON\n")[1]);
   const first = snapshot.calls[0];
   const second = snapshot.calls[1];
