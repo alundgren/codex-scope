@@ -108,10 +108,78 @@ Every retained event and pending operation needs a limit on both machines.
   Neither application imports the other's implementation. Keep shared
   protocol material limited to the wire contract and shared fixtures.
 
-Keep this file about principles. Keep current implementation details and resource
+Keep this file about principles and agent test setup. Keep current implementation details and resource
 budgets in the relevant application documentation, `docs/architecture.md`, and
 `ux.md`. `plan.md` is the sole temporary progress-tracking exception until the
 initial plan reaches parity. Preserve its remaining requirements and completion
 states; keep attached evidence and detailed run reports out of it. Remove the
 plan after parity and move any lasting instructions into the appropriate docs.
 Preserve concurrent Linux and UI work when reconciling shared documents.
+
+## Linux test startup and troubleshooting
+
+Prepare the display and Electron sandbox before starting a long suite. Treat
+display or sandbox startup errors as environment failures. Run these commands
+from the repository root, installing dependencies only when missing:
+
+```bash
+bun install --frozen-lockfile
+export PATH="$PWD/node_modules/.bin:$PATH"
+vp -C electron run setup
+```
+
+Use the runtime versions pinned in `.node-version` and the package manifests.
+Linux needs Electron's shared libraries, including NSS, ATK, X11, GBM, ALSA and
+CUPS. Install missing desktop tools on Ubuntu with
+`sudo apt-get install --no-install-recommends xvfb xauth openbox x11-utils`.
+Check the tools, then enter the Electron directory for all remaining commands:
+
+```bash
+export PATH="$PWD/node_modules/.bin:$PATH"
+command -v Xvfb xvfb-run xauth openbox xprop
+cd electron
+```
+
+Check `ldd "$(node -p 'require("electron")')"` for missing shared libraries.
+On hosts that restrict unprivileged user namespaces, configure the downloaded
+sandbox helper after each fresh Electron installation:
+
+```bash
+electron_sandbox="$(node -p 'require("node:path").join(require("node:path").dirname(require("electron")), "chrome-sandbox")')"
+sudo chown root:root "$electron_sandbox"
+sudo chmod 4755 "$electron_sandbox"
+```
+
+The app and tests keep sandboxing and GPU acceleration enabled. Playwright sets
+`chromiumSandbox: true` explicitly.
+
+Use a fresh display for each test invocation. `scripts/desktop.ts` starts and
+stops Openbox itself and rejects a display that already has a window manager.
+Do not start Openbox manually or reuse a desktop session for these commands.
+Run one Electron scenario first to catch launch failures before the full suite:
+
+```bash
+vp run build
+xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec playwright test test/inspector.spec.ts --workers=1 --max-failures=1 --grep 'security boundaries'
+xvfb-run -a -s '-screen 0 1600x1000x24' vp run test
+```
+
+- `Run a validation command inside the documented xvfb-run display`, a missing
+  X server, or an unset `DISPLAY` means the command needs the `xvfb-run` wrapper.
+  Merely assigning `DISPLAY` does not start Xvfb.
+- If Xvfb or xauth is missing, install the prerequisites above. Use `-a` to
+  select an available display; do not remove another process's X lock files.
+- `Isolated Openbox did not become ready` requires checking `openbox` and
+  `xprop`. An existing-window-manager error requires a fresh Xvfb invocation.
+- A `chrome-sandbox` error saying the helper must be owned by root with mode
+  `4755` requires the `chown` and `chmod` commands above. A downloaded Electron
+  helper can be owned by the installing user; repeat the setup after replacing
+  the runtime. If container policy prevents that setup or still rejects sandbox
+  startup, report the exact error and the integration-validation blocker.
+  Do not change `chromiumSandbox: true`, add `--no-sandbox`, or apply a sandbox
+  disabling environment override to obtain a passing suite. The tests check
+  sandbox behavior, so a run with sandboxing disabled cannot validate it.
+
+Once Electron launches and a test reaches its assertions, investigate assertion
+or timing failures separately from display and sandbox setup. Keep unit checks
+available through `vp run test:unit` while resolving desktop startup failures.
