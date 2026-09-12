@@ -1,5 +1,5 @@
 {
-  "sourceRevision": "f34711515052115e596e02d87c61faef0d32902f",
+  "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
   "noLinuxDirectory": true,
   "inputs": [
     {
@@ -100,7 +100,7 @@
     },
     {
       "path": "electron/scripts/interaction-metrics.mjs",
-      "sha256": "9f62a8a198e1f5c7aee77bb96aa10ed87de58c4f477f6a70ba974e94ca919fd6"
+      "sha256": "d5000f491d6a952ef5f789c5b41120cc6e5e9f09bd7ba9e8326f9c10294d206d"
     },
     {
       "path": "electron/scripts/desktop.mjs",
@@ -148,7 +148,7 @@
     },
     {
       "path": "electron/test/resource-thresholds.test.mjs",
-      "sha256": "9b37e98d4b33d0f5976be066be136b70077ef283f2db76ac437427dbb72a5070"
+      "sha256": "8079871c8553928eff64d775fe5c63278f143cbfcfb3a4e5a9130f773a349c61"
     },
     {
       "path": "electron/test/inspector.spec.mjs",
@@ -204,7 +204,7 @@
     }
   ],
   "visualSourceRevision": "3a290b218e2ed3e507adf3213aa5139bc848e5d1",
-  "sourceDifferenceAfterVisual": "The resource checker and its unit cases changed after the recorded visual run; its ceilings were then calibrated after measurement. Application source, assets, Electron tests and dependencies remained byte-identical.",
+  "sourceDifferenceAfterVisual": "The resource checker and ceilings, interaction completion helper and related unit cases changed after the recorded visual run. Application source, assets, Playwright Electron scenarios and dependencies remained byte-identical.",
   "commands": [
     {
       "command": "git archive HEAD electron protocol docs/mockups | tar -x -C <fresh directory>",
@@ -267,9 +267,52 @@
       "exit": 0,
       "sourceRevision": "f34711515052115e596e02d87c61faef0d32902f",
       "result": "21 checks passed, including omitted history/retained-byte/timer/latency/phase metrics and over-limit values."
+    },
+    {
+      "command": "git archive HEAD electron protocol docs/mockups | tar -x -C <same source-only export>",
+      "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+      "exit": 0,
+      "result": "All fifty inputs match the current source; the export still has no Linux implementation directory."
+    },
+    {
+      "command": "npm run test:unit",
+      "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+      "exit": 0,
+      "result": "22 checks passed, including the actual interaction predicate rejecting an empty payload with a stale selected row."
+    },
+    {
+      "command": "setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' npm run validate:resources -- --runs=1",
+      "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+      "exit": 1,
+      "report": "resource-review-failed.json",
+      "result": "Every scenario completed; maximumCycle2 renderer delay was 296.2 ms against unchanged 250 ms. Cause unproven. All other 280 values passed."
+    },
+    {
+      "command": "setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' npm run validate:resources -- --runs=1",
+      "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+      "exit": 0,
+      "report": "resource-review-repeat.json",
+      "result": "One unchanged complete reproduction passed all 281 values; maximum renderer delay 72.0 ms."
+    },
+    {
+      "command": "node scripts/check-resources.mjs <original three-trial report>",
+      "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+      "exit": 0,
+      "result": "All original 839 values pass unchanged f347115 ceilings."
+    },
+    {
+      "command": "node scripts/check-resources.mjs <original three-trial report> --prove-failure",
+      "sourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+      "exit": 0,
+      "result": "A deliberate one-byte RSS exceedance is rejected."
     }
   ],
   "desktopPrerequisite": "Openbox 3.6.1 and xprop from official Ubuntu packages extracted without installing, using the documented alternative PATH wrapper. Existing system package-manager lock was left untouched.",
   "measurementSourceRevision": "a7ade20a9ce4d26d39b98751da511b601af81a7b",
-  "thresholdSourceRevision": "f34711515052115e596e02d87c61faef0d32902f"
+  "thresholdSourceRevision": "f34711515052115e596e02d87c61faef0d32902f",
+  "reviewCorrectionSourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+  "reviewCorrectionReports": [
+    "resource-review-failed.json",
+    "resource-review-repeat.json"
+  ]
 }

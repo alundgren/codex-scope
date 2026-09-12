@@ -249,7 +249,7 @@ unchanged and are also enforced by the driver.
 `npm run check:resources` passed with exit 0. The normal checker rejected a
 copy of the report containing one RSS value a byte over its ceiling with exit 1;
 `--prove-failure` also confirmed that rejection. The final unit suite passed all
-21 checks, including missing metric/phase and over-limit cases. No excessive
+22 checks, including missing metric/phase, over-limit and stale empty-selection cases. No excessive
 allocation was needed to test the checker. The burst/stall phases separately
 exercised real bounded dropping and recovery in the running app.
 
@@ -262,13 +262,38 @@ were executed there: `npm ci` installed 16 packages and reported zero audit
 vulnerabilities, the pinned Electron and FFmpeg installed, all runtime shared
 libraries resolved, and both standard validation commands exited 0.
 
-The recorded app came from `3a290b2`; the resource workload came from `a7ade20`.
-The source export then advanced to `f347115` for final threshold evaluation and
-unit checks. Application source, assets, visual tests and dependencies remained
-identical across those last two updates. The
-[fresh-source receipt](evidence/electron-regressions/clean-source.json) gives
+The recorded app came from `3a290b2`; the original three resource trials came
+from `a7ade20`. The source export advanced to `f347115` for final threshold
+evaluation, then to `0589875` for the stricter empty-result completion check.
+All 22 current unit checks passed. Application source, assets, Playwright
+Electron scenarios and dependencies remained identical through these updates.
+The [fresh-source receipt](evidence/electron-regressions/clean-source.json) gives
 full revisions, fifty compared input hashes, the exact commands and results.
-It distinguishes the threshold update from a new application measurement.
+
+Review found that the measurement helper could accept an empty payload while a
+stale row remained selected. The helper now waits for that row to clear, and a
+focused negative test exercises the actual predicate. Two full resource runs
+used this corrected source and the unchanged `f347115` ceilings. The
+[first run](evidence/electron-regressions/resource-review-failed.json) completed
+every scenario but exited 1 because renderer timer delay reached 296.2 ms during
+`maximumCycle2`, above the 250 ms ceiling. All other 280 values passed. Its
+memory and queues stayed bounded; the maximum-only timer diagnostic cannot
+establish the cause. No environment or application cause is claimed.
+
+The [unchanged reproduction](evidence/electron-regressions/resource-review-repeat.json)
+passed all 281 values. It does not erase the preceding exceedance or establish
+that every later run will pass. Both complete reports remain separate from the
+original calibration report, which still passes all 839 final checks.
+
+| Corrected-source run | First run, exit 1 | Unchanged reproduction, exit 0 |
+| --- | --- | --- |
+| Measured application phases | 207.8 s | 207.4 s |
+| App startup | 1,158.7 ms | 1,178.3 ms |
+| Peak summed RSS / endpoint PSS | 798.6 / 396.5 MiB | 796.3 / 390.2 MiB |
+| Maximum main / renderer extra delay | 48.3 / 296.2 ms | 48.3 / 72.0 ms |
+| Maximum completed search / key result | 412.9 / 144.0 ms | 394.6 / 165.3 ms |
+| Cycle 3 minus cycle 1 RSS / PSS | -0.59 / +1.44 MiB | -0.17 / +1.40 MiB |
+| All sixty delayed events complete | 6.132 s | 6.116 s |
 
 ## Scenario coverage
 
@@ -301,7 +326,9 @@ later refinement. Synthetic Linux acceptance does not establish those claims.
 
 ## Inspected visual evidence
 
-The final clean-source run passed 21 unit checks and all 22 Electron scenarios.
+The recorded clean-source visual run passed 21 unit checks and all 22 Electron scenarios.
+The later completion-predicate correction brings the current unit suite to 22;
+application and visual-scenario files remain identical to that recording run.
 Its [manifest](evidence/electron-regressions/visual-manifest.json) identifies
 107 screenshots and 28 named recordings by hash; the
 [Playwright report](evidence/electron-regressions/visual-tests.json) records
