@@ -1,3 +1,4 @@
+import { sessionEvidence } from "./analysis-evidence.ts";
 import { prepare, type Statement } from "./database.ts";
 import type {
   EventValue,
@@ -535,6 +536,11 @@ port.on("message", async (message: WorkerRequest) => {
       if (faults.delay && ["inspect", "navigate", "append"].includes(operation))
         await new Promise((resolve) => setTimeout(resolve, faults.delay));
       if (!current(generation)) result = { stale: true };
+      else if (operation === "analysis")
+        result =
+          database && !state.pressure && !state.error
+            ? sessionEvidence(database, state, message.session)
+            : { error: "Session analysis unavailable while history is under pressure." };
       else if (operation === "inspect") result = inspect(message.id, message.rows);
       else if (operation === "navigate")
         result = search
@@ -551,7 +557,12 @@ port.on("message", async (message: WorkerRequest) => {
       }
     }
   } catch {
-    if (operation === "navigate" || operation === "choices") {
+    if (operation === "analysis") {
+      result = {
+        error: "Session evidence could not finish. Try again when capture is quieter.",
+        generation,
+      };
+    } else if (operation === "navigate" || operation === "choices") {
       result = { error: "Search could not finish. Edit the query or Reset filters.", generation };
     } else {
       state.error =

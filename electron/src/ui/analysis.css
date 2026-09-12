@@ -1,0 +1,424 @@
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-actions button {
+  font-size: 13.5px;
+}
+#analyzer[hidden] {
+  display: none;
+}
+.analysis-open main > .toolbar,
+.analysis-open main > .mode,
+.analysis-open main > #notice,
+.analysis-open main > .workspace {
+  display: none;
+}
+#analyzer {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--bg);
+}
+.analysis-controls,
+.analysis-run-controls,
+.analysis-filters {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  padding: 10px 24px;
+  flex-wrap: wrap;
+}
+.analysis-controls label,
+.analysis-run-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13.5px;
+  min-width: 0;
+}
+.analysis-controls input,
+.analysis-controls select,
+.analysis-run-controls select {
+  font-size: 16px;
+  width: 100%;
+  min-width: 0;
+}
+.analysis-controls .analysis-session-label {
+  flex: 1;
+  min-width: 230px;
+}
+.analysis-controls > label:not(.analysis-session-label) {
+  width: 230px;
+}
+.analysis-controls #analysis-start {
+  background: var(--accent);
+  color: var(--field);
+}
+.analysis-run-controls {
+  align-items: center;
+  padding-top: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.analysis-run-controls label:first-child {
+  flex-direction: row;
+  align-items: center;
+  max-width: 70%;
+}
+.analysis-run-controls select {
+  max-width: 420px;
+  font-size: 13.5px;
+}
+.analysis-run-controls .analysis-checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+.analysis-checkbox input {
+  accent-color: var(--accent);
+}
+#analysis-source {
+  font-size: 12px;
+}
+#analysis-status {
+  padding: 8px 24px;
+  background: var(--raised);
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+#analysis-status:empty {
+  display: none;
+}
+#analysis-coverage {
+  font-size: 13.5px;
+  padding: 0 24px 8px;
+}
+#analysis-coverage summary {
+  border: 0;
+  background: transparent;
+  padding: 5px 0;
+  font-size: 13.5px;
+}
+#analysis-coverage p {
+  margin: 5px 0;
+  max-width: 110ch;
+  max-height: 110px;
+  overflow: auto;
+}
+.analysis-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 8px 24px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.analysis-tabs button {
+  border: 0;
+  background: transparent;
+}
+.analysis-tabs button[aria-pressed="true"] {
+  background: var(--raised);
+  box-shadow: inset 0 -3px var(--accent);
+}
+.analysis-filters {
+  align-items: center;
+  padding-block: 12px;
+}
+.analysis-filters input {
+  flex: 1;
+  min-width: 180px;
+}
+.analysis-filters select,
+.analysis-filters button {
+  font-size: 13.5px;
+  min-width: 0;
+  max-width: 100%;
+}
+#analysis-focus {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0 24px 10px;
+  font-size: 13.5px;
+}
+#analysis-focus:empty {
+  display: none;
+}
+#analysis-focus span:first-child {
+  max-width: 65ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#analysis-focus button {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.analysis-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+#analysis-content,
+#analysis-detail {
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) var(--bg);
+  overflow-anchor: none;
+}
+#analysis-content {
+  padding: 8px 18px 24px 24px;
+}
+#analysis-detail {
+  border-left: 1px solid var(--line);
+  padding: 8px 24px 24px;
+  background: var(--field);
+}
+#analysis-detail > button {
+  font-size: 13.5px;
+  text-align: left;
+  margin: 0 5px 12px 0;
+}
+.analysis-call {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+  padding: 18px 16px;
+  text-align: left;
+  margin-bottom: 5px;
+}
+.analysis-call[aria-pressed="true"] {
+  border-left-color: var(--accent);
+  background: var(--raised);
+}
+.analysis-call-line {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+}
+.analysis-command {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.analysis-bytes {
+  flex-shrink: 0;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+.analysis-secondary {
+  display: block;
+  font-size: 13.5px;
+  color: var(--muted);
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.analysis-bar {
+  display: block;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--line);
+  margin-top: 12px;
+}
+.analysis-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+}
+.analysis-explanation {
+  font-size: 13.5px;
+  margin: 8px 16px 18px;
+  color: var(--muted);
+  max-width: 75ch;
+}
+.analysis-model-group {
+  margin: 0 0 24px;
+}
+.analysis-group-control {
+  text-align: left;
+  background: var(--panel);
+  width: 100%;
+  border: 0;
+  font-size: 13.5px;
+}
+.analysis-empty {
+  margin: 32px 12px;
+  max-width: 55ch;
+  color: var(--muted);
+}
+.analysis-detail-command {
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+}
+.analysis-warning {
+  font-size: 13.5px;
+  color: var(--danger);
+}
+.analysis-payload {
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.analysis-finding {
+  padding: 12px 16px 24px;
+  margin-bottom: 14px;
+  border-left: 3px solid transparent;
+}
+.analysis-finding.focused {
+  border-left-color: var(--accent);
+  background: var(--panel);
+}
+.analysis-finding p {
+  margin: 8px 0 12px;
+  max-width: 70ch;
+  overflow-wrap: anywhere;
+}
+.analysis-finding-title {
+  font-weight: 500;
+}
+.analysis-suggestion {
+  color: var(--blue);
+}
+.analysis-finding-calls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.analysis-finding-calls button {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.analysis-decision {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+.analysis-decision button {
+  font-size: 13.5px;
+}
+@media (max-width: 850px) {
+  .analysis-call-line {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .analysis-workspace {
+    grid-template-columns: minmax(0, 1.3fr) minmax(230px, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .header-actions {
+    gap: 8px;
+  }
+  .header-actions .connection {
+    display: none;
+  }
+  .analysis-controls,
+  .analysis-run-controls,
+  .analysis-filters,
+  .analysis-tabs {
+    padding-inline: 16px;
+    gap: 8px;
+  }
+  .analysis-controls .analysis-session-label {
+    flex-basis: 100%;
+  }
+  .analysis-controls > label:not(.analysis-session-label) {
+    flex: 1;
+    width: auto;
+  }
+  .analysis-run-controls label:first-child {
+    max-width: 100%;
+    width: 100%;
+  }
+  .analysis-run-controls select {
+    flex: 1;
+  }
+  #analysis-source {
+    display: none;
+  }
+  .analysis-tabs button {
+    font-size: 13.5px;
+    padding: 7px 8px;
+  }
+  #analysis-coverage {
+    padding-inline: 16px;
+  }
+  .analysis-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(130px, 1fr) minmax(100px, 0.8fr);
+  }
+  #analysis-content {
+    padding: 4px 12px 16px;
+  }
+  #analysis-detail {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 8px 16px 16px;
+  }
+  #analysis-focus {
+    padding-inline: 16px;
+    max-height: 90px;
+    overflow: auto;
+  }
+  .analysis-filters {
+    padding-block: 8px;
+  }
+  .analysis-filters input {
+    flex-basis: 100%;
+  }
+  .analysis-call {
+    padding: 12px;
+  }
+}
+
+.analysis-run-controls label:first-child {
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  #analysis-usage {
+    display: none;
+  }
+}
+
+#analysis-settings-toggle {
+  margin: 8px 16px;
+  text-align: left;
+  font-size: 13.5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+#analysis-settings-toggle[hidden],
+#analysis-setup[hidden] {
+  display: none;
+}
+
+.analysis-settings-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+#analysis-settings-toggle {
+  flex: 1;
+  min-width: 0;
+}
+#analysis-cancel-compact {
+  margin-right: 16px;
+  font-size: 13.5px;
+}

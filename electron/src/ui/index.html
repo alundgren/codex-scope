@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Codex Scope</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="analysis.css" />
     <script type="module" src="renderer.ts"></script>
   </head>
   <body>
     <main>
       <header>
         <h1>Event journal</h1>
-        <span class="connection" role="status">Starting…</span>
+        <div class="header-actions">
+          <span class="connection" role="status">Starting…</span
+          ><button id="open-analysis">Analyze session</button>
+        </div>
       </header>
       <div class="toolbar">
         <input
@@ -86,6 +90,86 @@
           <div id="copy-status" role="status"></div>
         </section>
       </div>
+      <section id="analyzer" aria-label="Session analyzer" hidden>
+        <div class="analysis-settings-actions">
+          <button
+            id="analysis-settings-toggle"
+            aria-expanded="true"
+            aria-controls="analysis-setup"
+            hidden
+          >
+            Session and model controls
+          </button>
+          <button id="analysis-cancel-compact" hidden>Cancel analysis</button>
+        </div>
+        <div id="analysis-setup">
+          <div class="analysis-controls">
+            <label class="analysis-session-label"
+              >Session<select id="analysis-session" aria-label="Analysis session">
+                <option value="">Choose a session</option>
+              </select></label
+            >
+            <label
+              >Analysis model<input
+                id="analysis-model"
+                value="gpt-5.6-luna"
+                list="analysis-models"
+                maxlength="120"
+                spellcheck="false"
+            /></label>
+            <datalist id="analysis-models"><option value="gpt-5.6-luna"></option></datalist>
+            <button id="analysis-start">Analyze</button
+            ><button id="analysis-cancel" hidden>Cancel analysis</button>
+          </div>
+          <div class="analysis-run-controls">
+            <label
+              >Analysis run<select id="analysis-run" aria-label="Analysis run">
+                <option value="">No analysis yet</option>
+              </select></label
+            >
+            <label class="analysis-checkbox"
+              ><input type="checkbox" id="analysis-fresh" />New snapshot</label
+            >
+            <span id="analysis-source"></span>
+          </div>
+        </div>
+        <div id="analysis-status" role="status"></div>
+        <details id="analysis-coverage">
+          <summary id="analysis-snapshot">
+            Choose a session to inspect its captured tool calls.
+          </summary>
+          <p id="analysis-limits"></p>
+        </details>
+        <nav class="analysis-tabs" aria-label="Analysis views">
+          <button data-analysis-view="results" aria-pressed="true">Results</button>
+          <button data-analysis-view="trail" aria-pressed="false">Search trail</button>
+          <button data-analysis-view="routing" aria-pressed="false">Agent routing</button>
+          <button data-analysis-view="recommendations" aria-pressed="false">Recommendations</button>
+        </nav>
+        <div class="analysis-filters">
+          <input
+            id="analysis-search"
+            type="search"
+            aria-label="Search this analysis view"
+            placeholder="Filter commands or findings…"
+            maxlength="512"
+          />
+          <select id="analysis-group" aria-label="Filter by observed model">
+            <option value="">All observed models</option>
+          </select>
+          <select id="analysis-sort" aria-label="Order analysis calls">
+            <option value="bytes">Largest response first</option>
+            <option value="order">Captured order</option>
+          </select>
+          <button id="analysis-reset">Reset filters</button>
+          <button id="analysis-export" hidden>Export kept suggestions</button>
+        </div>
+        <div id="analysis-focus" role="status"></div>
+        <div class="analysis-workspace">
+          <div id="analysis-content" tabindex="0" aria-label="Analysis results"></div>
+          <aside id="analysis-detail" aria-label="Focused call evidence"></aside>
+        </div>
+      </section>
       <footer>
         <span id="retention">Temporary recording · Deleted when the app closes.</span
         ><button class="clear" id="clear" aria-label="Unlock Clear history" disabled>

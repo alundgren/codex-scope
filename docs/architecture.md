@@ -14,7 +14,8 @@ stores original payload text and metadata in local recording order, and evicts
 oldest rows within fixed limits. The sandboxed, isolated renderer displays at
 most five neighboring summaries and one complete original payload as text.
 Local HTML/CSS and compiled TypeScript supply the selected journal and custom payload
-scrollbar. No runtime package or extra OS process is added.
+scrollbar. Capture and history add no runtime package or extra OS process.
+Optional session analysis starts a bounded local Codex CLI process group.
 
 Each application recording starts in Live. A configured collector supplies live
 events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
@@ -193,13 +194,13 @@ Use one app instance per local recording owner. Startup cleanup must not delete 
 
 The Mac initiates the connection. The collector's viewer API binds to loopback behind the chosen proxy. Require an application token for the viewer connection in addition to tailnet access rules; keep it out of URLs and logs. Local ingestion is restricted to the intended OS account through the chosen local transport. Do not expose ingestion through Tailscale Serve.
 
-The Electron UI is bundled local content, with context isolation, renderer sandboxing, and no renderer Node integration. Network credentials and filesystem access stay in the main process or a narrowly scoped worker. IPC accepts only the operations needed by the viewer. Render payloads as text, never executable HTML; block arbitrary navigation and remote content. These follow [Electron's security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
+The Electron UI is bundled local content, with context isolation, renderer sandboxing, and no renderer Node integration. Network credentials and filesystem access stay in the main process or a narrowly scoped worker. IPC accepts only the operations needed by the journal and session analyzer. Render payloads as text, never executable HTML; block arbitrary navigation and remote content. These follow [Electron's security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
 
 No telemetry, full payload logs, transcript reads, environment capture, public network publishing, or automatic export. Real connection details and screenshots stay out of the repository. The public architecture refers only to roles such as "Linux host" and "Mac viewer".
 
 ## Scope boundary
 
-One Linux host, one Mac viewer, multiple Codex sessions, event inputs only. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
+One Linux host, one Mac viewer, multiple Codex sessions, supplied hook inputs and optional Git labels. Optional analysis uses retained hook evidence. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
 
 Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md). Native Mac resource validation and complete real-session and proxy checks remain in [the plan](../plan.md).
 
@@ -248,4 +249,17 @@ event and resolves dropdown labels from the latest retained context using a
 session index. It pages IDs and labels together within existing choice limits.
 Git labels can be stale; absent metadata falls back to the supplied working
 directory or full session ID. The full ID controls filtering and remains visible
-in the inspector. No new runtime dependency or Electron process is needed.
+in the inspector. Git labels require no new runtime dependency or Electron process.
+
+## Session analysis
+
+The optional [session analyzer](session-analysis.md) shares one selected run and
+focused call across four views. The database worker extracts a bounded snapshot
+from retained hook inputs. Main keeps at most four temporary runs and starts one
+cancellable local Codex CLI process group when the user requests analysis.
+Different models can analyze the same evidence without replacing earlier findings.
+Hooks and tool actions are disabled for analysis, and capture does not depend on
+its completion. Source references and structured findings are validated before
+rendering. Full original payloads remain in bounded history; snapshots identify
+omissions and unavailable originals. No Linux collector or wire-protocol changes
+are needed.

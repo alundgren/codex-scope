@@ -15,7 +15,44 @@ ipcRenderer.on("scope:hidden", () => {
     ipcRenderer.send("scope:ack", "hidden");
   }
 });
+let analysisCallback: (() => void) | undefined;
+let analysisRequests = 0;
+let analysisCancellation: Promise<void> | undefined;
+async function analysisInvoke(channel: string, generation: number, ...args: unknown[]) {
+  if (
+    !Number.isSafeInteger(generation) ||
+    analysisRequests >= 3 ||
+    args.some((arg) => arg !== null && (typeof arg !== "string" || arg.length > 1024)) ||
+    JSON.stringify(args).length > 4096
+  )
+    throw new Error("Analysis is busy or the request is invalid.");
+  analysisRequests++;
+  try {
+    return await ipcRenderer.invoke(channel, generation, ...args);
+  } finally {
+    analysisRequests--;
+  }
+}
 const scope: ScopeAPI = {
+  analysisList: (generation) => analysisInvoke("scope:analysis-list", generation),
+  analysisRun: (generation, id) => analysisInvoke("scope:analysis-run", generation, id),
+  analysisStart: (generation, session, model, source) =>
+    analysisInvoke("scope:analysis-start", generation, session, model, source),
+  analysisCancel: async (generation) => {
+    if (!Number.isSafeInteger(generation)) throw new Error("Invalid analysis cancellation.");
+    analysisCancellation ??= ipcRenderer.invoke("scope:analysis-cancel", generation).finally(() => {
+      analysisCancellation = undefined;
+    });
+    await analysisCancellation;
+  },
+  analysisDecide: (generation, id, finding, decision) =>
+    analysisInvoke("scope:analysis-decide", generation, id, finding, decision),
+  analysisExport: (generation, id) => analysisInvoke("scope:analysis-export", generation, id),
+  onAnalysis: (callback) => {
+    if (analysisCallback || typeof callback !== "function") return;
+    analysisCallback = callback;
+    ipcRenderer.on("scope:analysis", () => analysisCallback?.());
+  },
   status: async () => {
     if (readingStatus) throw new Error("History is busy.");
     readingStatus = true;

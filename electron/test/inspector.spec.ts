@@ -243,12 +243,19 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
       "undefined",
       "undefined",
       [
+        "analysisCancel",
+        "analysisDecide",
+        "analysisExport",
+        "analysisList",
+        "analysisRun",
+        "analysisStart",
         "cancel",
         "choices",
         "clear",
         "copyPayload",
         "inspect",
         "navigate",
+        "onAnalysis",
         "onHidden",
         "onStatus",
         "status",
@@ -270,6 +277,17 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
       }),
     ).toBe(true);
     expect(await page.evaluate(() => window.scope.copyPayload(1, -1))).toBe(false);
+    expect(
+      await page.evaluate(async () => {
+        const generation = (await window.scope.status()).generation;
+        const results = await Promise.allSettled([
+          window.scope.analysisStart(generation, "session", "bad;model", null),
+          window.scope.analysisRun(generation - 1, "old-run"),
+          window.scope.analysisDecide(generation, "missing-run", "missing-finding", "kept"),
+        ]);
+        return results.every((result) => result.status === "rejected");
+      }),
+    ).toBe(true);
     const requests = await page.evaluate(() =>
       Promise.allSettled(Array.from({ length: 100 }, () => window.scope.inspect(1, 3, 5))).then(
         (results) => results.filter((item) => item.status === "fulfilled").length,

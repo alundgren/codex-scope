@@ -24,7 +24,7 @@ and previews may use visible ellipses; the payload and Copy JSON preserve
 complete accepted text. Private HTTPS proxy behavior, real Codex compatibility
 and macOS behavior remain unverified.
 
-Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
+Use “Codex Scope” in the window title. Use Event journal as the title while the journal is open. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 
 Give the desktop session control enough width to read ordinary repository and
 branch names; keep the narrow toolbar wrapping below search.
@@ -57,7 +57,7 @@ The right payload pane scrolls normally with wheel, trackpad, touch, and keyboar
 
 Clear history is a small red outlined button containing a locked icon and Clear. The first activation unlocks it for 3,000 milliseconds, changes the icon and accessible label, and shows Clear? with a receding fill. Only another activation before that deadline deletes history. Expiry relocks without deleting anything; an activation after expiry starts a new confirmation window. Use a monotonic deadline, not animation completion, to authorize deletion. Escape and document hiding cancel the unlocked state. Reduced motion can suppress the fill animation without extending the deadline. Disable the control on an empty recording. Do not show a modal confirmation dialog.
 
-Clearing invalidates loaded rows, selected payloads, counters, pending queries, and old incoming batches, and starts a fresh recording connection. Late work from the previous recording cannot repopulate history. Closing the only window quits and deletes the temporary recording without a routine confirmation. Hiding or minimizing keeps capture running. Report deletion failures without hanging indefinitely.
+Clearing invalidates loaded rows, selected payloads, counters, pending queries, and old incoming batches, and starts a fresh recording connection. Late work from the previous recording cannot repopulate history. Closing the only window quits, deletes the temporary recording and clears temporary analysis runs without a routine confirmation. Hiding or minimizing keeps capture running. Report deletion failures without hanging indefinitely.
 
 | Condition | Visible behavior |
 | --- | --- |
@@ -92,3 +92,29 @@ running and prints connection and removal instructions without exposing tokens.
 Failures trigger rollback; edited resources are preserved with an explicit
 cleanup result. Existing installations offer inspection, verification, removal,
 and optional deletion of retained files, without an implicit upgrade.
+
+## Session analyzer
+
+The analyzer is one session workspace with Results, Search trail, Agent routing
+and Recommendations views. The four [concepts](docs/mockups/session-analyzer.html)
+are visual references; the implemented workspace consolidates their session and
+model controls. Keep the event journal available with its held reading position.
+Use one visible title, Session analyzer, and necessary controls without additional
+subheadings.
+
+The selected session, analysis run and focused call are shared. Each view keeps
+its own search, sort and scroll state. Switching views never runs a model.
+Changing analysis models can reuse the same bounded evidence snapshot; New
+snapshot is explicit. Completed results remain open while another analysis runs. Retrying a failed
+or cancelled run selects the new attempt so its outcome is visible.
+Missing model and response information stays unknown, model groups do not imply
+agent relationships, and all totals describe retained evidence. Show snapshot
+omissions, recording-wide drop counts and original-event eviction plainly.
+
+Recommendations are model judgments with linked captured evidence. Keep, dismiss
+and undo belong to their analysis run. Export is explicit and does not apply
+workflow changes. Runs and decisions are bounded and temporary. Explain removal
+when an old run is evicted, and clear all analysis state with recording generation
+changes. CLI absence, invalid model, unavailable authentication, invalid output,
+resource limits and cancellation keep previous evidence readable and offer a
+new analysis attempt.

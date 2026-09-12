@@ -1,3 +1,4 @@
+import type { AnalysisAPI, AnalysisSnapshot } from "./analysis-types.ts";
 export interface EventValue {
   context?: string;
   connectionId?: string;
@@ -174,7 +175,7 @@ export interface Faults {
   searchMs?: number;
   transportDelay?: number;
 }
-export interface ScopeAPI {
+export interface ScopeAPI extends AnalysisAPI {
   status(): Promise<HistoryStatus>;
   onStatus(callback: (value: HistoryStatus) => void): void;
   onHidden(callback: () => void): void;
@@ -191,6 +192,7 @@ export interface ScopeAPI {
   clear(generation: number): Promise<Reply<{ ok: boolean; generation?: number }>>;
 }
 export interface HistoryOperations {
+  analysis: { data: { session: string }; result: AnalysisSnapshot };
   open: { data: Record<string, never>; result: { ok: boolean } };
   inspect: { data: { id: number | null; rows: number }; result: Inspection };
   navigate: { data: { query: NavigationRequest }; result: Navigation };

@@ -31,6 +31,7 @@ No offline recording is planned, in this or later releases. Events generated whi
 - Drag the journal pin through older and newer events, or move to its Live endpoint to follow arrivals.
 - Inspect and copy an event's complete accepted payload.
 - Clear history without closing the app.
+- [Analyze a retained session](docs/session-analysis.md) with a selectable local Codex model, then inspect the same evidence across four linked views.
 
 There is no historical playback. SQLite storage, sidecars, queries and pending operations have fixed limits. The viewer evicts oldest events when required, displays a bounded neighborhood and loads one selected payload.
 
