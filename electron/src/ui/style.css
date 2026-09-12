@@ -90,3 +90,14 @@ footer { padding: 10px 24px; border-top: 1px solid var(--line); display: flex; a
   footer { padding: 8px 14px; }
   footer span { max-width: 290px; font-size: 11px; }
 }
+.live { opacity: 1; border: 0; background: transparent; }
+.live[aria-pressed="true"] { background: var(--panel); color: var(--text); }
+.clear { position: relative; overflow: hidden; flex-shrink: 0; }
+.clear > * { position: relative; }
+.clear.unlocked::before { content: ''; position: absolute; inset: 0; background: var(--panel); transform-origin: left; animation: clear-countdown 3000ms linear forwards; }
+@keyframes clear-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .clear.unlocked::before { animation: none; } }
+@media (max-width: 720px) {
+  #notice { padding: 5px 16px; font-size: 11px; max-height: 65px; overflow: auto; }
+  footer > span { min-width: 0; }
+}
