@@ -2,14 +2,15 @@ export function attachFilters({ getGeneration, changed, error }) {
   const search = document.querySelector('#search');
   const session = document.querySelector('#session');
   const hooks = document.querySelector('#hooks');
+  const hookLabel = document.querySelector('#hook-label');
   const menu = document.querySelector('#hookmenu');
   const selectedHooks = new Set();
   let selectedSession = null;
   const pages = { session: { values: [] }, hook: { values: [] } };
   const pending = new Map();
-  let loading = false;
+  let loading = false, disabled = false;
   const value = () => ({ text: search.value, session: selectedSession, hooks: [...selectedHooks] });
-  function notify(delay = 0) { changed(value(), delay); }
+  function notify(delay = 0) { if (!disabled) changed(value(), delay); }
   function option(text, value) {
     const node = document.createElement('option');
     node.textContent = text; node.value = value;
@@ -57,6 +58,7 @@ export function attachFilters({ getGeneration, changed, error }) {
     }
   }
   async function load(field, cursor = null, direction = 'next') {
+    if (disabled) return;
     pending.set(field, { generation: getGeneration(), cursor, direction });
     if (loading) return;
     loading = true;
@@ -65,16 +67,17 @@ export function attachFilters({ getGeneration, changed, error }) {
         const [field, request] = pending.entries().next().value;
         pending.delete(field);
         const result = await window.scope.choices(request.generation, field, request.cursor, request.direction);
-        if (request.generation !== getGeneration() || result.stale || pending.has(field)) continue;
+        if (disabled || request.generation !== getGeneration() || result.stale || pending.has(field)) continue;
         if (result.error) { error(result.error); continue; }
         pages[field] = result;
         draw(field);
       }
-    } catch { error('Filter choices could not be loaded. Open the filter to try again.'); }
+    } catch { if (!disabled) error('Filter choices could not be loaded. Open the filter to try again.'); }
     finally { loading = false; }
   }
   search.addEventListener('input', () => notify(180));
   session.addEventListener('change', () => {
+    if (disabled) return;
     if (session.value.startsWith('@')) {
       const direction = session.value.slice(1);
       load('session', direction === 'previous' ? pages.session.values[0] : pages.session.values.at(-1), direction);
@@ -90,10 +93,20 @@ export function attachFilters({ getGeneration, changed, error }) {
   });
   session.addEventListener('focus', () => load('session'));
   hooks.addEventListener('toggle', () => { if (hooks.open) load('hook'); });
+  hookLabel.addEventListener('click', event => { if (disabled) event.preventDefault(); });
+  function disable(next) {
+    if (disabled === next) return;
+    disabled = next;
+    search.disabled = session.disabled = disabled;
+    hookLabel.setAttribute('aria-disabled', String(disabled));
+    hookLabel.tabIndex = disabled ? -1 : 0;
+    if (disabled) { hooks.open = false; pending.clear(); }
+  }
   function refresh() { load('session'); load('hook'); }
   function reset() {
+    if (disabled) return;
     search.value = ''; selectedSession = null; selectedHooks.clear();
     draw('session'); draw('hook'); notify();
   }
-  return { value, refresh, reset };
+  return { value, refresh, reset, disable };
 }

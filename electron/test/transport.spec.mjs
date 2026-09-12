@@ -146,7 +146,16 @@ test('recorded worker exit disconnects capture and restart opens a fresh recordi
   const root = run.root;
   try {
     await expect(run.page.locator('.connection')).toHaveText('Connected');
-    server.event(source[3]); await expect(run.page.locator('#json')).toHaveText(source[3].payload);
+    await seed(server); await expect(run.page.locator('#count')).toHaveText('5 retained');
+    await run.page.locator('button[data-event="4"]').click();
+    await expect(run.page.locator('#payload')).toHaveAttribute('data-event', '4');
+    await run.page.locator('#scrollbar').press('PageDown');
+    const offset = await run.page.locator('#payload').evaluate(node => node.scrollTop);
+    const rows = await run.page.locator('#entries').textContent();
+    const rank = await run.page.locator('#scrubber').getAttribute('aria-valuenow');
+    expect(offset).toBeGreaterThan(0);
+    await run.page.locator('#hook-label').click();
+    await run.page.locator('#clear').click();
     await run.app.evaluate(() => globalThis.scopeHistory.worker.terminate());
     await expect(run.page.locator('.connection')).toHaveText('Disconnected');
     await expect(run.page.locator('#notice')).toContainText('Temporary history is unavailable. Restart the app');
@@ -156,7 +165,36 @@ test('recorded worker exit disconnects capture and restart opens a fresh recordi
       coverageUnknown: true, requests: 0, processing: 0, retryPending: false });
     await until(() => server.state.stream.destroyed);
     const requests = server.state.requestCount; await wait(2200); expect(server.state.requestCount).toBe(requests);
-    await expect(run.page.locator('#json')).toHaveText(source[3].payload);
+    await expect(run.page.locator('#json')).toHaveText(source[4].payload);
+    await expect(run.page.locator('#entries')).toHaveAttribute('aria-busy', 'false');
+    for (const id of ['clear', 'live', 'copy', 'search', 'session']) await expect(run.page.locator(`#${id}`)).toBeDisabled();
+    await expect(run.page.locator('#hook-label')).toHaveAttribute('aria-disabled', 'true');
+    await expect(run.page.locator('#hooks')).not.toHaveAttribute('open', '');
+    await expect(run.page.locator('#scrubber')).toHaveAttribute('aria-disabled', 'true');
+    await expect(run.page.locator('#clear')).toHaveAccessibleName('Unlock Clear history');
+    for (const row of await run.page.locator('.event').all()) await expect(row).toBeDisabled();
+    await run.page.locator('#scrubber').press('ArrowUp');
+    await run.page.locator('#scrubber').dispatchEvent('pointerdown', { button: 0, pointerId: 71, clientY: 200 });
+    await run.page.locator('#hook-label').dispatchEvent('click');
+    await run.page.locator('#search').dispatchEvent('input');
+    await run.page.waitForTimeout(350);
+    expect(await run.page.locator('#scrubber').getAttribute('aria-valuenow')).toBe(rank);
+    expect(await run.page.locator('#entries').textContent()).toBe(rows);
+    expect(await run.page.locator('#payload').evaluate(node => node.scrollTop)).toBe(offset);
+    await expect(run.page.locator('#count')).toHaveText('5 retained');
+    await expect(run.page.locator('#notice')).not.toContainText('Searching');
+    await expect(run.page.locator('#hooks')).not.toHaveAttribute('open', '');
+    const rejectedClear = await run.app.evaluate(() => globalThis.scopeHistory.clear(globalThis.scopeHistory.generation));
+    expect(rejectedClear.error).toContain('Restart the app');
+    expect(await status(run.app)).toMatchObject({ generation: 1, total: 5 });
+    await run.page.locator('#payload').focus();
+    await run.page.evaluate(() => {
+      const range = document.createRange(); range.selectNodeContents(document.querySelector('#json'));
+      const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    });
+    await run.page.keyboard.press('Control+c');
+    expect(await run.app.evaluate(({ clipboard }) => clipboard.readText())).toBe(source[4].payload);
+    await run.page.evaluate(() => getSelection().removeAllRanges());
     await capture(run.page, info, 'worker-exit');
     await run.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 820));
     await capture(run.page, info, 'worker-exit-narrow');
@@ -167,6 +205,7 @@ test('recorded worker exit disconnects capture and restart opens a fresh recordi
     await expect(run.page.locator('#json')).toBeEmpty();
     server.event(source[1]); await expect(run.page.locator('#json')).toHaveText(source[1].payload);
     await expect(run.page.locator('#notice')).not.toContainText('unavailable');
+    for (const id of ['clear', 'live', 'copy', 'search', 'session']) await expect(run.page.locator(`#${id}`)).toBeEnabled();
     await capture(run.page, info, 'worker-restart-recovered');
     await run.app.close(); await run.video.saveAs(info.outputPath('worker-restart-walkthrough.webm')); run = null;
   } finally { if (run) await run.app.close(); await server.close(); }

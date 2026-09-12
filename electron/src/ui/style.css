@@ -12,6 +12,7 @@ button, select, summary { cursor: pointer; }
 button:hover:enabled { background: var(--panel); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 :disabled { cursor: default; opacity: .6; }
+summary[aria-disabled="true"] { cursor: default; opacity: .6; }
 header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px 14px; }
 h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.015em; }
 .connection { font-size: 13.5px; color: var(--muted); }
@@ -39,6 +40,7 @@ h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -.015em; }
 .live { font-size: 12px; color: var(--muted); opacity: .6; padding: 3px 8px; }
 #entries { display: flex; flex-direction: column; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; gap: 2px; padding: 10px 20px 10px 0; }
 .event { border: 0; background: transparent; text-align: left; padding: 12px 14px; width: 100%; flex-shrink: 0; position: relative; }
+.event:disabled { opacity: 1; }
 .event[aria-pressed="true"] { background: var(--panel); }
 .event[aria-pressed="true"]::before { content: ''; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 3px; background: var(--accent); }
 .eventline { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
@@ -97,6 +99,7 @@ footer { padding: 10px 24px; border-top: 1px solid var(--line); display: flex; a
   footer span { max-width: 290px; font-size: 11px; }
 }
 .live { opacity: 1; border: 0; background: transparent; }
+.live:disabled { opacity: .6; }
 .live[aria-pressed="true"] { background: var(--panel); color: var(--text); }
 .clear { position: relative; overflow: hidden; flex-shrink: 0; }
 .clear > * { position: relative; }
