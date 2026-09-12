@@ -23,6 +23,12 @@
 /tmp/
 /local/
 
+# UX evidence belongs in pull requests, not Git history
+/docs/evidence/**/*.png
+/docs/evidence/**/*.webm
+/docs/validation/**/*.png
+/docs/validation/**/*.webm
+
 # Dependencies and generated output
 node_modules/
 dist/
