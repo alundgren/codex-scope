@@ -232,3 +232,20 @@ on measuring the application, bundling code and keeping expensive work off the
 UI threads, and its [security guidance](https://www.electronjs.org/docs/latest/tutorial/security)
 on sandboxing and context isolation. Include the worker in whole-app
 resource measurements as described in the [development guide](../electron/README.md#resource-metrics).
+
+## Session identification
+
+The Linux collector may read Git repository and branch metadata for an absolute
+working directory supplied in hook input. This explicit capture exception uses
+one asynchronous worker with bounded paths, output, cache, rate, child memory
+and execution time. It cannot delay event delivery or the observer. See the
+[collector contract and limits](../linux/README.md#git-session-labels). It reads
+no transcripts, remote URLs, working-file contents or other hook command output.
+
+Optional `git` metadata accompanies later events while original payload text
+remains unchanged. The viewer stores a bounded display context per retained
+event and resolves dropdown labels from the latest retained context using a
+session index. It pages IDs and labels together within existing choice limits.
+Git labels can be stale; absent metadata falls back to the supplied working
+directory or full session ID. The full ID controls filtering and remains visible
+in the inspector. No new runtime dependency or Electron process is needed.

@@ -98,6 +98,7 @@ struct Viewer {
 
 pub struct Collector {
     limits: Limits,
+    git: crate::git_metadata::GitMetadata,
     drops: Drops,
     ingress: UnixDatagram,
     listener: TcpListener,
@@ -173,6 +174,7 @@ impl Collector {
         let socket_inode = socket_path.symlink_metadata()?.ino();
         let result = Self {
             limits: limits.clone(),
+            git: crate::git_metadata::GitMetadata::default(),
             drops: Drops::default(),
             ingress,
             listener,
@@ -432,7 +434,11 @@ impl Collector {
             self.disconnect(index);
             return;
         }
-        let Some(frame) = contract::event(raw, &viewer.id, viewer.sequence + 1) else {
+        let Some(frame) =
+            contract::event_with_git(raw, &viewer.id, viewer.sequence + 1, &mut |cwd| {
+                self.git.observe(cwd)
+            })
+        else {
             count(&mut self.drops.invalid, 1);
             return;
         };
@@ -781,6 +787,83 @@ mod tests {
             bytes: 0,
         });
         (directory, collector, client)
+    }
+    #[test]
+    fn git_labels_arrive_on_later_events_without_changing_payloads() {
+        let (_directory, mut collector, _client) = attached(Limits::default());
+        let repo = tempfile::tempdir().unwrap();
+        assert!(
+            std::process::Command::new("git")
+                .args(["init", "-b", "temporary"])
+                .arg(repo.path())
+                .stdout(std::process::Stdio::null())
+                .status()
+                .unwrap()
+                .success()
+        );
+        let raw = serde_json::to_vec(
+            &json!({"hook_event_name":"Stop", "session_id":"same-session", "cwd":repo.path()}),
+        )
+        .unwrap();
+        collector.ingest(&raw, false);
+        let first: serde_json::Value = serde_json::from_slice(
+            &collector
+                .viewer
+                .as_mut()
+                .unwrap()
+                .queue
+                .pop_front()
+                .unwrap(),
+        )
+        .unwrap();
+        assert!(first["git"].is_null());
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            std::thread::sleep(Duration::from_millis(20));
+            collector.ingest(&raw, false);
+            let frame: serde_json::Value = serde_json::from_slice(
+                &collector
+                    .viewer
+                    .as_mut()
+                    .unwrap()
+                    .queue
+                    .pop_front()
+                    .unwrap(),
+            )
+            .unwrap();
+            assert_eq!(frame["payload"].as_str().unwrap().as_bytes(), raw);
+            if frame["git"]["branch"] == "temporary" {
+                break;
+            }
+            assert!(Instant::now() < deadline);
+        }
+        assert!(
+            std::process::Command::new("git")
+                .arg("-C")
+                .arg(repo.path())
+                .args(["branch", "-m", "renamed"])
+                .status()
+                .unwrap()
+                .success()
+        );
+        loop {
+            std::thread::sleep(Duration::from_millis(20));
+            collector.ingest(&raw, false);
+            let frame: serde_json::Value = serde_json::from_slice(
+                &collector
+                    .viewer
+                    .as_mut()
+                    .unwrap()
+                    .queue
+                    .pop_front()
+                    .unwrap(),
+            )
+            .unwrap();
+            if frame["git"]["branch"] == "renamed" {
+                break;
+            }
+            assert!(Instant::now() < deadline);
+        }
     }
     #[test]
     fn queue_count_byte_rate_and_disconnect_bounds() {

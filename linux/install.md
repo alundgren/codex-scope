@@ -4,6 +4,13 @@ Use a normal Linux account with systemd user services and Codex CLI. The
 installed collector, observer, and recovery command are native Rust
 executables. They need neither Python nor Bun. Tailscale is optional.
 
+The collector also performs bounded, read-only Git queries in working directories
+supplied by hook events to label sessions with repository and branch names.
+Git at `/usr/bin/git` is optional; without it the viewer uses directory or session
+ID labels. This collects additional metadata beyond hook input. It does not read
+transcripts, remote URLs, working-file contents or other hook output. The observer
+never waits for Git. See [lookup limits and delayed updates](README.md#git-session-labels).
+
 Build from the checkout with a Rust toolchain, or place prebuilt `codex-scope`
 and `codex-scope-observer` beside `linux/install.sh`. In a source checkout, the
 script runs a release Cargo build before guided setup so source updates cannot

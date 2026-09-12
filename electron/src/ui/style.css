@@ -86,7 +86,7 @@ h1 {
   min-width: 0;
 }
 .toolbar select {
-  width: 220px;
+  width: clamp(220px, 40vw, 440px);
 }
 .hooks {
   position: relative;

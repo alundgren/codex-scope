@@ -1,4 +1,5 @@
 export interface EventValue {
+  context?: string;
   connectionId?: string;
   sequence: number;
   receivedAt: string;
@@ -35,6 +36,7 @@ export type ChoiceField = "session" | "hook";
 export type Direction = "next" | "previous";
 export interface ChoicePage {
   values: string[];
+  labels?: (string | null)[];
   previous?: boolean;
   next?: boolean;
 }

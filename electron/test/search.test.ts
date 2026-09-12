@@ -16,8 +16,10 @@ function succeeded(result: Reply<Navigation>): Navigation {
 function setup() {
   const database = new DatabaseSync(":memory:");
   database.exec(`CREATE TABLE events(id INTEGER PRIMARY KEY, receivedAt TEXT, localReceivedAt TEXT, connectionId TEXT,
-    sequence INTEGER, hook TEXT, session TEXT, tool TEXT, bytes INTEGER, preview TEXT, text TEXT)`);
-  const insert = database.prepare("INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?)");
+    sequence INTEGER, hook TEXT, session TEXT, tool TEXT, bytes INTEGER, preview TEXT, text TEXT, context TEXT)`);
+  const insert = database.prepare(
+    "INSERT INTO events(id,receivedAt,localReceivedAt,connectionId,sequence,hook,session,tool,bytes,preview,text) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+  );
   const events = [
     {
       id: 1,
@@ -182,7 +184,7 @@ test("cancellation interrupts a running SQLite scan without retaining its result
   try {
     await new Promise((resolve) => worker.once("message", resolve));
     const insert = x.database.prepare(
-      "INSERT INTO events SELECT ?,receivedAt,localReceivedAt,connectionId,sequence,hook,session,tool,bytes,preview,? FROM events WHERE id=1",
+      "INSERT INTO events SELECT ?,receivedAt,localReceivedAt,connectionId,sequence,hook,session,tool,bytes,preview,?,context FROM events WHERE id=1",
     );
     for (let id = 5; id <= 10000; id++) insert.run(id, "x".repeat(500));
     x.state.last.id = 10000;
@@ -194,6 +196,40 @@ test("cancellation interrupts a running SQLite scan without retaining its result
     assert.equal(x.search.status().canceled, 1);
   } finally {
     await worker.terminate();
+    x.database.close();
+  }
+});
+
+test("session labels follow latest retained context while identity and paging stay stable", () => {
+  const x = setup();
+  try {
+    x.database.prepare("UPDATE events SET context = ? WHERE id = ?").run("repo · temporary", 1);
+    let page = x.search.choices("session", null, "next");
+    assert.deepEqual(page.values, ["same-prefix-a", "same-prefix-b"]);
+    assert.equal(page.labels?.[0], "repo · temporary · …prefix-a");
+    x.database.prepare("UPDATE events SET context = ? WHERE id = ?").run("repo · renamed", 3);
+    page = x.search.choices("session", null, "next");
+    assert.equal(page.labels?.[0], "repo · renamed · …prefix-a");
+    assert.equal(succeeded(x.query(filter("", "same-prefix-a"))).view.count, 3);
+    const previous = x.search.choices("session", "same-prefix-b", "previous");
+    assert.deepEqual(previous.labels, ["repo · renamed · …prefix-a"]);
+    x.database.exec("DELETE FROM events WHERE id IN (1,3)");
+    assert.equal(x.search.choices("session", null, "next").labels?.[0], null);
+  } finally {
+    x.database.close();
+  }
+});
+
+test("colliding short labels display full IDs and stay inside the choice byte limit", () => {
+  const x = setup();
+  try {
+    x.database.exec(
+      "UPDATE events SET session = 'first-12345678', context = 'repo · branch' WHERE session = 'same-prefix-a'; UPDATE events SET session = 'second-12345678', context = 'repo · branch' WHERE session = 'same-prefix-b'",
+    );
+    const page = x.search.choices("session", null, "next");
+    assert.deepEqual(page.labels, [null, null]);
+    assert(Buffer.byteLength([...page.values, ...(page.labels ?? [])].join("")) <= 128 * 1024);
+  } finally {
     x.database.close();
   }
 });

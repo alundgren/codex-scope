@@ -9,8 +9,12 @@ Every retained event and pending operation needs a limit on both machines.
 - Preserve normal agent behavior before capturing data. Observation must not
   alter decisions, inject context, wrap other hooks, or depend on the viewer
   to finish. Capture failure must remain independent of session success.
-- Observe only the supplied hook input. Do not collect transcripts,
-  environment variables, or the output of other hook commands.
+- Observe the supplied hook input. The collector may additionally perform
+  bounded, read-only Git queries in the hook-supplied working directory to
+  identify the repository and branch. Keep this exception explicit in the
+  protocol and operating documentation; it must never delay the observer or
+  event delivery. Do not collect transcripts, environment variables, remote
+  URLs, working-file contents, or the output of other hook commands.
 - Keep payloads out of logs and telemetry, and real captures and machine
   configuration out of Git. Recordings must remain private.
 - Respect existing configuration and hook trust. Installation must be

@@ -50,7 +50,7 @@ SQLite history lives in a private app-owned directory. Normal close quits and de
 
 The Linux collector has no event files or database. It discards undelivered events when the connection ends. A dead connection may take a bounded heartbeat timeout to detect.
 
-Raw hook payloads can contain commands, paths, prompt text, or secrets already supplied to Codex. They stay inside the configured connection and local recording. There is no telemetry or payload logging. Examples and screenshots in this repository use synthetic data. Keep real endpoints, credentials, captures, and machine configuration outside Git.
+Raw hook payloads can contain commands, paths, prompt text, or secrets already supplied to Codex. The collector also reads repository and branch metadata from Git in the working directory supplied by the hook. These best-effort labels can lag behind branch changes and are sent separately from the unchanged hook payload. They stay inside the configured connection and local recording. There is no telemetry or payload logging. Examples and screenshots in this repository use synthetic data. Keep real endpoints, credentials, captures, and machine configuration outside Git.
 
 ## References
 

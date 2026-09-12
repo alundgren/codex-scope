@@ -169,13 +169,13 @@ function openDatabase() {
     PRAGMA hard_heap_limit=${limits.sqliteHeapBytes}; PRAGMA trusted_schema=OFF;
     CREATE TABLE events(id INTEGER PRIMARY KEY, generation INTEGER NOT NULL, connectionId TEXT NOT NULL,
       sequence INTEGER NOT NULL, localReceivedAt TEXT NOT NULL, receivedAt TEXT NOT NULL, hook TEXT NOT NULL,
-      session TEXT, tool TEXT, bytes INTEGER NOT NULL, cost INTEGER NOT NULL, preview TEXT NOT NULL, text TEXT NOT NULL) STRICT;
-    CREATE INDEX event_sessions ON events(session); CREATE INDEX event_hooks ON events(hook);`);
+      session TEXT, tool TEXT, bytes INTEGER NOT NULL, cost INTEGER NOT NULL, preview TEXT NOT NULL, text TEXT NOT NULL, context TEXT) STRICT;
+    CREATE INDEX event_sessions ON events(session); CREATE INDEX event_context ON events(session, id DESC) WHERE context IS NOT NULL; CREATE INDEX event_hooks ON events(hook);`);
   search = new Search(database, shared);
   const summary =
     "id, receivedAt, substr(hook,1,160) AS hook, substr(session,1,160) AS session, preview";
   statements = {
-    insert: prepare<never>(database, "INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)"),
+    insert: prepare<never>(database, "INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"),
     selected: prepare<StoredEvent>(
       database,
       "SELECT * FROM events WHERE id >= ? ORDER BY id LIMIT 1",
@@ -244,6 +244,7 @@ function appendEvents(events: readonly EventValue[]) {
             event.session,
             event.tool,
             event.preview,
+            event.context,
             event.connectionId ?? state.connectionId,
           ].join(""),
         ) +
@@ -303,6 +304,7 @@ function appendEvents(events: readonly EventValue[]) {
         cost,
         event.preview,
         event.text,
+        event.context ?? null,
       );
       diskBytes();
       database.exec("COMMIT");

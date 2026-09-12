@@ -39,6 +39,7 @@ test("the independent adapter accepts the shared protocol fixture", async () => 
     await readFile(new URL("../../protocol/fixtures/stream.jsonl", import.meta.url)),
   );
   assert.equal(data.events.length, 1);
+  assert.equal(data.events[0].context, "synthetic-repo · session-labels");
   assert.match(data.events[0].text, /future_field/);
 });
 

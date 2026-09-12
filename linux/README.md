@@ -107,3 +107,45 @@ not a hard end-to-end latency guarantee.
 The stream API and synthetic fixtures live in [protocol/](../protocol/README.md).
 The synthetic client can also check a configured private HTTPS proxy without
 Electron. It is a diagnostic client, not a production viewer implementation.
+
+## Git session labels
+
+The collector reads additional host metadata beyond hook input. For an absolute
+`cwd` supplied by an accepted hook event, it runs `/usr/bin/git -C <cwd>
+rev-parse --path-format=absolute --git-common-dir` and `symbolic-ref --quiet
+--short HEAD`. These read-only queries identify the repository directory and
+branch, including linked worktrees and unborn branches. The repository name
+comes from the common Git directory, not a remote URL. Detached HEAD and failed
+branch queries report an unavailable branch. Git missing at `/usr/bin/git`,
+non-repository directories, inaccessible paths, and lookup failures leave the
+viewer with its working-directory or session-ID fallback.
+
+This is an explicit exception to observing only hook input. No transcript,
+environment variable, remote URL, working-file content, or other hook command's
+output is collected. Git's stdout is private metadata; stderr is discarded.
+Child processes use a fixed environment, disable global/system Git configuration
+and optional locks, and never run a shell. Git may read repository-local
+configuration as part of resolving the repository. The observer remains a single
+nonblocking datagram send and never starts Git or waits for a lookup.
+
+One lazily started worker has a 256 KiB stack, one pending lookup and no backlog.
+It starts at most four lookups per second across all directories and refreshes a
+cached directory no more than once per second, only in response to events while
+a viewer is connected. Its cache holds at most 32 directory/results, including
+negative results, with 4,096-byte directory paths, 4,096-byte output per command,
+and 512-byte repository/branch names. Each lookup gives its two sequential Git
+commands one shared 100 ms deadline. Output overflow or timeout kills the child;
+the worker reaps it before accepting another lookup. A child stuck in kernel I/O
+can occupy this one worker, but cannot cause replacement workers or queued work.
+Each child has a 128 MiB address-space ceiling and receives SIGKILL if its
+parent worker exits. No event waits for the worker.
+
+Completed metadata accompanies a later event from that directory. Renames are
+therefore eventually visible during continued capture, not guaranteed immediately
+after the rename. A session with no later events cannot receive a new label.
+Cached metadata carries its observation time and may also be reused on a new
+connection; it is not recovered event history. Nothing is written to disk by the
+lookup worker. Cache entries and unfinished work are not persisted.
+
+The commands use Git's documented [common directory resolution](https://git-scm.com/docs/git-rev-parse)
+and [symbolic branch reference](https://git-scm.com/docs/git-symbolic-ref).
