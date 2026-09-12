@@ -65,3 +65,21 @@ Clearing invalidates loaded rows, selected payloads, counters, pending queries, 
 Use warm paper `#F2EADE`, panels `#EADFCD`, raised areas `#E0D2BD`, fields `#F9F6F0`, borders `#C1AF9A`, primary text `#604939`, secondary text `#66574D`, links and payload text `#3D5D71`, selected-event accents `#784F26`, and destructive controls `#8F3A2D`. The custom scrollbar uses a panel-colored track and a border-colored thumb, darkening on interaction. A small green connection dot is acceptable; Live is neutral. Keep visible focus rings, soft corners, and 400, 500, and 600 font weights. Use system UI text at 16px for primary controls and event names, 13.5px for secondary text and JSON, and system monospace for identifiers, timestamps, and payloads. No theme switcher or remote font dependency.
 
 Keep UI work bounded. The scrubber does not justify loading the complete recording into the renderer. Render only the visible event neighborhood, keep a limited summary cache, and load selected payloads on demand. Bound text formatting and search work for large accepted events. Announce connection and mode changes and clear confirmation status; do not announce every incoming row.
+
+## Guided Linux installation
+
+The terminal installer uses one title, plain prompts, and no decorative section
+labels. It asks about Tailscale and the Codex configuration directory first,
+then requests permission before reading selected configuration. Suggested paths
+and available ports appear together; customization is optional. Destructive or
+permission-changing prompts default to no. Missing prerequisites stop setup
+with the package or account-setting action needed to continue.
+
+The automatic isolated rehearsal requires no manual approval. The live flow
+asks for one CLI hook-approval round and two short tasks in the user's usual
+Codex client. The first checks delivery with a unique marker; the second checks
+normal behavior while the collector is stopped. Success leaves the service
+running and prints connection and removal instructions without exposing tokens.
+Failures trigger rollback; edited resources are preserved with an explicit
+cleanup result. Existing installations offer inspection, verification, removal,
+and optional deletion of retained files, without an implicit upgrade.

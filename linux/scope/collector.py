@@ -5,6 +5,7 @@ import asyncio
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import errno
 import fcntl
 import hmac
 import json
@@ -367,12 +368,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime-dir", type=Path, required=True)
     parser.add_argument("--token-file", type=Path, required=True)
-    parser.add_argument("--port", type=int, default=4318)
+    parser.add_argument("--port", type=int, default=4319)
     args = parser.parse_args()
     try:
         asyncio.run(run(args))
-    except (OSError, ValueError):
-        parser.exit(1, "Collector could not start. Check private paths, token format, and port availability.\n")
+    except OSError as error:
+        if error.errno == errno.EADDRINUSE:
+            parser.exit(1, f"Collector port {args.port} is already in use. Choose another --port.\n")
+        if error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+            parser.exit(1, "Another collector owns this runtime directory. Stop it or choose another directory.\n")
+        parser.exit(1, "Collector could not start. Check runtime and token file ownership and permissions.\n")
+    except ValueError:
+        parser.exit(1, "Collector could not start. Check private paths and token format.\n")
 
 
 if __name__ == "__main__":

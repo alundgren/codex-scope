@@ -12,7 +12,7 @@ from .collector import read_token
 from .contract import MAX_FRAME
 
 
-def inspect(endpoint, token, seconds):
+def inspect(endpoint, token, seconds, on_ready=None, match_text=None, finish=None):
     url = urlsplit(endpoint)
     if url.username or url.password or url.query or url.fragment or url.path not in ("", "/"):
         raise ValueError("endpoint must be an origin without credentials, path, query, or fragment")
@@ -61,9 +61,13 @@ def inspect(endpoint, token, seconds):
                     lease.close()
         heartbeat = threading.Thread(target=renew)
         heartbeat.start()
+        if on_ready:
+            on_ready()
+        if match_text is not None:
+            summary["matching_events"] = 0
         deadline = time.monotonic() + seconds
         sequence = 0
-        while time.monotonic() < deadline:
+        while time.monotonic() < deadline and not (finish and finish.is_set()):
             if failed.is_set():
                 raise ValueError("heartbeat failed")
             message = read()
@@ -75,6 +79,8 @@ def inspect(endpoint, token, seconds):
                 sequence = message["sequence"]
                 if len(message["payload"].encode("utf-8")) != message["payload_bytes"]:
                     raise ValueError("payload byte count mismatch")
+                if match_text is not None and match_text in message["payload"]:
+                    summary["matching_events"] += 1
                 summary["events"] += 1
                 summary["payload_bytes"] += message["payload_bytes"]
             elif message.get("type") == "health":
