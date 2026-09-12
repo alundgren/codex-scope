@@ -279,13 +279,16 @@ pub fn random_hex(bytes: usize) -> Result<String> {
     Ok(data.iter().map(|b| format!("{b:02x}")).collect())
 }
 pub fn atomic_write(path: &Path, data: &[u8]) -> Result<()> {
+    atomic_write_mode(path, data, 0o600)
+}
+pub fn atomic_write_mode(path: &Path, data: &[u8], mode: u32) -> Result<()> {
     let parent = path.parent().ok_or("File has no parent directory")?;
     let temporary = parent.join(format!(".codex-scope-{}", random_hex(8)?));
     let result = (|| {
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
-            .mode(0o600)
+            .mode(mode)
             .open(&temporary)
             .map_err(io_error)?;
         file.write_all(data).map_err(io_error)?;

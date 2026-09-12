@@ -9,6 +9,8 @@ mod host;
 mod managed;
 #[path = "setup/probe.rs"]
 mod probe;
+#[path = "setup/upgrade.rs"]
+mod upgrade;
 
 pub fn run(args: &[String]) -> Result<(), String> {
     flow::run(args)

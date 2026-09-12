@@ -6,6 +6,7 @@
 import { spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
+  renameSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -51,6 +52,10 @@ else if (action === 'systemctl') {
   else if (args.includes('--property=ActiveState')) console.log(fs.existsSync(stateFile) ? fs.readFileSync(stateFile, 'utf8') : 'inactive');
   else if (args.includes('enable') || args.includes('start')) {
     const r = JSON.parse(fs.readFileSync(recordPath));
+    const failed = path.join(home, '.fixture-upgrade-failed');
+    if (process.env.SCOPE_FIXTURE_SCENARIO === 'upgrade-failure' && r.phase === 'upgrading' && !fs.existsSync(failed)) {
+      fs.writeFileSync(failed, 'yes'); process.exit(1);
+    }
     const p = cp.spawn(path.join(r.app, 'codex-scope'), ['collector', '--runtime-dir', r.runtime, '--token-file', path.join(r.data, 'viewer.token'), '--port', String(r.port)], { detached: true, stdio: 'ignore' });
     fs.writeFileSync(pidFile, String(p.pid)); fs.writeFileSync(stateFile, 'active'); p.unref();
   } else if (args.includes('stop') || args.includes('disable')) stop();
@@ -82,6 +87,11 @@ const scenarios = [
   "success",
   "edited",
   "recovery",
+  "upgrade",
+  "upgrade-failure",
+  "upgrade-recovery",
+  "upgrade-decline",
+  "reinstall",
 ];
 for (const scenario of scenarios) {
   const root = mkdtempSync(join(tmpdir(), "scope-pty-"));
@@ -124,7 +134,7 @@ for (const scenario of scenarios) {
   const recordPath = join(home, ".local/state/codex-scope-installer/installation.json");
   async function terminal(
     command: string[],
-    mode: "setup" | "inspect" | "uninstall" | "purge" | "recovery",
+    mode: "setup" | "inspect" | "uninstall" | "purge" | "recovery" | "upgrade",
   ) {
     return await new Promise<number>((resolveExit, reject) => {
       const child = spawn(
@@ -181,6 +191,11 @@ for (const scenario of scenarios) {
         });
         once("stopped", /Did that task also finish normally.*\[y\/N\]: /, () => send("y\n"));
         once("record", /Read the installation record.*\[y\/N\]: /, () => send("y\n"));
+        once("choose-upgrade", /Choose upgrade.*\[upgrade\]: /, () => send("\n"));
+        once("upgrade", /Upgrade the installed executables now.*\[y\/N\]: /, () =>
+          send(scenario === "upgrade-decline" ? "n\n" : "y\n"),
+        );
+        once("recover-upgrade", /Recover the recorded upgrade now.*\[y\/N\]: /, () => send("y\n"));
         once("recover", /Undo its recorded changes now.*\[y\/N\]: /, () => send("y\n"));
         once("uninstall", /Remove unchanged Scope hooks.*\[y\/N\]: /, () => send("y\n"));
         once("retained", /Also delete unchanged local token.*\[y\/N\]: /, () => send("n\n"));
@@ -199,14 +214,65 @@ for (const scenario of scenarios) {
   }
   try {
     const code = await terminal([binary, "setup"], "setup");
-    if (["success", "edited", "recovery"].includes(scenario)) {
+    if (
+      ["success", "edited", "recovery", "reinstall"].includes(scenario) ||
+      scenario.startsWith("upgrade")
+    ) {
       if (code !== 0 || !text.includes("Live capture and collector-stop checks passed"))
         throw new Error(`${scenario} setup failed: ${text.slice(-900)}`);
       const management = join(dirname(recordPath), "manage.sh");
+      if (scenario.startsWith("upgrade")) {
+        const r = JSON.parse(readFileSync(recordPath, "utf8"));
+        const runtime = join(r.app, "codex-scope");
+        writeFileSync(
+          `${runtime}.fixture`,
+          Buffer.concat([readFileSync(runtime), Buffer.from("synthetic older build")]),
+          { mode: 0o700 },
+        );
+        renameSync(`${runtime}.fixture`, runtime);
+        r.files[runtime].hash = createHash("sha256").update(readFileSync(runtime)).digest("hex");
+        const previousHash = r.files[runtime].hash;
+        if (scenario === "upgrade-recovery") {
+          const paths = [
+            runtime,
+            join(r.app, "codex-scope-observer"),
+            join(dirname(recordPath), "codex-scope"),
+          ];
+          const old = paths.map((path, index) => {
+            const bytes = readFileSync(path);
+            writeFileSync(join(dirname(recordPath), `upgrade-${index}.backup`), bytes, {
+              mode: 0o600,
+            });
+            return createHash("sha256").update(bytes).digest("hex");
+          });
+          r.upgrade = { old, new: [binaryHash, old[1], binaryHash] };
+          r.phase = "upgrading";
+        }
+        writeFileSync(recordPath, JSON.stringify(r));
+        const upgradeCode = await terminal([binary, "setup"], "upgrade");
+        const expectedFailure = ["upgrade-failure", "upgrade-decline"].includes(scenario);
+        if ((upgradeCode !== 0) !== expectedFailure)
+          throw new Error(`Unexpected upgrade result: ${text.slice(-1500)}`);
+        const updated = JSON.parse(readFileSync(recordPath, "utf8"));
+        if (
+          updated.files[runtime].hash !== (expectedFailure ? previousHash : binaryHash) ||
+          updated.upgrade
+        )
+          throw new Error("Upgrade did not commit or restore the expected runtime");
+        if (scenario === "upgrade") {
+          if (
+            (await terminal([binary, "setup"], "upgrade")) !== 0 ||
+            !text.includes("already match this build")
+          )
+            throw new Error("Repeated upgrade did not report unchanged binaries");
+        }
+      }
       if (scenario === "edited") {
         const r = JSON.parse(readFileSync(recordPath, "utf8"));
         writeFileSync(r.unit, readFileSync(r.unit, "utf8") + "\n# changed by fixture user\n");
         add("\r\nFixture adds a user edit to the installed service before removal.\r\n");
+        if ((await terminal([binary, "setup"], "upgrade")) === 0)
+          throw new Error("Upgrade accepted an edited service");
         const removed = await terminal([management, "uninstall"], "uninstall");
         if (removed === 0 || !text.includes("Service file was edited; preserved"))
           throw new Error("Edited service was not preserved");
@@ -229,6 +295,12 @@ for (const scenario of scenarios) {
           JSON.parse(hooks),
           "Unrelated hooks changed",
         );
+        if (scenario === "reinstall") {
+          if ((await terminal([binary, "setup"], "setup")) !== 0)
+            throw new Error("Setup did not reinstall after removal");
+          if ((await terminal([management, "uninstall"], "uninstall")) !== 0)
+            throw new Error("Reinstalled management uninstall failed");
+        }
         if ((await terminal([management, "purge"], "purge")) !== 0)
           throw new Error("Copied management purge failed");
       }
