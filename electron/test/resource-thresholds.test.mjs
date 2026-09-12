@@ -4,7 +4,9 @@ import { evaluateReport, requiredWorkloads, thresholds } from '../scripts/resour
 
 function passing() {
   const workload = () => ({ peakRssBytes: 600e6, steadyRssBytes: 550e6, finalPssBytes: 300e6,
-    peakProcesses: 7, meanCpuPercentOneCore: 1 });
+    peakProcesses: 7, meanCpuPercentOneCore: 1, maximumMainDelayMs: 5, maximumRendererDelayMs: 5,
+    history: { maximumDiskBytes: 100000, total: 3, retainedBytes: 10000, peakQueueCount: 1, peakQueueBytes: 10000, peakPending: 1 },
+    workload: { searchMs: { maximum: 300 }, keyboardMs: { maximum: 50 } } });
   return { completed: true, appBytes: 180000, runtimeBytes: 295827900,
     trials: [{ index: 1, complete: true, startupMs: 1500, baseline: { startupMs: 1200, idle: workload() },
       workloads: Object.fromEntries(requiredWorkloads.map(name => [name, workload()])) }] };
@@ -18,6 +20,10 @@ test('resource limits reject regression, missing measurement and incomplete work
     value => { value.trials[0].workloads.hiddenCapture.finalPssBytes = null; },
     value => { value.trials[0].workloads.navigateMaximum.workload = { searchMs: { maximum: thresholds.searchMs + 1 }, keyboardMs: { maximum: 10 } }; },
     value => { delete value.trials[0].workloads.stalledStorage; },
+    value => { delete value.trials[0].workloads.navigateMaximum.workload; },
+    value => { delete value.trials[0].workloads.maximumCycle1.history; },
+    value => { delete value.trials[0].workloads.maximumCycle1.history.retainedBytes; },
+    value => { delete value.trials[0].workloads.capture1000.maximumRendererDelayMs; },
     value => { value.completed = false; },
   ]) {
     const report = passing(); mutate(report);
