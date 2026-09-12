@@ -193,7 +193,9 @@ test('recorded worker exit disconnects capture and restart opens a fresh recordi
       const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range);
     });
     await run.page.keyboard.press('Control+c');
-    expect(await run.app.evaluate(({ clipboard }) => clipboard.readText())).toBe(source[4].payload);
+    // Native selection copy omits the final layout newline. Copy JSON has separate exact-byte checks.
+    expect(await run.app.evaluate(({ clipboard }) => clipboard.readText())).toBe(source[4].payload.replace(/\n$/, ''));
+    expect(await run.page.locator('#json').textContent()).toBe(source[4].payload);
     await run.page.evaluate(() => getSelection().removeAllRanges());
     await capture(run.page, info, 'worker-exit');
     await run.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(440, 820));
