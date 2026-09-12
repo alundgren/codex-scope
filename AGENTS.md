@@ -76,6 +76,12 @@ Every retained event and pending operation needs a limit on both machines.
   Explain any agreed differences. Evidence must come from the actual changed
   app. If visual execution or recording is blocked, report the blocker and
   incomplete scenarios explicitly; do not claim the UX change is verified.
+- Keep generated validation screenshots, terminal recordings, and videos out
+  of Git unless the owner explicitly requests otherwise. Attach them to the PR
+  or link to an approved artifact location. Commit only reproduction scripts,
+  concise validation results, tested environments, and limitations. CLI
+  interaction changes also require visual verification. If evidence cannot be
+  uploaded, report that limitation; do not commit it as a fallback.
 - Keep Electron overhead minimal. Justify added runtime dependencies and
   processes with a concrete need and measured cost. Prefer built-in platform
   capabilities, load optional work on demand, and exclude development tools
