@@ -230,3 +230,14 @@ Checks use synthetic data and temporary configuration. They do not establish
 real-session hook coverage, interaction with existing denying hooks, private
 Tailscale delivery, cross-device connections or macOS performance, energy use
 and native lifecycle behavior. No existing account installation is migrated.
+
+## Independent completion review
+
+The independent reviewer passed the complete Plan, technical and affected UX
+review of `614821e0e9695c2b7cb582f4dc212fc07eaf35da` against the fixed base above,
+with no blocking findings or actionable suggestions. The reviewer reran all
+15 native runtime integration tests, the actual observer-to-Electron smoke test
+and the resource report checker. All passed, including a zero exit status for
+the smoke command. The reviewer inspected desktop/narrow, worker-failure,
+native setup and fresh smoke screenshots plus sampled walkthrough frames.
+The platform and wrapper limitations above remain open.

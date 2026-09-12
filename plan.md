@@ -17,7 +17,7 @@ required. Historical validation below describes the former implementation.
 - [x] Convert Electron source and validation tooling to checked TypeScript.
 - [x] Run actual Electron visual/resource checks and native collector integration.
 - [x] Record fresh measurements and remaining platform/real-session limitations in `docs/port-validation.md`.
-- [ ] Complete independent review of the full change and open the pull request.
+- [x] Complete independent review of the full change and prepare the pull request.
 
 ## Current work
 
