@@ -1,5 +1,5 @@
 /** Record the actual native CLI in a PTY using private synthetic host fixtures.
- * Development only: node linux/scripts/record_setup.ts [artifact-directory].
+ * Development only: node linux/scripts/record_setup.ts [artifact-directory] [scenario...].
  * systemd/Codex approval metadata and Tailscale are simulated. The collector,
  * observer, prompts, configuration writes, and recovery commands are real.
  */
@@ -85,6 +85,7 @@ const scenarios = [
   "enablement-symlink",
   "cancel",
   "success",
+  "pairing",
   "edited",
   "recovery",
   "upgrade",
@@ -92,7 +93,7 @@ const scenarios = [
   "upgrade-recovery",
   "upgrade-decline",
   "reinstall",
-];
+].filter((name) => process.argv.length < 4 || process.argv.slice(3).includes(name));
 for (const scenario of scenarios) {
   const root = mkdtempSync(join(tmpdir(), "scope-pty-"));
   const home = join(root, "home"),
@@ -215,12 +216,56 @@ for (const scenario of scenarios) {
   try {
     const code = await terminal([binary, "setup"], "setup");
     if (
-      ["success", "edited", "recovery", "reinstall"].includes(scenario) ||
+      ["success", "pairing", "edited", "recovery", "reinstall"].includes(scenario) ||
       scenario.startsWith("upgrade")
     ) {
       if (code !== 0 || !text.includes("Live capture and collector-stop checks passed"))
         throw new Error(`${scenario} setup failed: ${text.slice(-900)}`);
       const management = join(dirname(recordPath), "manage.sh");
+      if (scenario === "pairing") {
+        if (text.includes("?token=")) throw new Error("Local setup displayed a pairing URL");
+        const record = JSON.parse(readFileSync(recordPath, "utf8"));
+        const localRecord = JSON.stringify(record);
+        // Simulate a saved Tailnet installation without provisioning a real listener.
+        record.dns = "machine.example.ts.net";
+        record.https_port = 8443;
+        record.endpoint = "https://machine.example.ts.net:8443";
+        writeFileSync(recordPath, JSON.stringify(record));
+        const token = readFileSync(join(record.data, "viewer.token"), "utf8").trim();
+        const expected = `${record.endpoint}/?token=${token}`;
+        for (let run = 0; run < 2; run++) {
+          const start = text.length;
+          if ((await terminal([binary, "setup"], "upgrade")) !== 0)
+            throw new Error("Repeated pairing setup failed");
+          if (!text.slice(start).includes(expected))
+            throw new Error("Setup did not display the saved pairing URL");
+          if (readFileSync(join(record.data, "viewer.token"), "utf8").trim() !== token)
+            throw new Error("Setup changed the saved token");
+        }
+        const start = text.length;
+        if (
+          (await terminal([management, "inspect"], "inspect")) !== 0 ||
+          !text.slice(start).includes(expected)
+        )
+          throw new Error("Management did not display the pairing URL");
+        const tokenPath = join(record.data, "viewer.token");
+        renameSync(tokenPath, `${tokenPath}.saved`);
+        const missingStart = text.length;
+        if (
+          (await terminal([management, "inspect"], "inspect")) !== 0 ||
+          !text.slice(missingStart).includes("Pairing URL unavailable:") ||
+          text.slice(missingStart).includes("?token=")
+        )
+          throw new Error("Missing token blocked inspection or displayed a pairing URL");
+        renameSync(`${tokenPath}.saved`, tokenPath);
+        const recoveredStart = text.length;
+        if (
+          (await terminal([management, "inspect"], "inspect")) !== 0 ||
+          !text.slice(recoveredStart).includes(expected)
+        )
+          throw new Error("Pairing URL did not return after token recovery");
+        writeFileSync(recordPath, localRecord);
+      }
       if (scenario.startsWith("upgrade")) {
         const r = JSON.parse(readFileSync(recordPath, "utf8"));
         const runtime = join(r.app, "codex-scope");

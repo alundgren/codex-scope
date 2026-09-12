@@ -338,6 +338,17 @@ fn live_checks(job: &Installation, host: &dyn Host) -> Result<()> {
     );
     Ok(())
 }
+fn show_pairing(job: &Installation) {
+    if job.record.phase == "installed" && job.record.dns.is_some() {
+        match crate::token::read(&job.record.data.join("viewer.token")) {
+            Ok(token) => {
+                println!("Paste this pairing URL into the app settings:");
+                println!("{}/?token={token}", job.record.endpoint);
+            }
+            Err(_) => println!("Pairing URL unavailable: cannot read the private token file."),
+        }
+    }
+}
 fn show(job: &Installation) -> Result<()> {
     println!("Installation state: {}", job.record.phase);
     println!("Endpoint: {}", job.record.endpoint);
@@ -752,7 +763,9 @@ fn new_install(home: &Path, registry: &Path, host: &dyn Host) -> Result<()> {
         live_checks(&job, host)?;
         job.record.phase = "installed".into();
         job.save()?;
-        show(&job)
+        show(&job)?;
+        show_pairing(&job);
+        Ok(())
     })();
     if let Err(error) = result {
         println!("\nInstallation did not finish. Undoing the recorded changes...");
@@ -875,6 +888,9 @@ pub fn run(args: &[String]) -> Result<()> {
             job.purge()?;
             return new_install(&home, &registry, &host);
         }
+        if args[0] == "setup" {
+            show_pairing(&job);
+        }
         let action = match action {
             Some(a) => a.to_owned(),
             None if args[0] == "setup" => ask(
@@ -915,6 +931,9 @@ pub fn run(args: &[String]) -> Result<()> {
             }
             "inspect" => {
                 show(&job)?;
+                if args[0] == "manage" {
+                    show_pairing(&job);
+                }
                 if job.record.phase == "installed" {
                     let state = host::systemctl(
                         &host,
