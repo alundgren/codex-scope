@@ -175,3 +175,32 @@ test("missing CLI leaves both choices empty and retains connection input", async
     await rm(f.root, { recursive: true, force: true });
   }
 });
+
+test("maximum catalog remains usable with long identifiers and supported efforts at narrow widths", async ({}, info) => {
+  const f = await setup(info);
+  try {
+    await writeFile(f.control, "maximum");
+    await tool(f.page, "settings");
+    await refresh(f.page, "256 models.");
+    await expect(f.page.locator("#analysis-model option")).toHaveCount(257);
+    await pair(f.page, "analysis", `model-255-${"x".repeat(110)}`, "effort-31");
+    await expect(f.page.locator("#analysis-effort option")).toHaveCount(33);
+    await f.page.screenshot({ path: info.outputPath("maximum-desktop.png") });
+    await f.page.locator("#analysis-model").click();
+    await expect(f.page.locator("#model-refresh")).toBeEnabled();
+    await f.page.screenshot({ path: info.outputPath("maximum-picker.png") });
+    await f.page.locator("#analysis-model").press("Home");
+    await f.page.locator("#analysis-model").press("ArrowDown");
+    await f.page.locator("#analysis-model").press("Enter");
+    await expect(f.page.locator("#analysis-model")).toHaveValue(`model-0-${"x".repeat(110)}`);
+    await expect(f.page.locator("#model-refresh")).toBeEnabled();
+    await f.page.locator("#analysis-effort").selectOption("effort-0");
+    await f.page.setViewportSize({ width: 390, height: 700 });
+    await pair(f.page, "review", `model-254-${"x".repeat(110)}`, "effort-30");
+    await f.page.locator("#settings-save").scrollIntoViewIfNeeded();
+    await f.page.screenshot({ path: info.outputPath("maximum-narrow.png") });
+  } finally {
+    await f.app.close();
+    await rm(f.root, { recursive: true, force: true });
+  }
+});

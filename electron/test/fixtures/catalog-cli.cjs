@@ -48,6 +48,10 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     process.exit(2);
   }
   if (mode === "slow") return;
+  if (mode === "storage") {
+    fs.writeFileSync("oversized-temporary", Buffer.alloc(17 * 1024 * 1024));
+    return;
+  }
   if (mode === "malformed") {
     process.stdout.write("invalid\n");
     return;

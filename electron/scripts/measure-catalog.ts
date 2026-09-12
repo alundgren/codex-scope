@@ -1,4 +1,4 @@
-import { _electron } from "@playwright/test";
+import { _electron, expect } from "@playwright/test";
 import assert from "node:assert/strict";
 import { mkdtemp, writeFile, mkdir, readdir, rm } from "node:fs/promises";
 import path from "node:path";
@@ -21,86 +21,136 @@ const child = app.process();
 try {
   const page = await app.firstWindow();
   await page.waitForSelector('html[data-ready="true"]');
-  const idle = await sample(app, 3000);
-  let result: unknown;
-  let temporaryPeakBytes = 0;
   const directory = path.join(root, "catalog");
-  let reading = false;
-  const timer = setInterval(() => {
-    if (reading) return;
-    reading = true;
-    void bytes(directory)
-      .then(
-        (value) => {
-          temporaryPeakBytes = Math.max(temporaryPeakBytes, value);
-        },
-        () => {},
-      )
-      .finally(() => {
-        reading = false;
-      });
-  }, 250);
-  let maxFrameGapMs = 0;
-  const responsiveness = () =>
-    page.evaluate(
-      () =>
-        new Promise<number>((resolve) => {
-          const start = performance.now();
-          requestAnimationFrame(() => resolve(performance.now() - start));
-        }),
-    );
-  const frames: number[] = [];
-  let probing = false;
-  const probe = setInterval(() => {
-    if (!probing) {
-      probing = true;
-      void responsiveness()
-        .then((value) => frames.push(value))
+  async function measure(action: () => Promise<unknown>) {
+    let temporaryPeakBytes = 0,
+      frameSamples = 0,
+      maxFrameResponseMs = 0;
+    let reading: Promise<void> | undefined, probing: Promise<void> | undefined, failure: unknown;
+    const timer = setInterval(() => {
+      if (reading) return;
+      reading = bytes(directory)
+        .then(
+          (value) => {
+            temporaryPeakBytes = Math.max(temporaryPeakBytes, value);
+          },
+          (error) => {
+            if (error.code !== "ENOENT") failure = error;
+          },
+        )
         .finally(() => {
-          probing = false;
+          reading = undefined;
         });
+    }, 250);
+    const probe = setInterval(() => {
+      if (probing) return;
+      const started = performance.now();
+      probing = page
+        .evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+        .then(
+          () => {
+            frameSamples++;
+            maxFrameResponseMs = Math.max(maxFrameResponseMs, performance.now() - started);
+          },
+          (error) => {
+            failure = error;
+          },
+        )
+        .finally(() => {
+          probing = undefined;
+        });
+    }, 100);
+    let resources;
+    try {
+      resources = await sample(app, 0, action);
+    } finally {
+      clearInterval(timer);
+      clearInterval(probe);
+      await reading;
+      await probing;
     }
-  }, 100);
+    if (failure) throw failure;
+    return { ...resources, temporaryPeakBytes, frameSamples, maxFrameResponseMs };
+  }
+  const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const refreshButton = page.locator("#model-refresh");
+  const status = page.locator("#model-status");
+  async function refresh(expected: string | RegExp = /\d+ models?\./) {
+    await refreshButton.click();
+    await expect(status).toContainText(expected);
+    await expect(refreshButton).toBeEnabled();
+  }
+  async function choose(role: string, model: string, effort: string) {
+    const started = performance.now();
+    await page.locator(`#${role}-model`).selectOption(model);
+    await expect(refreshButton).toBeEnabled();
+    await page.locator(`#${role}-effort`).selectOption(effort);
+    await page.evaluate(
+      () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
+    return performance.now() - started;
+  }
+  const idle = await sample(app, 3000);
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="settings"]').click();
   const started = performance.now();
-  const discovery = await sample(app, 0, async () => {
-    result = await page.evaluate(() => window.scope.models());
-  });
+  const discovery = await measure(() => refresh());
   const discoveryMs = performance.now() - started;
-  clearInterval(timer);
-  clearInterval(probe);
-  maxFrameGapMs = Math.max(0, ...frames);
-  assert.equal((result as { complete: boolean }).complete, true);
   assert.deepEqual(await readdir(directory), []);
   const cases: Record<string, unknown> = {};
   if (real)
-    cases.repeated = await sample(app, 0, async () => {
-      for (let i = 0; i < 3; i++)
-        assert.equal((await page.evaluate(() => window.scope.models())).complete, true);
+    cases.repeated = await measure(async () => {
+      for (let i = 0; i < 3; i++) await refresh();
     });
-  if (!real) {
-    for (const mode of ["maximum", "output", "pages"]) {
+  else {
+    await writeFile(control, "maximum");
+    let desktopSelectionMs = 0,
+      narrowSelectionMs = 0;
+    cases.maximum = await measure(async () => {
+      await refresh("256 models.");
+      await expect(page.locator("#analysis-model option")).toHaveCount(257);
+      desktopSelectionMs = await choose("analysis", `model-255-${"x".repeat(110)}`, "effort-31");
+      await expect(page.locator("#analysis-effort option")).toHaveCount(33);
+      await page.setViewportSize({ width: 390, height: 700 });
+      narrowSelectionMs = await choose("review", `model-254-${"x".repeat(110)}`, "effort-30");
+      await page.locator("#settings-save").scrollIntoViewIfNeeded();
+      await pause(500);
+    });
+    cases.maximum = { ...(cases.maximum as object), desktopSelectionMs, narrowSelectionMs };
+    for (const [mode, error] of [
+      ["output", "output limit"],
+      ["pages", "incomplete"],
+      ["storage", "temporary storage limit"],
+    ]) {
       await writeFile(control, mode);
-      cases[mode] = await sample(app, 0, async () => {
-        result = await page.evaluate(() => window.scope.models());
-      });
-      assert.equal((result as { complete: boolean }).complete, mode === "maximum");
+      cases[mode] = await measure(() => refresh(error));
+      assert.equal(await bytes(directory), 0);
     }
     await writeFile(control, "slow");
-    const pending = page.evaluate(() => window.scope.models());
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const cancelStarted = performance.now();
-    await page.evaluate(() => window.scope.cancelModels());
-    assert.match((await pending).error ?? "", /cancelled/);
-    cases.cancelMs = performance.now() - cancelStarted;
+    let cancelMs = 0;
+    cases.cancellation = await measure(async () => {
+      await refreshButton.click();
+      await expect(page.locator("#model-cancel")).toBeVisible();
+      await pause(1000);
+      const started = performance.now();
+      await page.locator("#model-cancel").click();
+      await expect(status).toContainText("cancelled");
+      await expect(refreshButton).toBeEnabled();
+      cancelMs = performance.now() - started;
+    });
+    cases.cancellation = { ...(cases.cancellation as object), cancelMs };
     await writeFile(control, "success");
-    assert.equal((await page.evaluate(() => window.scope.models())).complete, true);
+    cases.recovery = await measure(async () => {
+      await refresh("9 models.");
+      await choose("analysis", "gpt-5.6-luna", "low");
+    });
   }
   const settled = await sample(app, 3000);
   const beforeQuitBytes = await bytes(directory);
+  assert.equal(beforeQuitBytes, 0);
   const quitStarted = performance.now();
   await app.close();
   const quitMs = performance.now() - quitStarted;
-  assert.equal(beforeQuitBytes, 0);
   await mkdir("measurements", { recursive: true });
   await writeFile(
     `measurements/catalog-${real ? "real" : "fixture"}.json`,
@@ -109,12 +159,10 @@ try {
         environment:
           "Linux Xvfb, sandbox and GPU enabled, no recording or concurrent tests; no threads or model turns",
         method:
-          "All app process group members and descendants, 250ms /proc sampling; RSS sums shared pages, PSS endpoint; CPU100%=one core; frame callback delay sampled every100ms",
+          "Actual Settings controls; all app process group members and descendants, 250ms /proc sampling; RSS sums shared pages, PSS endpoint; CPU100%=one core; per-case temp bytes sampled250ms; driver request to renderer animation-frame callback sampled100ms, including dispatch delay; idle and settled omit browser probing",
         idle,
         discovery,
         discoveryMs,
-        maxFrameGapMs,
-        temporaryPeakBytes,
         cases,
         settled,
         beforeQuitBytes,
