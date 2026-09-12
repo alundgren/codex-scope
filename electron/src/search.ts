@@ -1,3 +1,4 @@
+import { sessionLabel } from "./session-label.ts";
 import type { DatabaseSync } from "node:sqlite";
 import { prepare, type Statement } from "./database.ts";
 import type {
@@ -99,8 +100,13 @@ class Search {
   queries: Queries[];
   sql!: Queries;
   choiceQueries: Record<ChoiceField, Record<"first" | Direction, Statement<{ value: string }>>>;
+  sessionContext: Statement<{ context: string }>;
   constructor(database: DatabaseSync, shared: Int32Array) {
     this.database = database;
+    this.sessionContext = prepare(
+      database,
+      "SELECT context FROM events WHERE session = ? AND context IS NOT NULL ORDER BY id DESC LIMIT 1",
+    );
     this.shared = shared;
     this.queryId = 0;
     this.maximumMs = 0;
@@ -344,7 +350,8 @@ class Search {
   choices(field: ChoiceField, cursor: string | null, direction: Direction) {
     const descending = direction === "previous";
     const query = this.choiceQueries[field][cursor === null ? "first" : direction];
-    const values = [];
+    const values: string[] = [];
+    const labels: (string | null)[] = [];
     let bytes = 0,
       more = false;
     for (const row of query.iterate(
@@ -352,17 +359,30 @@ class Search {
         ? [QUERY_LIMITS.choiceCount + 1]
         : [cursor, QUERY_LIMITS.choiceCount + 1]),
     )) {
-      const size = Buffer.byteLength(row.value);
+      const context = field === "session" ? this.sessionContext.get(row.value)?.context : undefined;
+      const label = context ? sessionLabel(row.value, context) : null;
+      const size = Buffer.byteLength(row.value) + (label ? Buffer.byteLength(label) : 0);
       if (values.length >= QUERY_LIMITS.choiceCount || bytes + size > QUERY_LIMITS.choiceBytes) {
         more = true;
         break;
       }
       values.push(row.value);
+      labels.push(label);
       bytes += size;
     }
-    if (descending) values.reverse();
+    const displayed = labels.map((label, index) => label ?? values[index]);
+    const duplicates = new Set(
+      displayed.filter((label, index) => displayed.indexOf(label) !== index),
+    );
+    for (let index = 0; index < labels.length; index++)
+      if (duplicates.has(displayed[index])) labels[index] = null;
+    if (descending) {
+      values.reverse();
+      labels.reverse();
+    }
     return {
       values,
+      ...(field === "session" ? { labels } : {}),
       previous: descending ? more : cursor !== null,
       next: descending ? cursor !== null : more,
     };

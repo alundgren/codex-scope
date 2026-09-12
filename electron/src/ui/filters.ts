@@ -11,11 +11,14 @@ export function attachFilters({
 }) {
   const search = requiredElement<HTMLInputElement>("#search");
   const session = requiredElement<HTMLSelectElement>("#session");
+  session.title =
+    "Labels use last observed Git metadata or the hook working directory. Branch changes may appear after later events.";
   const hooks = requiredElement<HTMLDetailsElement>("#hooks");
   const hookLabel = requiredElement("#hook-label");
   const menu = requiredElement("#hookmenu");
   const selectedHooks = new Set<string>();
   let selectedSession: string | null = null;
+  let selectedLabel: string | null = null;
   const pages: Record<ChoiceField, ChoicePage> = { session: { values: [] }, hook: { values: [] } };
   const pending = new Map<
     ChoiceField,
@@ -47,8 +50,17 @@ export function attachFilters({
         selectedSession !== null && !page.values.includes(selectedSession)
           ? [selectedSession, ...page.values]
           : page.values;
-      for (const name of values)
-        session.append(option(name || "Empty session ID", JSON.stringify(name)));
+      for (const name of values) {
+        const index = page.values.indexOf(name);
+        const label =
+          index >= 0
+            ? (page.labels?.[index] ?? name)
+            : ((name === selectedSession ? selectedLabel : null) ?? name);
+        if (name === selectedSession) selectedLabel = label;
+        const item = option(label || "Empty session ID", JSON.stringify(name));
+        item.title = name;
+        session.append(item);
+      }
       if (page.previous) session.append(option("Previous sessions…", "@previous"));
       if (page.next) session.append(option("More sessions…", "@next"));
       session.value = selectedSession === null ? "" : JSON.stringify(selectedSession);
@@ -151,9 +163,12 @@ export function attachFilters({
       return;
     }
     const previous = selectedSession;
+    const previousLabel = selectedLabel;
+    selectedLabel = session.selectedOptions[0]?.textContent ?? null;
     selectedSession = session.value === "" ? null : JSON.parse(session.value);
     if (new TextEncoder().encode(JSON.stringify(value())).length > 128 * 1024) {
       selectedSession = previous;
+      selectedLabel = previousLabel;
       draw("session");
       error("Clear some hook choices before selecting this session.");
       return;
@@ -161,6 +176,7 @@ export function attachFilters({
     notify();
   });
   session.addEventListener("focus", () => load("session"));
+  session.addEventListener("pointerdown", () => load("session"));
   hooks.addEventListener("toggle", () => {
     if (hooks.open) void load("hook");
   });
@@ -186,6 +202,7 @@ export function attachFilters({
     if (disabled) return;
     search.value = "";
     selectedSession = null;
+    selectedLabel = null;
     selectedHooks.clear();
     draw("session");
     draw("hook");

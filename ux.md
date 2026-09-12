@@ -26,6 +26,19 @@ and macOS behavior remain unverified.
 
 Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 
+Give the desktop session control enough width to read ordinary repository and
+branch names; keep the narrow toolbar wrapping below search.
+
+Session choices show the latest retained repository and branch label plus a short
+session-ID suffix. Labels use collector Git metadata when available, otherwise
+the hook working directory, with project/worktree names for T3 paths. Without
+either, show the full ID. Filtering always uses the full ID, and the inspector
+keeps it available. Refresh labels on opening the dropdown without changing the
+selected event or payload position. Git labels describe the last observation;
+quiet sessions may keep an older label until later events carry refreshed
+metadata. The collector documentation states this additional Git data collection
+and its limits explicitly.
+
 The toolbar contains a literal payload search, a session dropdown with All sessions as its default, and a multi-select hook filter with All hooks as its default. Filters apply to retained history and live arrivals equally. Filtering changes what is displayed, not what is collected. Debounce search, cancel obsolete queries, and prevent stale results from replacing a newer query. Identify payload matches even when they occur outside the visible preview.
 
 Each journal entry shows receive time in UTC, hook type, a short preview, and the session identifier. Keep the selected entry visually distinct with a warm background and a small accent marker. Show a bounded neighborhood around it. The left journal has no scrollbar. Do not simply hide a scrollbar on a long list that still requires scrolling to discover events.

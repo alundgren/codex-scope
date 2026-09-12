@@ -25,6 +25,15 @@ pub fn encode(value: &Value) -> Vec<u8> {
 }
 
 pub fn event(raw: &[u8], connection_id: &str, sequence: u64) -> Option<Vec<u8>> {
+    event_with_git(raw, connection_id, sequence, &mut |_| None)
+}
+
+pub(crate) fn event_with_git(
+    raw: &[u8],
+    connection_id: &str,
+    sequence: u64,
+    lookup: &mut dyn FnMut(&str) -> Option<crate::git_metadata::Metadata>,
+) -> Option<Vec<u8>> {
     if raw.len() > MAX_PAYLOAD {
         return None;
     }
@@ -43,15 +52,16 @@ pub fn event(raw: &[u8], connection_id: &str, sequence: u64) -> Option<Vec<u8>> 
             return None;
         }
     }
+    let git = payload.get("cwd").and_then(Value::as_str).and_then(lookup);
     Some(encode(&json!({
         "type": "event", "connection_id": connection_id, "sequence": sequence,
         "received_at": timestamp(), "hook_type": hook,
         "session_id": payload.get("session_id"), "tool_name": payload.get("tool_name"),
-        "payload_bytes": raw.len(), "payload": text,
+        "payload_bytes": raw.len(), "payload": text, "git": git,
     })))
 }
 
-fn timestamp() -> String {
+pub(crate) fn timestamp() -> String {
     let elapsed = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default();

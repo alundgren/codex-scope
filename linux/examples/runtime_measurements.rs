@@ -21,7 +21,10 @@ fn usage(pid: u32) -> (f64, u64, u64, u64) {
     let stat = fs::read_to_string(format!("/proc/{pid}/stat")).unwrap();
     let (_, fields) = stat.rsplit_once(") ").unwrap();
     let fields: Vec<_> = fields.split_whitespace().collect();
-    let ticks = fields[11].parse::<u64>().unwrap() + fields[12].parse::<u64>().unwrap();
+    let ticks = [11, 12, 13, 14]
+        .into_iter()
+        .map(|index| fields[index].parse::<u64>().unwrap())
+        .sum::<u64>();
     let status = fs::read_to_string(format!("/proc/{pid}/status")).unwrap();
     let value = |key: &str| {
         status
@@ -80,10 +83,23 @@ fn profile(name: &str, with_viewer: bool, burst: bool) -> Value {
     let endpoint = format!("http://127.0.0.1:{port}");
     let ready = AtomicBool::new(false);
     let finish = AtomicBool::new(false);
-    let payload = format!(
-        "{{\"hook_event_name\":\"Stop\",\"text\":\"{}\"}}",
-        "x".repeat(60_000)
+    let repository = directory.path().join("synthetic-repo");
+    fs::create_dir(&repository).unwrap();
+    assert!(
+        Command::new("git")
+            .arg("-C")
+            .arg(&repository)
+            .args(["init", "-b", "labels"])
+            .stdout(Stdio::null())
+            .status()
+            .unwrap()
+            .success()
     );
+    let mut payload = json!({"hook_event_name":"Stop", "session_id":"synthetic-session", "text":"x".repeat(60_000)});
+    if name.contains("git_labels") {
+        payload["cwd"] = json!(repository);
+    }
+    let payload = payload.to_string();
     let sender = UnixDatagram::unbound().unwrap();
     sender.set_nonblocking(true).unwrap();
     let result = thread::scope(|scope| {
@@ -115,7 +131,7 @@ fn profile(name: &str, with_viewer: bool, burst: bool) -> Value {
         let mut peak_rss = before.1;
         let count = if burst {
             10_000
-        } else if name == "sustained_large_payloads" {
+        } else if name.starts_with("sustained_") {
             500
         } else {
             0
@@ -169,6 +185,8 @@ fn main() {
         profile("idle_with_viewer", true, false),
         profile("sustained_large_payloads", true, false),
         profile("burst_large_payloads", true, true),
+        profile("sustained_git_labels", true, false),
+        profile("burst_git_labels", true, true),
     ];
-    println!("{}", serde_json::to_string_pretty(&json!({"environment":"Linux synthetic data; collector process measured separately from client and producer", "profiles":values})).unwrap());
+    println!("{}", serde_json::to_string_pretty(&json!({"environment":"Linux synthetic data; collector RSS and collector plus reaped Git child CPU; client and producer excluded; short-lived Git RSS measured separately", "profiles":values})).unwrap());
 }

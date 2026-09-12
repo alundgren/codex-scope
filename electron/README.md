@@ -171,18 +171,18 @@ size, sandboxing and background throttling. Filesystem caches remain warm, so
 startup measures process launch rather than cold-machine startup. Reports include
 the workload, runtime versions and machine configuration needed to assess results.
 
-| Metric | Definition |
-| --- | --- |
-| Summed RSS | All Electron process-group members and descendants, sampled with 250 ms waits plus reader overhead. Shared pages count more than once. Worker threads are included in their owning process. |
-| Steady RSS | Median RSS in the final third of a workload's samples. |
-| PSS | Aggregate endpoint snapshot that apportions shared pages. It is not a peak measurement. |
-| CPU | User and system ticks divided by actual monotonic sample duration. 100% means one full core. Sampling can miss short-lived processes and peaks. |
-| Startup | Driver launch through readiness, connection readiness for configured input, and two completed animation frames. |
-| Input latency | Input start through completed selection, matching payload and slider, and the following animation frame. Search includes the 180 ms debounce. |
-| Timer delay | Maximum extra delay beyond a 20 ms diagnostic timer in main and renderer during active workloads. |
-| Disk | Worker maximum across all recording files inside transactions, including rollback journal and owner marker, corroborated by an endpoint directory scan. |
-| Pending work | Broker queue count/bytes and requests, transport buffers, and the single processing operation. |
-| Drops | Storage/rate/queue counters, transport rate disconnects and fake-server refusals remain separate. Unobserved losses remain unknown. |
+| Metric        | Definition                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Summed RSS    | All Electron process-group members and descendants, sampled with 250 ms waits plus reader overhead. Shared pages count more than once. Worker threads are included in their owning process. |
+| Steady RSS    | Median RSS in the final third of a workload's samples.                                                                                                                                      |
+| PSS           | Aggregate endpoint snapshot that apportions shared pages. It is not a peak measurement.                                                                                                     |
+| CPU           | User and system ticks divided by actual monotonic sample duration. 100% means one full core. Sampling can miss short-lived processes and peaks.                                             |
+| Startup       | Driver launch through readiness, connection readiness for configured input, and two completed animation frames.                                                                             |
+| Input latency | Input start through completed selection, matching payload and slider, and the following animation frame. Search includes the 180 ms debounce.                                               |
+| Timer delay   | Maximum extra delay beyond a 20 ms diagnostic timer in main and renderer during active workloads.                                                                                           |
+| Disk          | Worker maximum across all recording files inside transactions, including rollback journal and owner marker, corroborated by an endpoint directory scan.                                     |
+| Pending work  | Broker queue count/bytes and requests, transport buffers, and the single processing operation.                                                                                              |
+| Drops         | Storage/rate/queue counters, transport rate disconnects and fake-server refusals remain separate. Unobserved losses remain unknown.                                                         |
 
 Xvfb, Openbox, the driver, fake collector and metric reader are excluded from app
 totals. Native Linux `/proc` access is required for resource measurements.
@@ -195,19 +195,19 @@ workloads and exceeded ceilings fail `check:resources`.
 
 ## Ownership and limits
 
-| Resource | Limit and behavior |
-| --- | --- |
-| Accepted data | 61,440 payload bytes and 393,216 encoded frame bytes. Oversized events are dropped whole. |
-| Synthetic intake | 32 queued frames / 1 MiB, batches of four frames / 512 KiB, 256 events/s and 2 MiB/s with 32-event / 512 KiB burst credit. |
-| Worker requests | Four outstanding requests, with one slot reserved for Clear/close. Timeouts retain their slot until reply or worker exit. |
-| Presentation | Five summaries, one selected payload, one unacknowledged status per recipient and at most five updates/s; hidden presentation stops. |
-| Retention | 10,000 rows and 8 MiB accounted bytes, including payloads, labels, previews and row overhead. Evict at most 64 rows per input batch; drop input if more cleanup is needed. |
-| Disk | 16 MiB database, 33 MiB total recording files, and 34 MiB free headroom before writes. Account for sidecars and owner files. |
-| Memory | 2 MiB SQLite cache and 8 MiB SQLite heap. Worker V8 old/young heaps are limited to 32/8 MiB with a 4 MiB stack. These are parts of total app memory. |
-| Deadlines | 2,500 ms worker requests, 1,500 ms cleanup and 2,750 ms quit. Cleanup scans at most 32 root entries and five files per owned directory. |
-| Live transport | One stream, one heartbeat, one retry timer and one event awaiting storage. Fixed frame buffer and 64 KiB response high-water mark. |
-| Transport rates | 2 MiB/s with 512 KiB burst credit; 512 frames/s with 512-frame burst credit. Excess closes the connection with unknown loss. |
-| Transport deadlines | 2,500 ms response/hello and 1,500 ms heartbeat response. Heartbeat every 2,000 ms, stopped after 4,000 ms without processed input or 2,000 ms waiting for storage. |
+| Resource            | Limit and behavior                                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Accepted data       | 61,440 payload bytes and 393,216 encoded frame bytes. Oversized events are dropped whole.                                                                                  |
+| Synthetic intake    | 32 queued frames / 1 MiB, batches of four frames / 512 KiB, 256 events/s and 2 MiB/s with 32-event / 512 KiB burst credit.                                                 |
+| Worker requests     | Four outstanding requests, with one slot reserved for Clear/close. Timeouts retain their slot until reply or worker exit.                                                  |
+| Presentation        | Five summaries, one selected payload, one unacknowledged status per recipient and at most five updates/s; hidden presentation stops.                                       |
+| Retention           | 10,000 rows and 8 MiB accounted bytes, including payloads, labels, previews and row overhead. Evict at most 64 rows per input batch; drop input if more cleanup is needed. |
+| Disk                | 16 MiB database, 33 MiB total recording files, and 34 MiB free headroom before writes. Account for sidecars and owner files.                                               |
+| Memory              | 2 MiB SQLite cache and 8 MiB SQLite heap. Worker V8 old/young heaps are limited to 32/8 MiB with a 4 MiB stack. These are parts of total app memory.                       |
+| Deadlines           | 2,500 ms worker requests, 1,500 ms cleanup and 2,750 ms quit. Cleanup scans at most 32 root entries and five files per owned directory.                                    |
+| Live transport      | One stream, one heartbeat, one retry timer and one event awaiting storage. Fixed frame buffer and 64 KiB response high-water mark.                                         |
+| Transport rates     | 2 MiB/s with 512 KiB burst credit; 512 frames/s with 512-frame burst credit. Excess closes the connection with unknown loss.                                               |
+| Transport deadlines | 2,500 ms response/hello and 1,500 ms heartbeat response. Heartbeat every 2,000 ms, stopped after 4,000 ms without processed input or 2,000 ms waiting for storage.         |
 
 The finite seed-file loader in `src/recording.ts` accepts at most 16 events and
 256 KiB of original payloads, reading at most 1,966,080 encoded source bytes.
@@ -227,7 +227,11 @@ scan at most the fixed retained history and return bounded results. There is no
 whole-recording ID index or result array. Summary paging uses stable local IDs;
 coarse slider positions use a measured, deadline-limited SQL offset.
 Session and hook indexes live inside the existing database/page/disk budgets.
-Choice pages have at most 32 values and 128 KiB of text. Filter input allows
+Choice pages have at most 32 values and 128 KiB of combined ID/label text.
+Session labels use the latest retained nonempty context for the exact full ID.
+The context is at most 160 display characters, accounted in retained bytes and
+indexed inside the existing disk budget. There is no separate session cache
+that grows after events are evicted. Filter input allows
 512 search characters, 32 selected hooks and 128 KiB total filter bytes.
 
 The SQLite file has a physical page limit, a small cache, disabled memory
@@ -261,3 +265,17 @@ credential exposure or remote content. One original payload text node remains
 complete and navigable, without pretty-print expansion. One clipboard write may
 remain pending; its two-second timeout does not release the native-write slot
 until the operation settles.
+
+The desktop session control allows more room for branch text; the narrow toolbar
+continues to wrap below search.
+
+The session dropdown displays the last observed repository and branch with a
+short session-ID suffix. The full ID remains the filter value and appears in
+the inspector. Optional collector Git metadata takes precedence over a label
+derived from `cwd`; T3 worktree paths retain the project and worktree directory
+names. Without either source the full session ID remains visible. Labels refresh
+when opening the dropdown, without moving the selected event or payload offset.
+Metadata is display-only and never changes Copy JSON. An older collector still
+works using `cwd` or ID labels. Working-directory fallback is not verified Git
+metadata. Git labels can lag behind branch changes as described in the
+[collector documentation](../linux/README.md#git-session-labels).

@@ -161,13 +161,19 @@ async function trial(index: number) {
       beforeRefused = server!.state.refused;
     for (let cursor = 0; cursor < count; cursor++) {
       server!.event(
-        template ??
-          frame({
+        template ?? {
+          ...frame({
             session: `session-${cursor % 40}`,
             message: "population synthetic input",
             tail: `${"x".repeat(60)} literal [a.*]%_ ${cursor % 2 ? "odd" : "even"}`,
             index: cursor,
           }),
+          git: {
+            repo: `synthetic-repo-${cursor % 40}`,
+            branch: "session-labels-" + "x".repeat(140),
+            observed_at: "2026-09-12T12:00:00Z",
+          },
+        },
       );
       if (intervalMs) await wait(intervalMs);
     }
@@ -324,6 +330,22 @@ async function trial(index: number) {
       "Small input reaches the retained row cap and evicts old rows.",
     );
     await record("navigateRowLimit", () => interactions(page, state));
+    await record("sessionChoicesAtRowLimit", async () => {
+      const started = performance.now();
+      await page.evaluate(async () => {
+        const status = await window.scope.status();
+        for (let index = 0; index < 100; index++) {
+          const choices = await window.scope.choices(status.generation, "session");
+          if (
+            !("values" in choices) ||
+            choices.values.length !== 32 ||
+            choices.labels?.length !== 32
+          )
+            throw new Error("Bounded session labels unavailable.");
+        }
+      });
+      return { durationMs: performance.now() - started };
+    });
     await record("captureAndRapidInput", async () => {
       const intake = feed(300, 10);
       for (const text of ["odd", "even", "literal", "missing", ""])

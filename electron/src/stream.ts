@@ -1,3 +1,4 @@
+import { eventContext } from "./session-label.ts";
 import type { EventValue, TransportReason } from "./types.ts";
 const MAX_PAYLOAD_BYTES = 61440,
   MAX_FRAME_BYTES = 393216;
@@ -91,6 +92,7 @@ function eventValue(
       (value) => typeof value === "string",
     ) ?? "Inspect the complete accepted payload";
   return {
+    context: eventContext(payload.cwd, message.git),
     connectionId: connection,
     sequence: message.sequence,
     receivedAt: new Date(timestamp).toISOString(),

@@ -54,6 +54,7 @@ events create unbounded pending storage or UI work.
 | `session_id` | Original string or null |
 | `tool_name` | Original string or null |
 | `payload_bytes` | Byte length of original UTF-8 input |
+| `git` | Optional object or null: `repo`, `branch` string or null, and `observed_at` UTC timestamp from a successful repository lookup |
 | `payload` | String containing the entire original JSON text, including whitespace |
 
 Re-encoding `payload` as UTF-8 recovers the accepted input bytes. Do not replace
@@ -61,6 +62,22 @@ it with a reserialized object. Unknown JSON fields remain intact. The
 collector accepts UTF-8 JSON objects for explicitly supported hook events,
 rejects malformed input and non-finite numbers, and never truncates payloads.
 Summary fields are conveniences; full inspection uses the original text.
+
+`git` is collector-derived metadata, not part of the hook input. The collector
+runs read-only Git queries using the hook's absolute `cwd`. `repo` is the
+repository directory name obtained from Git's common directory, so linked
+worktrees use the main repository name. It is not a remote URL. A null branch
+means unavailable, including detached HEAD or a failed branch query. Repo and
+branch strings are each limited to 512 UTF-8 bytes; larger metadata is omitted.
+No original payload bytes are changed or truncated for these labels.
+
+Lookup is asynchronous and event-driven. Results accompany later events from
+the same working directory, with the lookup timestamp. The first event may have
+no Git metadata, and a quiet session may retain an older branch label. This does
+not prove the branch at the event's exact time. There is no metadata replay or
+background refresh of idle directories. Old collectors omit the field; old
+viewers ignore it. Invalid optional metadata is ignored without dropping an
+otherwise valid event. See [Linux lookup limits](../linux/README.md#git-session-labels).
 
 The Mac assigns its own recording IDs, generation, local receive time, and
 increasing recording order. It must not use remote timestamps to page history.
