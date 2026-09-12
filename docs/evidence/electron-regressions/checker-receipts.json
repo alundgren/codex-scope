@@ -1,0 +1,77 @@
+{
+  "finalEvaluation": {
+    "pass": true,
+    "checkedValues": 839,
+    "limits": {
+      "startupMs": 2000,
+      "peakRssBytes": 943718400,
+      "steadyRssBytes": 865075200,
+      "finalPssBytes": 471859200,
+      "idleCpuPercent": 5,
+      "activeCpuPercent": 110,
+      "searchMs": 600,
+      "keyboardMs": 500,
+      "mainDelayMs": 250,
+      "rendererDelayMs": 250,
+      "plateauRssGrowthBytes": 16777216,
+      "plateauPssGrowthBytes": 8388608,
+      "diskBytes": 34603008,
+      "retainedBytes": 8388608,
+      "queueCount": 32,
+      "queueBytes": 1048576,
+      "requests": 4,
+      "processCount": 10,
+      "appBytes": 204800,
+      "runtimeBytes": 325058560
+    },
+    "startupRangeMs": [
+      1173.9127670000016,
+      1402.9329980000002
+    ],
+    "failures": []
+  },
+  "normalCheckerExit": 0,
+  "overLimitNormalCheckerExit": 1,
+  "overLimitEvaluation": {
+    "pass": false,
+    "checkedValues": 839,
+    "limits": {
+      "startupMs": 2000,
+      "peakRssBytes": 943718400,
+      "steadyRssBytes": 865075200,
+      "finalPssBytes": 471859200,
+      "idleCpuPercent": 5,
+      "activeCpuPercent": 110,
+      "searchMs": 600,
+      "keyboardMs": 500,
+      "mainDelayMs": 250,
+      "rendererDelayMs": 250,
+      "plateauRssGrowthBytes": 16777216,
+      "plateauPssGrowthBytes": 8388608,
+      "diskBytes": 34603008,
+      "retainedBytes": 8388608,
+      "queueCount": 32,
+      "queueBytes": 1048576,
+      "requests": 4,
+      "processCount": 10,
+      "appBytes": 204800,
+      "runtimeBytes": 325058560
+    },
+    "startupRangeMs": [
+      1173.9127670000016,
+      1402.9329980000002
+    ],
+    "failures": [
+      {
+        "metric": "trial1.settledIdle.peakRssBytes",
+        "value": 943718401,
+        "limit": 943718400
+      }
+    ]
+  },
+  "proveFailureExit": 0,
+  "unitChecks": 21,
+  "unitFailures": 0,
+  "measurementSourceRevision": "a7ade20a9ce4d26d39b98751da511b601af81a7b",
+  "thresholdSourceRevision": "f34711515052115e596e02d87c61faef0d32902f"
+}
