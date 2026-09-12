@@ -1,6 +1,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { evaluateReport, requiredWorkloads, thresholds } from '../scripts/resource-thresholds.mjs';
+import { completed } from '../scripts/interaction-metrics.mjs';
+
+test('interaction completion requires a matching selected row or a cleared empty result', async () => {
+  const originalDocument = globalThis.document;
+  try {
+    for (const [payload, selected, busy, expected, position, ready] of [
+      ['null', '7', 'false', null, 0, false],
+      ['', '7', 'false', null, 0, false],
+      ['null', null, 'false', null, 0, true],
+      ['', null, 'false', null, 0, true],
+      ['7', null, 'false', null, 0, false],
+      ['7', '8', 'false', null, 0, false],
+      ['7', '7', 'true', null, 0, false],
+      ['7', '7', 'false', { id: 7, position: 2 }, 1, false],
+      ['7', '7', 'false', { id: 7, position: 2 }, 2, true],
+    ]) {
+      globalThis.document = { querySelector: selector => ({
+        '#entries': { getAttribute: () => busy },
+        '#payload': { dataset: { event: payload } },
+        '.event[aria-pressed="true"]': selected === null ? null : { dataset: { event: selected } },
+        '#scrubber': { getAttribute: () => String(position) },
+      })[selector] };
+      let frames = 0;
+      const page = {
+        waitForFunction: async (predicate, argument) => {
+          if (!predicate(argument)) throw new Error('Result is not complete');
+        },
+        locator: () => ({ textContent: async () => '' }),
+        evaluate: async () => { frames++; },
+      };
+      if (ready) await completed(page, expected);
+      else await assert.rejects(completed(page, expected), /Result is not complete/);
+      assert.equal(frames, Number(ready));
+    }
+  } finally {
+    if (originalDocument === undefined) delete globalThis.document;
+    else globalThis.document = originalDocument;
+  }
+});
 
 function passing() {
   const workload = () => ({ peakRssBytes: 600e6, steadyRssBytes: 550e6, finalPssBytes: 300e6,
