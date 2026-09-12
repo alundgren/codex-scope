@@ -186,7 +186,7 @@ test('security boundaries deny Node, remote content, navigation, extra windows a
     const prefs = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences());
     expect(prefs).toMatchObject({ sandbox: true, contextIsolation: true, nodeIntegration: false, webviewTag: false, webSecurity: true });
     expect(app.process().spawnargs).not.toContain('--no-sandbox');
-    expect(await page.evaluate(() => [typeof require, typeof process, Object.keys(window.scope).sort()])).toEqual(['undefined', 'undefined', ['clear', 'copyPayload', 'inspect', 'onHidden', 'onStatus', 'status']]);
+    expect(await page.evaluate(() => [typeof require, typeof process, Object.keys(window.scope).sort()])).toEqual(['undefined', 'undefined', ['cancel', 'choices', 'clear', 'copyPayload', 'inspect', 'navigate', 'onHidden', 'onStatus', 'status']]);
     expect(await page.evaluate(async () => { try { await window.scope.inspect(1, {}, 999); return false; } catch { return true; } })).toBe(true);
     expect(await page.evaluate(() => window.scope.copyPayload(1, -1))).toBe(false);
     const requests = await page.evaluate(() => Promise.allSettled(Array.from({ length: 100 }, () => window.scope.inspect(1, 3, 5))).then(results => results.filter(item => item.status === 'fulfilled').length));

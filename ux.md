@@ -11,14 +11,16 @@ Clear uses the specified two-activation lock and starts an empty new recording.
 Eviction, known drops, storage pressure and cleanup failures appear in the
 existing status area.
 
-Search, session and hook filters remain disabled. The journal pin still marks
-the selected visible row; full filtered scrubbing follows separately. The header
-says Synthetic data and makes no collector connection claim. Payloads display as
-original text without formatting expansion. Metadata and previews may use
-visible ellipses; the payload and Copy JSON preserve complete accepted text.
-These are the current partial-scope differences from the full experience below.
-[Recorded Linux evidence](docs/electron-history-validation.md) covers the actual
-app; macOS behavior and real collector compatibility remain unverified.
+Search, full-session-ID filtering and multi-select hooks now apply to retained
+events and matching arrival counts. The journal pin is an interactive scrubber
+with a distinct Live endpoint. Filter choices page within fixed limits, and a
+query timeout keeps the previous selection visibly identified while offering
+Reset filters. The header says Synthetic data and makes no collector connection
+claim. Payloads display as original text without formatting expansion. Metadata
+and previews may use visible ellipses; the payload and Copy JSON preserve
+complete accepted text. These are the current delivery details of the experience
+below. [Recorded Linux evidence](docs/electron-navigation-validation.md) covers
+the actual app; macOS behavior and real collector compatibility remain unverified.
 
 Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 

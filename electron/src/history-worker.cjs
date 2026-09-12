@@ -6,12 +6,14 @@ const { randomUUID } = require('node:crypto');
 const { performance } = require('node:perf_hooks');
 const { parseRecording, loadRecording, MAX_PAYLOAD_BYTES, MAX_FRAME_BYTES } = require('./recording.cjs');
 
+const { Search } = require('./search.cjs');
+
 const limits = workerData.limits;
 const shared = new Int32Array(workerData.shared);
 const root = workerData.directory;
 const marker = 'codex-scope-temporary-recording-v1';
 const allowed = new Set(['owner.json', 'history.sqlite', 'history.sqlite-journal', 'history.sqlite-wal', 'history.sqlite-shm']);
-let database, directory, statements, timer, templates = [], sequence = 0;
+let database, directory, statements, search, timer, templates = [], sequence = 0;
 let state = { generation: 1, total: 0, accepted: 0, retainedBytes: 0, first: null, last: null, drops: {}, evicted: 0 };
 let faults = {};
 let maximumTransactionMs = 0;
@@ -23,8 +25,10 @@ function notify() {
   if (notificationPending) { notificationDirty = true; return; }
   notificationPending = true;
   notificationDirty = false;
-  parentPort.postMessage({ notification: true, status: { ...state, maximumTransactionMs, maximumDiskBytes } });
+  parentPort.postMessage({ notification: true, status: snapshot() });
 }
+
+function snapshot() { return { ...state, view: search?.status(), maximumTransactionMs, maximumDiskBytes }; }
 
 function entriesIn(location, maximum) {
   const handle = fs.opendirSync(location);
@@ -77,7 +81,9 @@ function openDatabase() {
     PRAGMA hard_heap_limit=${limits.sqliteHeapBytes}; PRAGMA trusted_schema=OFF;
     CREATE TABLE events(id INTEGER PRIMARY KEY, generation INTEGER NOT NULL, connectionId TEXT NOT NULL,
       sequence INTEGER NOT NULL, localReceivedAt TEXT NOT NULL, receivedAt TEXT NOT NULL, hook TEXT NOT NULL,
-      session TEXT, tool TEXT, bytes INTEGER NOT NULL, cost INTEGER NOT NULL, preview TEXT NOT NULL, text TEXT NOT NULL) STRICT;`);
+      session TEXT, tool TEXT, bytes INTEGER NOT NULL, cost INTEGER NOT NULL, preview TEXT NOT NULL, text TEXT NOT NULL) STRICT;
+    CREATE INDEX event_sessions ON events(session); CREATE INDEX event_hooks ON events(hook);`);
+  search = new Search(database, shared);
   const summary = 'id, receivedAt, substr(hook,1,160) AS hook, substr(session,1,160) AS session, preview';
   statements = {
     insert: database.prepare('INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)'),
@@ -85,7 +91,7 @@ function openDatabase() {
     newest: database.prepare('SELECT * FROM events ORDER BY id DESC LIMIT 1'),
     before: database.prepare(`SELECT ${summary} FROM events WHERE id < ? ORDER BY id DESC LIMIT ?`),
     after: database.prepare(`SELECT ${summary} FROM events WHERE id >= ? ORDER BY id LIMIT ?`),
-    oldest: database.prepare('SELECT id,cost FROM events ORDER BY id LIMIT ?'),
+    oldest: database.prepare('SELECT * FROM events ORDER BY id LIMIT ?'),
     remove: database.prepare('DELETE FROM events WHERE id <= ?'),
     first: database.prepare('SELECT id,receivedAt FROM events ORDER BY id LIMIT 1'),
     last: database.prepare('SELECT id,receivedAt FROM events ORDER BY id DESC LIMIT 1'),
@@ -114,11 +120,11 @@ function appendEvents(events) {
       if (!hasRoom()) throw new Error('Storage pressure.');
       const cost = event.bytes + Buffer.byteLength([event.hook, event.session, event.tool, event.preview, state.connectionId].join('')) + 256;
       if (state.total >= limits.retainedCount || state.retainedBytes + cost > limits.retainedBytes) {
-        const old = statements.oldest.all(budget);
-        let removedBytes = 0, count = 0, last = 0;
+        const old = statements.oldest.iterate(budget);
+        let removedBytes = 0, count = 0, last = 0, matching = 0;
         for (const row of old) {
           if (state.total - count < limits.retainedCount && state.retainedBytes - removedBytes + cost <= limits.retainedBytes) break;
-          removedBytes += row.cost; count++; last = row.id;
+          removedBytes += row.cost; count++; last = row.id; matching += search.removing(row);
         }
         if (count) {
           database.exec('BEGIN IMMEDIATE');
@@ -126,19 +132,22 @@ function appendEvents(events) {
           diskBytes();
           database.exec('COMMIT');
           state.total -= count; state.retainedBytes -= removedBytes; state.evicted += count; budget -= count;
+          search.removedEvents(matching, last);
         }
         if (state.total >= limits.retainedCount || state.retainedBytes + cost > limits.retainedBytes) throw new Error('Cleanup capacity exceeded.');
       }
       if (faults.write) throw new Error('Write failed.');
       const id = state.accepted + 1;
+      const localReceivedAt = new Date().toISOString();
       database.exec('BEGIN IMMEDIATE');
-      statements.insert.run(id, state.generation, state.connectionId, event.sequence, new Date().toISOString(),
+      statements.insert.run(id, state.generation, state.connectionId, event.sequence, localReceivedAt,
         event.receivedAt, event.hook, event.session, event.tool, event.bytes, cost, event.preview, event.text);
       diskBytes();
       database.exec('COMMIT');
       state.accepted = id;
       state.total++;
       state.retainedBytes += cost;
+      search.accepted({ ...event, id, generation: state.generation, connectionId: state.connectionId, localReceivedAt });
       state.pressure = false;
     } catch {
       if (database.isTransaction) database.exec('ROLLBACK');
@@ -192,7 +201,7 @@ function inspect(id, rows) {
 }
 function closeDatabase() {
   clearInterval(timer);
-  if (database) { database.close(); database = null; statements = null; }
+  if (database) { database.close(); database = null; statements = null; search = null; }
   if (directory) { removeOwned(directory, performance.now() + limits.cleanupMs); directory = null; }
 }
 
@@ -223,19 +232,25 @@ parentPort.on('message', async message => {
         const pages = faults.diskFull ? database.prepare('PRAGMA page_count').get().page_count : limits.databaseBytes / 4096;
         database.exec(`PRAGMA max_page_count=${pages}`);
       }
-      result = { ok: true, directory, limits, ...state, maximumTransactionMs, maximumDiskBytes };
+      result = { ok: true, directory, limits, ...snapshot() };
     } else {
-      if (faults.delay && ['inspect', 'append'].includes(operation)) await new Promise(resolve => setTimeout(resolve, faults.delay));
+      if (faults.delay && ['inspect', 'navigate', 'append'].includes(operation)) await new Promise(resolve => setTimeout(resolve, faults.delay));
       if (!current(generation)) result = { stale: true };
       else if (operation === 'inspect') result = inspect(message.id, message.rows);
+      else if (operation === 'navigate') result = search ? search.navigate(state, message.query, faults.searchMs) : { error: state.error ?? 'History is unavailable.' };
+      else if (operation === 'choices') result = { generation, ...search.choices(message.field, message.cursor, message.direction) };
       else if (operation === 'append') { ingest(message.frames, message.connectionId); result = { ok: true }; }
     }
   } catch {
+    if (operation === 'navigate' || operation === 'choices') {
+      result = { error: 'Search could not finish. Edit the query or Reset filters.', generation };
+    } else {
     state.error = operation === 'clear' || operation === 'close' ?
       'Clear failed. Temporary recording files remain. Restart the app to retry cleanup.' :
       'The synthetic recording could not be opened. Restart the app to try again.';
     state.clearing = false;
     result = { error: state.error, generation };
+    }
   }
-  parentPort.postMessage({ request, result, status: { ...state, maximumTransactionMs, maximumDiskBytes } });
+  parentPort.postMessage({ request, result, status: snapshot() });
 });

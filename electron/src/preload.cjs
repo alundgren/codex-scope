@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 let inspecting = false, copying = false, clearing = false, subscribed = false, readingStatus = false;
-let onHidden;
+let onHidden, readingChoices = false;
 ipcRenderer.on('scope:hidden', () => { try { onHidden?.(); } finally { ipcRenderer.send('scope:ack', 'hidden'); } });
 contextBridge.exposeInMainWorld('scope', {
   status: async () => {
@@ -22,6 +22,22 @@ contextBridge.exposeInMainWorld('scope', {
     inspecting = true;
     try { return await ipcRenderer.invoke('scope:inspect', generation, id, rows); }
     finally { inspecting = false; }
+  },
+  cancel: (generation, targetId) => {
+    if (Number.isSafeInteger(generation) && Number.isInteger(targetId) && targetId > 0 && targetId <= 2147483647) ipcRenderer.send('scope:cancel', generation, targetId);
+  },
+  navigate: async (generation, query) => {
+    if (inspecting || !Number.isSafeInteger(generation) || !query || JSON.stringify(query).length > 140000) throw new Error('Invalid navigation request.');
+    inspecting = true;
+    try { return await ipcRenderer.invoke('scope:navigate', generation, query); }
+    finally { inspecting = false; }
+  },
+  choices: async (generation, field, cursor = null, direction = 'next') => {
+    if (readingChoices || !Number.isSafeInteger(generation) || !['session', 'hook'].includes(field) ||
+        !(cursor === null || typeof cursor === 'string' && cursor.length <= 61440)) throw new Error('Filter choices unavailable.');
+    readingChoices = true;
+    try { return await ipcRenderer.invoke('scope:choices', generation, field, cursor, direction); }
+    finally { readingChoices = false; }
   },
   copyPayload: async (generation, id) => {
     if (copying || !Number.isSafeInteger(generation) || !Number.isSafeInteger(id)) return false;
