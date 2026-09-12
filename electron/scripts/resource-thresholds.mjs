@@ -35,18 +35,20 @@ export function evaluateReport(report, limits = thresholds) {
       check(`${prefix}.finalPssBytes`, workload.finalPssBytes, limits.finalPssBytes);
       check(`${prefix}.processCount`, workload.peakProcesses, limits.processCount);
       check(`${prefix}.cpuPercent`, workload.meanCpuPercentOneCore, /idle/i.test(name) ? limits.idleCpuPercent : limits.activeCpuPercent);
-      if (workload.maximumMainDelayMs !== undefined) check(`${prefix}.mainDelayMs`, workload.maximumMainDelayMs, limits.mainDelayMs);
-      if (workload.maximumRendererDelayMs !== undefined) check(`${prefix}.rendererDelayMs`, workload.maximumRendererDelayMs, limits.rendererDelayMs);
-      if (workload.history) {
-        check(`${prefix}.diskBytes`, workload.history.maximumDiskBytes ?? 0, limits.diskBytes);
-        check(`${prefix}.retainedBytes`, workload.history.retainedBytes ?? 0, limits.retainedBytes);
+      const active = !['baselineIdle', 'connectedIdle', 'hiddenCapture', 'minimizedCapture', 'settledIdle', 'cleanupFailure', 'restartRecovery'].includes(name);
+      if (active) check(`${prefix}.mainDelayMs`, workload.maximumMainDelayMs, limits.mainDelayMs);
+      if (active) check(`${prefix}.rendererDelayMs`, workload.maximumRendererDelayMs, limits.rendererDelayMs);
+      if (name !== 'baselineIdle') {
+        if (!workload.history) { failures.push({ metric: `${prefix}.history`, value: 'missing' }); continue; }
+        check(`${prefix}.diskBytes`, workload.history.maximumDiskBytes, limits.diskBytes);
+        check(`${prefix}.retainedBytes`, workload.history.retainedBytes ?? (workload.history.total === 0 ? 0 : undefined), limits.retainedBytes);
         check(`${prefix}.queueCount`, workload.history.peakQueueCount, limits.queueCount);
         check(`${prefix}.queueBytes`, workload.history.peakQueueBytes, limits.queueBytes);
         check(`${prefix}.requests`, workload.history.peakPending, limits.requests);
       }
-      if (workload.workload?.searchMs) {
-        check(`${prefix}.searchMs`, workload.workload.searchMs.maximum, limits.searchMs);
-        check(`${prefix}.keyboardMs`, workload.workload.keyboardMs.maximum, limits.keyboardMs);
+      if (['navigate1000', 'navigateRowLimit', 'navigateMaximum'].includes(name)) {
+        check(`${prefix}.searchMs`, workload.workload?.searchMs?.maximum, limits.searchMs);
+        check(`${prefix}.keyboardMs`, workload.workload?.keyboardMs?.maximum, limits.keyboardMs);
       }
     }
     const first = trial.workloads.maximumCycle1, last = trial.workloads.maximumCycle3;
