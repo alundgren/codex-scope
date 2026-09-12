@@ -1,10 +1,12 @@
 import { _electron } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 
 const destination = path.resolve('test-results/reference');
 await mkdir(destination, { recursive: true });
-const app = await _electron.launch({ args: [path.resolve('test/baseline/main.cjs')], chromiumSandbox: true });
+const root = await mkdtemp(path.join(os.tmpdir(), 'scope-reference-'));
+const app = await _electron.launch({ args: [path.resolve('test/baseline/main.cjs'), `--scope-test-root=${root}`], chromiumSandbox: true });
 try {
   const page = await app.firstWindow();
   await page.waitForSelector('html[data-ready="true"]');
@@ -18,4 +20,4 @@ try {
     await page.waitForTimeout(500);
     await page.screenshot({ path: path.join(destination, `reference-${name}.png`) });
   }
-} finally { await app.close(); }
+} finally { await app.close(); await rm(root, { recursive: true, force: true }); }

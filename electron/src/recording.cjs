@@ -1,7 +1,6 @@
 const { open } = require('node:fs/promises');
 
-const MAX_PAYLOAD_BYTES = 61440;
-const MAX_FRAME_BYTES = 393216;
+const { MAX_PAYLOAD_BYTES, MAX_FRAME_BYTES, eventValue } = require('./stream.cjs');
 const MAX_EVENTS = 16;
 const MAX_RECORDING_BYTES = 256 * 1024;
 const MAX_SOURCE_BYTES = MAX_RECORDING_BYTES * 6 + MAX_FRAME_BYTES;
@@ -40,51 +39,13 @@ function parseRecording(bytes) {
       drops.capacity++;
       continue;
     }
-    const boundedText = value => typeof value === 'string' && value.length <= MAX_PAYLOAD_BYTES;
-    if (!connection || message.connection_id !== connection || !Number.isSafeInteger(message.sequence) ||
-        message.sequence <= lastSequence || !boundedText(message.hook_type) ||
-        !(message.session_id === null || boundedText(message.session_id)) ||
-        !(message.tool_name === null || boundedText(message.tool_name)) ||
-        typeof message.received_at !== 'string' || message.received_at.length > 64 || !/T.*(?:Z|\+00:00)$/.test(message.received_at) ||
-        !Number.isFinite(Date.parse(message.received_at)) || !raw.isWellFormed() ||
-        Buffer.byteLength(raw) !== message.payload_bytes) {
-      drops.invalid++;
-      continue;
-    }
-    let payload;
-    try { payload = JSON.parse(raw); } catch { drops.invalid++; continue; }
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload) ||
-        payload.hook_event_name !== message.hook_type ||
-        (typeof payload.session_id === 'string' ? payload.session_id : null) !== message.session_id ||
-        (typeof payload.tool_name === 'string' ? payload.tool_name : null) !== message.tool_name) {
-      drops.invalid++;
-      continue;
-    }
-    // Iteration also accepts deeply nested JSON without recursive formatting or traversal.
-    const pending = [payload];
-    let finite = true;
-    while (pending.length && finite) {
-      const value = pending.pop();
-      if (typeof value === 'number') finite = Number.isFinite(value);
-      else if (value && typeof value === 'object') {
-        for (const key of Object.keys(value)) pending.push(value[key]);
-      }
-    }
-    if (!finite) { drops.invalid++; continue; }
-    const preview = [payload.message, payload.tool_input?.command, payload.tool_input?.patch, payload.demo_note]
-      .find(value => typeof value === 'string') ?? 'Inspect the complete accepted payload';
-    events.push(Object.freeze({
-      id: events.length + 1,
-      receivedAt: new Date(message.received_at).toISOString(),
-      hook: message.hook_type,
-      session: message.session_id,
-      tool: message.tool_name,
-      bytes: message.payload_bytes,
-      preview: preview.slice(0, 180).replace(/\s+/g, ' '),
-      text: raw,
-    }));
-    payloadBytes += message.payload_bytes;
-    lastSequence = message.sequence;
+    try {
+      const event = eventValue(message, connection, lastSequence);
+      events.push(Object.freeze({ ...event, id: events.length + 1 }));
+      payloadBytes += event.bytes;
+      lastSequence = event.sequence;
+    } catch { drops.invalid++; }
+
   }
   if (!connection) throw new Error('Missing fixture protocol header.');
   return Object.freeze({ events: Object.freeze(events), drops: Object.freeze(drops), payloadBytes });

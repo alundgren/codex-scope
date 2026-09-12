@@ -9,7 +9,7 @@ Temporary implementation checklist. Linux code and synthetic tests are implement
 - [x] Run Linux synthetic failure tests, installed-runtime registration probe, startup benchmark, and short overload check. Evidence and limitations are in `docs/linux-validation.md`.
 - [x] Complete independent Plan, technical, and CLI review. Fix the input-timing test race and numeric-overflow validation finding; reviewer independently confirms all 33 tests pass.
 - [ ] Validate real-session policy behavior before approving capture for actual use. This work deliberately does not install account hooks or change trust. Collector tests can run synthetically, but do not complete this acceptance gate.
-- [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Live transport, filters, scrub navigation, Clear and SQLite remain separate work.
+- [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Later deliveries below add filters, scrubbing, Clear, SQLite and live transport.
 - [x] Complete issue #5's recorded Electron tests, visual inspection, clean-checkout validation and measured empty-window comparison. Evidence and Linux-only limits are in `docs/electron-validation.md`.
 - [x] Complete issue #5's independent Plan, technical and UX review. The reviewer reported no findings.
 
@@ -62,7 +62,7 @@ Done when a real supported Codex session has the same policy and output behavior
 - [ ] Test private HTTPS proxy delivery and route isolation through Tailscale Serve.
 - [ ] Verify rejection from another OS account and measure sustained isolated collector CPU/RSS.
 - [x] Add guided Linux setup, a durable recovery record, permanent runtime copies, optional Tailscale Serve, interactive capture/collector-stop checks, and ownership-preserving uninstall. Include an install guide and recorded synthetic terminal walkthroughs linked in PR #12. Keep reproduction details and validation limits in `docs/linux-validation.md`; generated evidence is removed from the branch contents.
-- [x] Clarify in `AGENTS.md` that generated visual evidence belongs in PR attachments or approved artifact links, with explicit owner permission required to commit it; include CLI interactions in visual verification.
+- [x] Clarify visual evidence storage in `AGENTS.md`: generate into ignored `.artifacts/visual/`, upload selected evidence as PR attachments, and keep reproduction instructions and validation results in Git. Include CLI interactions in visual verification.
 - [ ] Run the guided installer end to end on a live account with private HTTPS delivery; separately verify the eventual UI connection. Synthetic host-command and approval fixtures do not complete these checks.
 - [x] Change the default loopback port to 4319 and report port conflicts separately from path/token failures. Guided setup suggests an available port and preserves existing listeners.
 
@@ -84,35 +84,44 @@ Done when a synthetic client can observe live events through a private proxy, bu
 ## 3. Build the Mac app and temporary history
 
 - [x] Add Electron with a development command that opens the finite fixture inspector from a clone. Keep bundled UI isolated from Node, with narrow IPC and text-only payload rendering. Pin and test the runtime independently of Linux.
-- [ ] Select and validate SQLite integration with the pinned runtime for temporary history.
-- [ ] Put connection and credentials outside the renderer. Run database writes and searches off the UI thread. Limit pending batches and UI notifications.
-- [ ] Store original accepted payloads and the small envelope defined in the architecture. Define stable recording IDs and connection identities; do not order solely by remote timestamps.
-- [ ] Choose and measure SQLite size, cache, journal, transaction, queue, and disk-headroom limits. Budget sidecars too. Evict oldest rows in small batches and reuse space without full compaction during capture. Reject more input if cleanup cannot keep pace.
-- [ ] Implement one app instance, private recording directories, clear-history generation changes, normal-close deletion, and startup cleanup restricted to abandoned owned files. Keep settings separate from recordings.
-- [ ] Test disk-full and write failures, history eviction, burst traffic, renderer responsiveness, sleep, force quit, relaunch, normal close, and cleanup failure. Verify stale pending events cannot reappear after Clear.
+- [x] Select and validate SQLite integration with the pinned runtime for temporary history.
+- [x] Put synthetic input and database work outside the renderer. Run SQLite and payload parsing in one bounded worker. Limit pending batches and acknowledged UI notifications. Literal search and live transport run in that same worker.
+- [x] Store original accepted payloads and the small envelope defined in the architecture. Define stable recording IDs and connection identities; do not order solely by remote timestamps.
+- [x] Choose and measure SQLite size, cache, journal, transaction, queue, and disk-headroom limits. Budget sidecars too. Evict oldest rows in small batches and reuse space without full compaction during capture. Reject more input if cleanup cannot keep pace.
+- [x] Implement one app instance, private recording directories, clear-history generation changes, normal-close deletion, and startup cleanup restricted to abandoned owned files. Keep settings separate from recordings.
+- [x] Test actual SQLite full/read-only failures, simulated low disk headroom, selected-event eviction, bounded burst intake, delayed Clear work, cleanup failure, second instances, force kill/relaunch, normal close and hidden/minimized capture in Electron on Linux.
+- [ ] Validate macOS sleep, native window lifecycle, energy use and performance. Linux results do not complete these checks.
 
-Done when the actual Electron app receives and queries synthetic events on the Linux VM, respects measured VM resource budgets, and removes owned recording files through the lifecycle checks available there. Record macOS-only checks as unverified follow-up work.
+Electron temporary history is implemented. [History validation](docs/electron-history-validation.md) records the Linux synthetic checks, measured limits, inspected recordings and remaining macOS limits. Filtered navigation and version 1 live transport are implemented below.
 
 ## 4. Implement filtering and frozen history
 
 - [x] Build the finite Event journal and payload inspector using [ux.md](ux.md), the [agreed prototype](docs/mockups/event-journal-v2.html), and the [Electron build handoff](docs/mockups/event-journal-v2-notes.md), with desktop and narrow layouts.
-- [ ] Keep roughly 500 summaries loaded and virtualize rendering. Load payloads on selection; bound formatting and expansion work.
-- [ ] Add the session dropdown, multi-select hook filtering, and literal free-text search over retained payloads and metadata. Debounce, cancel, and time-limit queries; keep search and capture independent.
-- [ ] Add stable backward and forward paging through the left journal pin, a new matching-event count, and the pin's Live endpoint. Freeze following during inspection or scrubbing while capture continues; keep the journal free of scrollbars.
+- [x] Load at most five visible summaries and one selected payload. Page by local IDs, without a whole-recording cache. Preserve original text with no formatting expansion.
+- [x] Add the session dropdown, multi-select hook filtering, and literal free-text search over retained payloads and metadata. Debounce, cancel, and time-limit queries; keep search and capture independent.
+- [x] Add stable backward and forward paging through the left journal pin, a new matching-event count, and the pin's Live endpoint. Freeze following during inspection or scrubbing while capture continues; keep the journal free of scrollbars.
 - [x] Add the custom payload scrollbar with pointer, wheel, touch and keyboard input. Keep the journal and payload visible together without subheadings, event numbers, or back and timestamp-jump buttons.
-- [ ] Add the two-click Clear lock with its three-second confirmation window and atomic recording deletion.
-- [ ] Show connection status separately from viewing mode. Handle gaps, oldest retained time, evicted selection, empty results, and resource pressure without moving the current view unexpectedly.
-- [ ] Test concurrent arrival while browsing, rapid filter changes, large JSON, matches outside previews, eviction while paused, old query responses after Clear, keyboard use, and reconnection while in history.
+- [x] Add the two-click Clear lock with its three-second confirmation window and atomic recording deletion.
+- [x] Handle oldest retained time, evicted selection and gestures, empty results, timeout recovery, and resource pressure while preserving held reading. Keep Synthetic data separate from Live/history.
+- [x] Add version 1 authenticated transport, connection status, collector lifetime totals and unknown-loss gaps. Keep local drops separate.
+- [x] Test concurrent arrivals, full-ID and hook filters, nonzero held offsets, rapid delayed queries, full-payload matches, every scrub input, frozen gesture mapping, eviction, timeout/reset, old replies after Clear, and bounded option paging in actual Electron on Linux.
+- [x] Verify held reconnection, payload offsets, counter reset, delayed Clear, heartbeat stalls and hidden/minimized capture in actual Electron on Linux. Run the separate landed-collector smoke with synthetic input and isolated configuration.
+
+[Navigation validation](docs/electron-navigation-validation.md) records query bounds. [Transport validation](docs/electron-transport-validation.md) records the independent fake-server suite, landed-collector smoke, inspected recordings and resource measurements. Private proxy, real-session and macOS checks remain unverified.
 
 Done when retained events can be explored in both directions without unbounded loading, and the Live endpoint follows only the currently connected stream.
 
 ## 5. Validate and document the usable first version
 
+- [x] Run the independent integrated Electron visual command from a fresh Linux source export with no collector or private configuration. Inspect all 107 screenshots and sampled frames from all 28 recordings; include desktop/narrow reference comparisons and the full handoff matrix in `docs/electron-regression-validation.md`.
+- [x] Complete three isolated integrated resource trials with empty-window comparisons, measured regression ceilings, successful and deliberately failing checker paths, and memory/queue plateaus across repeated eviction. Keep recording separate from measurement. Results are in `docs/electron-regression-validation.md`.
+- [x] Verify actual Linux minimization with an isolated Openbox window manager. Earlier feature runs only called `minimize()` under bare Xvfb; their docs now qualify that evidence. macOS lifecycle remains unverified.
+
 - [ ] Run a clean Linux capture setup and a clean Mac development setup connected through Tailscale Serve. Document actual commands, prerequisite versions, token creation, Codex trust, route isolation, and uninstall.
 - [ ] Record a synthetic load profile and measured observer latency, collector and Mac memory, CPU behavior, UI responsiveness, and total recording disk use. Choose conservative defaults from those results and test exceeding them.
 - [ ] Verify real Codex sessions with existing hooks, collector absence, Mac close, Mac sleep, connection loss, slow viewer, history limit, and storage failure. Confirm lost events never trigger replay or remote waits in the observer.
-- [ ] Update README status and compatibility claims only after the relevant checks pass. Keep the mockup marked as design until replaced with a synthetic-data screenshot. Keep SVGs consistent with final architecture.
-- [ ] Review the complete code and experience against the agreed priorities. Inspect tracked files for credentials, real captures, endpoints, account-specific paths, and unrelated machine configuration.
+- [x] Update README, architecture, UX and handoff status for performed Electron checks, identify actual-app synthetic evidence and preserve Linux progress. Keep Mac, real-session and private-proxy acceptance explicitly unverified.
+- [x] Review the complete code and experience against the agreed priorities. Correct the late synthetic timeout after Clear and the unavailable-worker controls in the final PR. The refreshed run passes 22 unit checks, 24 Electron scenarios and 281 resource checks; all 109 screenshots and 30 recordings were inspected. [Combined review](docs/electron-final-review.md) records the fixes, evidence and remaining limits. Inspect changed files for credentials, real captures, endpoints and unrelated machine configuration; none were found.
 - [ ] Move lasting instructions and measured budgets into permanent docs, then remove this temporary plan.
 
 Done when a fresh Linux clone can launch the collector and Electron viewer using their independent documented development workflows, and the required Linux failure, visual, and resource checks have evidence. Keep Mac setup and macOS-only checks explicitly unverified for later validation. Signed builds and auto-update infrastructure are not required.

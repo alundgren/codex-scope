@@ -1,31 +1,69 @@
 # Architecture
 
-The Linux observer and collector and a finite Electron fixture inspector are implemented for synthetic testing. Real-session compatibility, live viewer transport, database history and macOS behavior remain unverified. The priority order is normal Codex behavior, bounded host and laptop resource use, then event retention.
+The Linux observer and collector and an Electron viewer with temporary SQLite
+history and version 1 transport are implemented for synthetic testing.
+Real-session compatibility, private proxy delivery and macOS behavior remain
+unverified. The priority order
+is normal Codex behavior, bounded host and laptop resource use, then event retention.
 
 ## Current Electron delivery
 
-`electron/` runs and builds independently of Linux. The main process validates
-one bundled version 1 fixture recording and owns original payload text and
-clipboard writes. A sandboxed preload exposes only bounded event inspection
-and copying by internal ID. The isolated renderer displays neighboring event
-buttons and one complete original payload as text. It uses plain local
-HTML/CSS/JavaScript, a custom payload scrollbar and an allowlisted application
-protocol. It adds no runtime package dependency or worker process.
+`electron/` runs and builds independently of Linux. The main process limits
+incoming synthetic frames, owns one database/transport worker and validates narrow IPC
+for inspection, copying, status and Clear. The worker parses accepted input,
+stores original payload text and metadata in local recording order, and evicts
+oldest rows within fixed limits. The sandboxed, isolated renderer displays at
+most five neighboring summaries and one complete original payload as text.
+Plain local HTML/CSS/JavaScript supplies the selected journal and custom payload
+scrollbar. No runtime package or extra OS process is added.
 
-The recording is finite, capped at 16 events and 256 KiB of original payloads.
-The shipped five-event fixture occupies 70,623 payload bytes. Each accepted
-payload is at most 61,440 bytes, as required by the shared protocol. The
-renderer holds at most five summaries, one displayed payload, one in-flight
-inspection and one replaceable next target. One native clipboard write may be
-pending. The [Electron development guide](../electron/README.md) explains the
-commands and boundaries; [Linux validation](electron-validation.md) records
-the tested budgets and whole-process measurements.
+Each application recording starts in Live. A configured collector supplies live
+events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
+while capture continues. Retained bounds and arrival counts stay current.
+Literal search covers complete accepted payloads and metadata. Full session IDs
+and several hook selections filter history and matching-arrival counters equally.
+The vertical slider freezes its matching count and retained upper bound during a
+gesture, with one logical stop per event and a distinct Live endpoint. Timed
+worker queries and bounded option pages avoid whole-recording result arrays.
+Clear requires two separate activations within its three-second deadline,
+invalidates old work and removes old history before starting a fresh connection.
+The renderer adopts the generation accepted by the main process. A refused
+Clear leaves the visible selection intact. Synthetic intake checks its captured
+generation again after each worker reply or timeout, before changing queues or
+drop counters. Worker failure disables history operations while preserving the
+visible original text and scroll position for reading and manual copying.
+One application instance owns private recording files, separately from settings.
+Normal close deletes its recording; startup deletes abandoned owned files
+without reopening or recovering their data. Hide/minimize preserve capture
+while suppressing presentation work. Deletion failures remain explicit.
 
-The diagrams and history sections below describe the complete target system.
-This slice has no transport, credentials, SQLite, search, live arrivals, scrub
-navigation or Clear operation. It never records missed events. Root
-`AGENTS.md` already contains the owner's recorded-visual and minimal-overhead
-rules for this and later UX work.
+Admission, worker requests, database/cache/journal sizes, retention and cleanup
+all have fixed limits. The [Electron development guide](../electron/README.md)
+explains commands and ownership; [history validation](electron-history-validation.md)
+records storage budgets and actual Electron lifecycle checks.
+[Navigation validation](electron-navigation-validation.md) records inspected
+search/scrub flows, bounded queries and whole-application measurements.
+
+The existing worker also owns authenticated HTTP NDJSON transport. Local private
+settings contain an HTTPS origin and token-file location; literal loopback HTTP
+is accepted for same-host tests. Node HTTP APIs use separate connections for the
+stream and heartbeat, strict certificate checks, fixed deadlines and one retry
+timer. No redirects or replay requests are followed. Stream parsing uses a fixed
+frame buffer and awaits one storage operation, so stalled intake cannot retain
+an independent heartbeat loop. Collector lifetime totals are replaced by each
+health report; local drops and unknown coverage remain separate. Clear changes
+the shared generation before closing old transport and deleting its recording.
+[Transport validation](electron-transport-validation.md) records protocol limits,
+measured working sets, sources and actual-app failure/recovery evidence.
+
+[Integrated regression validation](electron-regression-validation.md) runs the production app through capture, full-history search, repeated eviction, hidden presentation and storage failures. It compares all Electron processes with an empty window, enforces measured resource thresholds and keeps the recorded visual suite separate. Validation tooling and its synthetic fake server are development-only.
+
+The [combined review](electron-final-review.md) records the subsequent corrections
+to Clear and worker failure handling, inspected scenarios and final resource check.
+
+The diagrams below describe the complete target system.
+There is no recording of missed events, replay or offline recovery. macOS
+performance, energy use, sleep, setup and native lifecycle remain unverified.
 
 ## System context
 
@@ -119,11 +157,28 @@ Store original accepted payload bytes with a small envelope: local event ID, rec
 
 Both processes need limits on incoming bytes, event rate, queue bytes, queue count, and pending operations. On the Mac, database work and expensive searching belong off the renderer and must not block Electron's lifecycle handling. Rate-limit UI updates and provide a bounded number of pending database batches. When capacity runs out, drop input before allocating more work.
 
-Use a configurable recording size budget and evict the oldest rows in small transactions. Account for the database, journal or WAL, temporary search files, and SQLite cache, not just payload lengths. Set physical growth limits and leave disk headroom. If eviction cannot keep up or a write fails, discard incoming events and keep the app responsive. Avoid full database compaction during capture. Freed pages can be reused without shrinking the file on every eviction. See [SQLite pragmas](https://sqlite.org/pragma.html) for the controls to evaluate; a database page limit alone does not bound every sidecar file.
+Use a fixed measured recording size budget and evict the oldest rows in small transactions. Account for the database, journal or WAL, temporary search files, and SQLite cache, not just payload lengths. Set physical growth limits and leave disk headroom. If eviction cannot keep up or a write fails, discard incoming events and keep the app responsive. Avoid full database compaction during capture. Freed pages can be reused without shrinking the file on every eviction. See [SQLite pragmas](https://sqlite.org/pragma.html) for the controls to evaluate; a database page limit alone does not bound every sidecar file.
 
-The initial viewport should load about 500 summaries, render only visible rows, and request a full accepted payload only on selection. Page with stable event IDs rather than increasingly large offsets. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured.
+The current viewer loads at most five visible summaries and one selected payload, with no whole-recording ID array or summary cache. Use stable event IDs for neighboring rows. Coarse slider positions may use SQL
+offsets within the measured retained row/byte ceilings and query deadline. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured. One active worker predicate
+also updates scalar matching counts when rows arrive or are evicted. A frozen
+navigation request carries the matching count, retained upper ID and cumulative
+matching eviction count. New arrivals cannot change its ranks; matching eviction
+invalidates it. Recording, filter and target identities reject obsolete replies.
+A JavaScript SQLite function checks shared cancellation and the query deadline
+per visited row. Choice indexes and result pages stay inside fixed budgets.
 
 Numeric defaults for bytes, timeouts, rates, and storage are implementation decisions to establish with measured overload checks in step 1 and step 3 of [the plan](../plan.md). The agreed behavior at every limit is to shed work, not expand capacity indefinitely.
+
+The current Electron implementation uses built-in SQLite in one worker thread.
+A main-process broker caps incoming frame bytes/count and outstanding requests;
+only a bounded neighborhood and one payload cross into the renderer. The worker
+stores both local and remote receive times and orders by local increasing IDs.
+A shared generation counter stops old batches before another transaction; every
+query reply also carries its generation. Clear changes that counter before
+waiting for database deletion, and creates a new input connection only after
+successful cleanup. Its numeric budgets and measured costs are in
+[Electron history validation](electron-history-validation.md).
 
 ## Recording lifetime
 
@@ -153,7 +208,7 @@ No telemetry, full payload logs, transcript reads, environment capture, public n
 
 One Linux host, one Mac viewer, multiple Codex sessions, event inputs only. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
 
-Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). SQLite integration, Mac resource limits, and complete real-session and proxy checks remain in [the plan](../plan.md).
+Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). Native Mac resource validation and complete real-session and proxy checks remain in [the plan](../plan.md).
 
 ## Guided Linux setup
 

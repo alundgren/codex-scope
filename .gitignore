@@ -3,6 +3,8 @@
 .env.*
 !.env.example
 /config.local.*
+/electron/connection.local.json
+/electron/token.local
 /config/*.local.*
 *.pem
 *.key
@@ -22,6 +24,7 @@
 /local/
 
 # UX evidence belongs in pull requests, not Git history
+/.artifacts/visual/
 /docs/evidence/**/*.png
 /docs/evidence/**/*.webm
 /docs/validation/**/*.png
