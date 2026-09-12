@@ -77,24 +77,37 @@ Every retained event and pending operation needs a limit on both machines.
   app. If visual execution or recording is blocked, report the blocker and
   incomplete scenarios explicitly; do not claim the UX change is verified.
 - Visual verification remains required, including for CLI interaction changes.
-  Write generated evidence to `.artifacts/visual/`, which must be ignored by
-  Git. Upload selected screenshots and walkthroughs as GitHub PR attachments.
-  Do not commit generated evidence or link to Git blobs as its storage
-  location. Commit reproduction scripts and concise validation results with
-  the tested commit, environment, scenarios, limitations, and PR link. If
-  uploading is blocked, report the blocker rather than committing the files.
+  Generate visual evidence under ignored `.artifacts/visual/` and other run
+  output under ignored local directories. All attached evidence belongs only
+  in GitHub attachments associated with the relevant PR, never in Git files,
+  Git blob links, or another hosting service. Put validation summaries, tested
+  commits, environments, scenarios, and limitations in the PR. If upload is
+  blocked, report the blocker rather than committing evidence as a fallback.
+- Keep repository documentation about current behavior, architecture, operating
+  instructions, and maintained resource limits. Do not commit development
+  journals, completion reports, review narratives, dated validation results,
+  command receipts, or generated evidence in any format. Reproduction scripts,
+  synthetic fixtures, metric definitions, maintained thresholds, and authored
+  design references belong in Git. Review prose for historical run results as
+  well as checking the staged file paths with `node scripts/check-evidence.mjs`,
+  also run by `vp run check`. Stage intended evidence removals before this check;
+  deleting a working copy alone does not remove it from the commit.
 - Keep Electron overhead minimal. Justify added runtime dependencies and
   processes with a concrete need and measured cost. Prefer built-in platform
   capabilities, load optional work on demand, and exclude development tools
   and unused assets from the shipped app. Consult current primary-source
   Electron guidance when choosing or changing the runtime architecture;
-  record sources and measurements in the application documentation.
+  record technical rationale and sources in application documentation, with
+  measured results in the PR.
 - Keep Linux and Electron dependencies, build commands, and tests independent.
   Electron development must work with synthetic data without a collector.
   Neither application imports the other's implementation. Keep shared
   protocol material limited to the wire contract and shared fixtures.
 
-Keep this file about principles. Record implementation details and measured
-budgets in the relevant application documentation, `docs/architecture.md`,
-and `ux.md`. Record progress in `plan.md`. Preserve concurrent Linux and UI
-work when reconciling changes to shared documents.
+Keep this file about principles. Keep current implementation details and resource
+budgets in the relevant application documentation, `docs/architecture.md`, and
+`ux.md`. `plan.md` is the sole temporary progress-tracking exception until the
+initial plan reaches parity. Preserve its remaining requirements and completion
+states; keep attached evidence and detailed run reports out of it. Remove the
+plan after parity and move any lasting instructions into the appropriate docs.
+Preserve concurrent Linux and UI work when reconciling shared documents.

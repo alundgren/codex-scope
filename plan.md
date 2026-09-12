@@ -1,6 +1,6 @@
 # Build plan
 
-Temporary implementation checklist. Linux code and synthetic tests are implemented under issue #1; real-session acceptance remains pending. Electron work proceeds independently. Move lasting decisions into the architecture, deployment, and UX documents as they are implemented. Delete this file once the build is complete and its useful information lives in those documents.
+Temporary implementation checklist, retained until initial-plan parity. Linux code and synthetic tests are implemented under issue #1; real-session acceptance remains pending. Electron work proceeds independently. Move lasting decisions into the architecture, deployment, and UX documents as they are implemented. Delete this file once the build is complete and its useful information lives in those documents.
 
 ## Rust and TypeScript port
 
@@ -8,7 +8,8 @@ The owner selected native Rust for the complete Linux application and TypeScript
 for Electron. Bun manages JavaScript dependencies; Vite+ provides shared
 commands while Cargo builds and tests Linux. Electron retains its embedded
 Node/Chromium runtime and `node:sqlite`. No existing deployment migration is
-required. Historical validation below describes the former implementation.
+required. This file tracks remaining parity work; detailed validation results
+and attachments belong in the relevant PR.
 
 - [x] Agree runtime responsibilities and verify minimal Rust/datagram feasibility.
 - [x] Audit this VM for active Scope services/hooks; only inert test artifacts found.
@@ -16,19 +17,19 @@ required. Historical validation below describes the former implementation.
 - [x] Port guided setup, recovery and safe removal to Rust with isolated tests.
 - [x] Convert Electron source and validation tooling to checked TypeScript.
 - [x] Run actual Electron visual/resource checks and native collector integration.
-- [x] Record fresh measurements and remaining platform/real-session limitations in `docs/port-validation.md`.
+- [x] Measure the port and identify remaining platform and real-session limitations.
 - [x] Complete independent review of the full change and prepare the pull request.
 
 ## Current work
 
 - [x] Separate `linux/`, reserved `electron/`, and shared `protocol/` tooling and fixtures; add principles-only root `AGENTS.md`.
 - [x] Implement Linux observer, collector, isolated installer, and synthetic viewer.
-- [x] Run Linux synthetic failure tests, installed-runtime registration probe, startup benchmark, and short overload check. Evidence and limitations are in `docs/linux-validation.md`.
-- [x] Complete independent Plan, technical, and CLI review. Fix the input-timing test race and numeric-overflow validation finding; reviewer independently confirms all 33 tests pass.
+- [x] Run Linux synthetic failure tests, installed-runtime registration probe, startup benchmark, and short overload check.
+- [x] Complete independent Plan, technical, and CLI review. Fix the input-timing test race and numeric-overflow validation finding.
 - [ ] Validate real-session policy behavior before approving capture for actual use. This work deliberately does not install account hooks or change trust. Collector tests can run synthetically, but do not complete this acceptance gate.
 - [x] Implement the finite Electron fixture inspector for issue #5, with independent pinned tooling, sandboxed local content, neighboring rows, original-text inspection/copy and the custom payload scrollbar. Later deliveries below add filters, scrubbing, Clear, SQLite and live transport.
-- [x] Complete issue #5's recorded Electron tests, visual inspection, clean-checkout validation and measured empty-window comparison. Evidence and Linux-only limits are in `docs/electron-validation.md`.
-- [x] Complete issue #5's independent Plan, technical and UX review. The reviewer reported no findings.
+- [x] Complete issue #5's recorded Electron tests, visual inspection, clean-checkout validation and measured empty-window comparison.
+- [x] Complete issue #5's independent Plan, technical and UX review.
 
 ## Fixed requirements
 
@@ -57,7 +58,7 @@ or the Linux agent's capture responsibilities.
 ## 1. Prove capture compatibility and failure behavior
 
 - [x] Establish independent Linux development tooling. Choose the observer runtime using startup measurements; record tested tool versions and commands.
-- [x] Add synthetic fixtures and an isolated Codex CLI 0.153.4 registration probe. All twelve registrations are recognized and untrusted, without warnings.
+- [x] Add synthetic fixtures and an isolated Codex CLI 0.153.4 registration probe.
 - [ ] Verify actual event emission, tool coverage, trust behavior in use, and neutral return behavior in real sessions. Registration recognition alone does not complete compatibility validation.
 - [x] Implement the minimal observer and local receiver. Bound input and processing time; make one local handoff, exit silently, and avoid retries or detached delivery.
 - [x] Implement explicit install/uninstall with atomic configuration replacement, ownership recovery, idempotence, and preservation of unrelated or edited hooks. Test against isolated configuration without granting trust.
@@ -78,23 +79,14 @@ Done when a real supported Codex session has the same policy and output behavior
 - [x] Measure a short synthetic overload profile and verify bounded queue use.
 - [ ] Test private HTTPS proxy delivery and route isolation through Tailscale Serve.
 - [ ] Verify rejection from another OS account and measure sustained isolated collector CPU/RSS.
-- [x] Add guided Linux setup, a durable recovery record, permanent runtime copies, optional Tailscale Serve, interactive capture/collector-stop checks, and ownership-preserving uninstall. Include an install guide and recorded synthetic terminal walkthroughs linked in PR #12. Keep reproduction details and validation limits in `docs/linux-validation.md`; generated evidence is removed from the branch contents.
-- [x] Clarify visual evidence storage in `AGENTS.md`: generate into ignored `.artifacts/visual/`, upload selected evidence as PR attachments, and keep reproduction instructions and validation results in Git. Include CLI interactions in visual verification.
+- [x] Add guided Linux setup, a durable recovery record, permanent runtime copies, optional Tailscale Serve, interactive capture/collector-stop checks, and ownership-preserving uninstall. Include an install guide and recorded synthetic terminal walkthroughs linked in PR #12. Keep reproduction commands in `linux/install.md` and attach evidence only in GitHub.
+- [x] Clarify visual evidence storage in `AGENTS.md`: generate into ignored `.artifacts/visual/`, upload selected evidence as PR attachments, keep reproduction instructions in Git, and put validation results in the PR. Include CLI interactions in visual verification.
 - [ ] Run the guided installer end to end on a live account with private HTTPS delivery; separately verify the eventual UI connection. Synthetic host-command and approval fixtures do not complete these checks.
 - [x] Change the default loopback port to 4319 and report port conflicts separately from path/token failures. Guided setup suggests an available port and preserves existing listeners.
 
-Live Linux trial, user-reported on 2026-09-11: after CLI hook approval, a
-fresh Codex client session completed a harmless command with no collector running.
-A later 60-second viewer run received 13 events totaling 6905 payload bytes,
-with all reported collector drop counters at zero. Loss outside the collector
-remains unknown. This establishes basic live delivery, not event-type coverage,
-session attribution, measured overhead, or policy coexistence. The user also
-confirmed that the same Codex client session completed another harmless command after
-the collector stopped. The user then confirmed live uninstall, verification that
-the original hook configuration survived, restoration of the configuration
-directory permissions, and a successful harmless command in a fresh Codex client
-session. This completes the basic install, capture, collector-stop, and uninstall
-smoke test. No payloads are recorded here.
+Basic live install, capture, collector-stop and uninstall smoke testing is
+complete. Event-type coverage, session attribution, measured overhead and policy
+coexistence remain incomplete. Loss outside collector counters remains unknown.
 
 Done when a synthetic client can observe live events through a private proxy, but cannot retrieve events generated while disconnected, and collector resources remain bounded under overload.
 
@@ -109,7 +101,7 @@ Done when a synthetic client can observe live events through a private proxy, bu
 - [x] Test actual SQLite full/read-only failures, simulated low disk headroom, selected-event eviction, bounded burst intake, delayed Clear work, cleanup failure, second instances, force kill/relaunch, normal close and hidden/minimized capture in Electron on Linux.
 - [ ] Validate macOS sleep, native window lifecycle, energy use and performance. Linux results do not complete these checks.
 
-Electron temporary history is implemented. [History validation](docs/electron-history-validation.md) records the Linux synthetic checks, measured limits, inspected recordings and remaining macOS limits. Filtered navigation and version 1 live transport are implemented below.
+Electron temporary history, filtered navigation and version 1 live transport are implemented. Current limits and validation commands are in [Electron development](electron/README.md).
 
 ## 4. Implement filtering and frozen history
 
@@ -124,21 +116,21 @@ Electron temporary history is implemented. [History validation](docs/electron-hi
 - [x] Test concurrent arrivals, full-ID and hook filters, nonzero held offsets, rapid delayed queries, full-payload matches, every scrub input, frozen gesture mapping, eviction, timeout/reset, old replies after Clear, and bounded option paging in actual Electron on Linux.
 - [x] Verify held reconnection, payload offsets, counter reset, delayed Clear, heartbeat stalls and hidden/minimized capture in actual Electron on Linux. Run the separate landed-collector smoke with synthetic input and isolated configuration.
 
-[Navigation validation](docs/electron-navigation-validation.md) records query bounds. [Transport validation](docs/electron-transport-validation.md) records the independent fake-server suite, landed-collector smoke, inspected recordings and resource measurements. Private proxy, real-session and macOS checks remain unverified.
+Private proxy, real-session and macOS checks remain unverified.
 
 Done when retained events can be explored in both directions without unbounded loading, and the Live endpoint follows only the currently connected stream.
 
 ## 5. Validate and document the usable first version
 
-- [x] Run the independent integrated Electron visual command from a fresh Linux source export with no collector or private configuration. Inspect all 107 screenshots and sampled frames from all 28 recordings; include desktop/narrow reference comparisons and the full handoff matrix in `docs/electron-regression-validation.md`.
-- [x] Complete three isolated integrated resource trials with empty-window comparisons, measured regression ceilings, successful and deliberately failing checker paths, and memory/queue plateaus across repeated eviction. Keep recording separate from measurement. Results are in `docs/electron-regression-validation.md`.
-- [x] Verify actual Linux minimization with an isolated Openbox window manager. Earlier feature runs only called `minimize()` under bare Xvfb; their docs now qualify that evidence. macOS lifecycle remains unverified.
+- [x] Run the independent integrated Electron visual command from a fresh Linux source export with no collector or private configuration. Inspect screenshots and walkthroughs, including desktop/narrow reference comparisons and the full handoff matrix.
+- [x] Complete three isolated integrated resource trials with empty-window comparisons, measured regression ceilings, successful and deliberately failing checker paths, and memory/queue plateaus across repeated eviction. Keep recording separate from measurement.
+- [x] Verify actual Linux minimization with an isolated Openbox window manager. macOS lifecycle remains unverified.
 
 - [ ] Run a clean Linux capture setup and a clean Mac development setup connected through Tailscale Serve. Document actual commands, prerequisite versions, token creation, Codex trust, route isolation, and uninstall.
 - [ ] Record a synthetic load profile and measured observer latency, collector and Mac memory, CPU behavior, UI responsiveness, and total recording disk use. Choose conservative defaults from those results and test exceeding them.
 - [ ] Verify real Codex sessions with existing hooks, collector absence, Mac close, Mac sleep, connection loss, slow viewer, history limit, and storage failure. Confirm lost events never trigger replay or remote waits in the observer.
 - [x] Update README, architecture, UX and handoff status for performed Electron checks, identify actual-app synthetic evidence and preserve Linux progress. Keep Mac, real-session and private-proxy acceptance explicitly unverified.
-- [x] Review the complete code and experience against the agreed priorities. Correct the late synthetic timeout after Clear and the unavailable-worker controls in the final PR. The refreshed run passes 22 unit checks, 24 Electron scenarios and 281 resource checks; all 109 screenshots and 30 recordings were inspected. [Combined review](docs/electron-final-review.md) records the fixes, evidence and remaining limits. Inspect changed files for credentials, real captures, endpoints and unrelated machine configuration; none were found.
+- [x] Review the complete code and experience against the agreed priorities. Correct the late synthetic timeout after Clear and the unavailable-worker controls in the final PR. Inspect changed files for credentials, real captures, endpoints and unrelated machine configuration; none were found.
 - [ ] Move lasting instructions and measured budgets into permanent docs, then remove this temporary plan.
 
 Done when a fresh Linux clone can launch the collector and Electron viewer using their independent documented development workflows, and the required Linux failure, visual, and resource checks have evidence. Keep Mac setup and macOS-only checks explicitly unverified for later validation. Signed builds and auto-update infrastructure are not required.

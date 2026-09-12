@@ -1,12 +1,11 @@
 # Architecture
 
-The Linux observer and collector and an Electron viewer with temporary SQLite
-history and version 1 transport are implemented for synthetic testing.
-Real-session compatibility, private proxy delivery and macOS behavior remain
-unverified. The priority order
+The Linux observer and collector send live events to an Electron viewer with
+temporary SQLite history and version 1 transport. Real-session compatibility,
+private proxy delivery and macOS behavior remain unverified. The priority order
 is normal Codex behavior, bounded host and laptop resource use, then event retention.
 
-## Current Electron delivery
+## Electron viewer
 
 `electron/` runs and builds independently of Linux. The main process limits
 incoming synthetic frames, owns one database/transport worker and validates narrow IPC
@@ -39,12 +38,9 @@ while suppressing presentation work. Deletion failures remain explicit.
 
 Admission, worker requests, database/cache/journal sizes, retention and cleanup
 all have fixed limits. The [Electron development guide](../electron/README.md)
-explains commands and ownership; [history validation](electron-history-validation.md)
-records storage budgets and actual Electron lifecycle checks.
-[Navigation validation](electron-navigation-validation.md) records inspected
-search/scrub flows, bounded queries and whole-application measurements.
+explains commands, ownership and resource limits.
 
-The existing worker also owns authenticated HTTP NDJSON transport. Local private
+The worker also owns authenticated HTTP NDJSON transport. Local private
 settings contain an HTTPS origin and token-file location; literal loopback HTTP
 is accepted for same-host tests. Node HTTP APIs use separate connections for the
 stream and heartbeat, strict certificate checks, fixed deadlines and one retry
@@ -53,13 +49,10 @@ frame buffer and awaits one storage operation, so stalled intake cannot retain
 an independent heartbeat loop. Collector lifetime totals are replaced by each
 health report; local drops and unknown coverage remain separate. Clear changes
 the shared generation before closing old transport and deleting its recording.
-[Transport validation](electron-transport-validation.md) records protocol limits,
-measured working sets, sources and actual-app failure/recovery evidence.
-
-[Integrated regression validation](electron-regression-validation.md) runs the production app through capture, full-history search, repeated eviction, hidden presentation and storage failures. It compares all Electron processes with an empty window, enforces measured resource thresholds and keeps the recorded visual suite separate. Validation tooling and its synthetic fake server are development-only.
-
-The [combined review](electron-final-review.md) records the subsequent corrections
-to Clear and worker failure handling, inspected scenarios and final resource check.
+The [protocol](../protocol/README.md) defines the wire limits. The Electron
+resource workflow compares all app processes with an empty window and keeps
+measurement separate from visual recording. Validation tooling and its
+synthetic fake server are development-only.
 
 The diagrams below describe the complete target system.
 There is no recording of missed events, replay or offline recovery. macOS
@@ -168,7 +161,7 @@ invalidates it. Recording, filter and target identities reject obsolete replies.
 A JavaScript SQLite function checks shared cancellation and the query deadline
 per visited row. Choice indexes and result pages stay inside fixed budgets.
 
-Numeric defaults for bytes, timeouts, rates, and storage are implementation decisions to establish with measured overload checks in step 1 and step 3 of [the plan](../plan.md). The agreed behavior at every limit is to shed work, not expand capacity indefinitely.
+Numeric defaults for bytes, timeouts, rates, and storage are maintained in the application development guides. Changes require measured overload checks. At every limit, shed work rather than expand capacity indefinitely.
 
 The current Electron implementation uses built-in SQLite in one worker thread.
 A main-process broker caps incoming frame bytes/count and outstanding requests;
@@ -177,8 +170,8 @@ stores both local and remote receive times and orders by local increasing IDs.
 A shared generation counter stops old batches before another transaction; every
 query reply also carries its generation. Clear changes that counter before
 waiting for database deletion, and creates a new input connection only after
-successful cleanup. Its numeric budgets and measured costs are in
-[Electron history validation](electron-history-validation.md).
+successful cleanup. Its numeric budgets are in the
+[Electron development guide](../electron/README.md#ownership-and-limits).
 
 ## Recording lifetime
 
@@ -208,7 +201,7 @@ No telemetry, full payload logs, transcript reads, environment capture, public n
 
 One Linux host, one Mac viewer, multiple Codex sessions, event inputs only. Historical playback, multi-host aggregation, shared viewers, hook command wrapping, durable archives, offline recording, signed distribution, and automatic updates are outside this design. Offline recording is deliberately excluded from future releases too.
 
-Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md), with measured evidence in [Linux validation](linux-validation.md). Native Mac resource validation and complete real-session and proxy checks remain in [the plan](../plan.md).
+Linux runtime choices, limits, and commands are recorded in [Linux development](../linux/README.md). Native Mac resource validation and complete real-session and proxy checks remain in [the plan](../plan.md).
 
 ## Guided Linux setup
 
@@ -231,11 +224,11 @@ budgets. Runtime queues and payload limits remain those of the collector.
 The recovery copy and backups remain private until explicitly purged. No captured
 event payload is saved by setup.
 
-The port retains Electron's sandboxed renderer, context isolation and bounded
+Electron uses a sandboxed renderer, context isolation and bounded
 SQLite worker. Vite+ bundles the TypeScript main process, preload and renderer;
 Bun and compiler packages stay outside the application output. This follows the
 current Electron [performance guidance](https://www.electronjs.org/docs/latest/tutorial/performance)
 on measuring the application, bundling code and keeping expensive work off the
 UI threads, and its [security guidance](https://www.electronjs.org/docs/latest/tutorial/security)
-on sandboxing and context isolation. The retained worker is included in whole-app
-measurements in [port validation](port-validation.md).
+on sandboxing and context isolation. Include the worker in whole-app
+resource measurements as described in the [development guide](../electron/README.md#resource-metrics).

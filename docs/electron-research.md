@@ -1,12 +1,8 @@
-# Electron research for UI planning
+# Electron runtime rationale
 
-Checked 2026-09-11 against current primary sources. Recommendations below are planning judgments, not measured Codex Scope results.
-
-Implementation rechecked the sources and pinned Electron 44.3.0 with Playwright
-1.63.0. The actual sandboxed app, asynchronous original-text clipboard writes,
-and Xvfb recording work with that pair. It uses no application package
-dependencies or formatting library. Temporary history now uses one bounded worker thread. See [Linux validation](electron-validation.md)
-for the measured empty-window comparison and the limits of those results.
+The viewer uses local HTML/CSS/TypeScript, Electron's embedded Node runtime,
+and built-in SQLite in one bounded worker thread. This document records the
+technical rationale and primary-source references for those choices.
 
 - Use a supported stable Electron release and pin the version used for validation. Electron 43 improved startup through snapshots, cached bytecode and less blocking IPC. Electron 44 includes further initialization and IPC improvements. Recheck release notes at implementation time rather than copying an old starter template. Sources: https://www.electronjs.org/blog/electron-43-0 and https://www.electronjs.org/blog/electron-44-0
 - Electron 44 adds built-in window-state persistence and changes clipboard APIs to asynchronous operations. Check these APIs before adding packages for the same jobs, and use documentation for the pinned version. Source: https://www.electronjs.org/blog/electron-44-0
@@ -20,14 +16,14 @@ for the measured empty-window comparison and the limits of those results.
 
 The owner accepts Linux VM evidence for current delivery. Compare an empty Electron app with the implemented viewer on the same VM. Use a production bundle where possible; packaging is not a new distribution requirement. Record runtime and application bytes separately, cold startup, all-process memory and CPU, and interaction latency with workload and machine details. VM results do not establish Mac memory, energy, GPU, sleep, or native window behavior. Cover idle, sustained arrivals, bursts, maximum accepted payloads, frozen reading, rapid search/scrubbing, hidden/minimized capture, disk cleanup and memory pressure. Establish numeric budgets from these measurements, not this research note. Collect performance runs separately from recorded visual runs so capture overhead does not become app overhead.
 
-Electron documents Xvfb for headless Linux execution. It is already installed on this VM. Use the actual app with Playwright Electron automation or equivalent capture to record scenarios and screenshots. Run resource measurements separately from video capture. Source: https://www.electronjs.org/docs/latest/tutorial/testing-on-headless-ci
+Electron documents Xvfb for headless Linux execution. Use the actual app with Playwright Electron automation or equivalent capture to record scenarios and screenshots. Run resource measurements separately from video capture. Source: https://www.electronjs.org/docs/latest/tutorial/testing-on-headless-ci
 
-PR #4 supplies HTTP NDJSON version 1, not WebSocket. Use incremental HTTP response parsing and the separate heartbeat request defined in its protocol. No WebSocket package is needed. Planning inspected commit `ee6953bc0a38e3e70a7cb355351427b50df766e6`; recheck the landed contract before implementation. Source: https://github.com/alundgren/codex-scope/pull/4
+The [wire contract](../protocol/README.md) defines HTTP NDJSON version 1 and a
+separate heartbeat request. Incremental HTTP response parsing uses Node's
+built-in APIs and requires no WebSocket package.
 
 ## Temporary history runtime decision
 
-The actual Electron 44.3.0 executable reported Node 24.20.0 and SQLite 3.53.4.
-A `node:sqlite` in-memory create/query/close check succeeded in that executable.
 The exact [Node 24.20.0 SQLite documentation](https://github.com/nodejs/node/blob/v24.20.0/doc/api/sqlite.md)
 confirms synchronous database calls, the zero-wait busy timeout, and defensive
 mode. All SQLite access, payload parsing, file accounting and deletion therefore

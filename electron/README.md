@@ -23,9 +23,9 @@ restart, and there is no replay or recovery of missed events.
 
 Commands below use the pinned workspace `vp` command from `node_modules/.bin`. Add that directory to your development shell PATH, or invoke it by its relative path.
 
-Tested with Node 24.21.0, Bun 1.3.14, Ubuntu 26.04.1 x64 and Xvfb. Electron
-44.3.0 embeds Node 24.20.0 and SQLite 3.53.4. Playwright 1.63.0 is used only for
-development validation. Linux needs Electron's shared libraries, including
+Runtime and development versions are pinned in `.node-version`,
+`rust-toolchain.toml`, the package manifests and `bun.lock` at the repository
+root. Playwright is used only for development validation. Linux needs Electron's shared libraries, including
 NSS, ATK, X11, GBM, ALSA and CUPS, plus Xvfb and xauth. The combined
 validation and Electron test commands also need Openbox and `xprop` from
 `x11-utils` to test actual minimization. On Ubuntu, install those development
@@ -154,20 +154,64 @@ bursts, stalled storage and failure/recovery. Append `--runs=1` for a single
 trial. Reports go under ignored `measurements/regression/`. Missing required
 metrics or exceeded checked-in thresholds return failure. Visual artifacts go
 under ignored `../.artifacts/visual/electron-report/`; inspect the screenshots and recordings.
-See [integrated regression validation](../docs/electron-regression-validation.md)
-for metric definitions, machine prerequisites, measured variation, limits and
-the complete handoff scenario matrix.
+The acceptance scenarios are described in the [UI reference](../docs/mockups/event-journal-v2-notes.md#electron-build-handoff)
+and implemented in `test/`. Publish run summaries in the PR and attach evidence
+there using GitHub attachments only. Keep generated output out of Git.
 
-The original per-feature `measure:history`, `measure:navigation`,
-`measure:transport` and `measure -- baseline` commands remain available for
-focused investigation. [Transport validation](../docs/electron-transport-validation.md),
-[search and navigation validation](../docs/electron-navigation-validation.md),
-[history validation](../docs/electron-history-validation.md) and
-[initial inspector validation](../docs/electron-validation.md) retain their
-dated results. Linux synthetic checks do not establish real Codex compatibility
-or macOS performance, energy use, sleep, native lifecycle or setup.
+The focused `measure:history`, `measure:navigation`, `measure:transport` and
+`measure -- baseline` commands are available for investigations. Linux synthetic
+checks do not establish real Codex compatibility or macOS performance, energy
+use, sleep, native lifecycle or setup.
+
+## Resource metrics
+
+Run resource trials independently of screenshots, video and other app workloads.
+The workflow compares fresh app and empty-window processes with equal window
+size, sandboxing and background throttling. Filesystem caches remain warm, so
+startup measures process launch rather than cold-machine startup. Reports include
+the workload, runtime versions and machine configuration needed to assess results.
+
+| Metric | Definition |
+| --- | --- |
+| Summed RSS | All Electron process-group members and descendants, sampled with 250 ms waits plus reader overhead. Shared pages count more than once. Worker threads are included in their owning process. |
+| Steady RSS | Median RSS in the final third of a workload's samples. |
+| PSS | Aggregate endpoint snapshot that apportions shared pages. It is not a peak measurement. |
+| CPU | User and system ticks divided by actual monotonic sample duration. 100% means one full core. Sampling can miss short-lived processes and peaks. |
+| Startup | Driver launch through readiness, connection readiness for configured input, and two completed animation frames. |
+| Input latency | Input start through completed selection, matching payload and slider, and the following animation frame. Search includes the 180 ms debounce. |
+| Timer delay | Maximum extra delay beyond a 20 ms diagnostic timer in main and renderer during active workloads. |
+| Disk | Worker maximum across all recording files inside transactions, including rollback journal and owner marker, corroborated by an endpoint directory scan. |
+| Pending work | Broker queue count/bytes and requests, transport buffers, and the single processing operation. |
+| Drops | Storage/rate/queue counters, transport rate disconnects and fake-server refusals remain separate. Unobserved losses remain unknown. |
+
+Xvfb, Openbox, the driver, fake collector and metric reader are excluded from app
+totals. Native Linux `/proc` access is required for resource measurements.
+The checked ceilings and required workloads are maintained in
+[`scripts/resource-thresholds.ts`](scripts/resource-thresholds.ts). They are
+regression checks, not portable performance guarantees. Recalibration requires
+new measurements and review in the PR; `--calibrate` collects results without
+accepting the ceilings and does not rewrite them. Missing metrics, incomplete
+workloads and exceeded ceilings fail `check:resources`.
 
 ## Ownership and limits
+
+| Resource | Limit and behavior |
+| --- | --- |
+| Accepted data | 61,440 payload bytes and 393,216 encoded frame bytes. Oversized events are dropped whole. |
+| Synthetic intake | 32 queued frames / 1 MiB, batches of four frames / 512 KiB, 256 events/s and 2 MiB/s with 32-event / 512 KiB burst credit. |
+| Worker requests | Four outstanding requests, with one slot reserved for Clear/close. Timeouts retain their slot until reply or worker exit. |
+| Presentation | Five summaries, one selected payload, one unacknowledged status per recipient and at most five updates/s; hidden presentation stops. |
+| Retention | 10,000 rows and 8 MiB accounted bytes, including payloads, labels, previews and row overhead. Evict at most 64 rows per input batch; drop input if more cleanup is needed. |
+| Disk | 16 MiB database, 33 MiB total recording files, and 34 MiB free headroom before writes. Account for sidecars and owner files. |
+| Memory | 2 MiB SQLite cache and 8 MiB SQLite heap. Worker V8 old/young heaps are limited to 32/8 MiB with a 4 MiB stack. These are parts of total app memory. |
+| Deadlines | 2,500 ms worker requests, 1,500 ms cleanup and 2,750 ms quit. Cleanup scans at most 32 root entries and five files per owned directory. |
+| Live transport | One stream, one heartbeat, one retry timer and one event awaiting storage. Fixed frame buffer and 64 KiB response high-water mark. |
+| Transport rates | 2 MiB/s with 512 KiB burst credit; 512 frames/s with 512-frame burst credit. Excess closes the connection with unknown loss. |
+| Transport deadlines | 2,500 ms response/hello and 1,500 ms heartbeat response. Heartbeat every 2,000 ms, stopped after 4,000 ms without processed input or 2,000 ms waiting for storage. |
+
+The finite seed-file loader in `src/recording.ts` accepts at most 16 events and
+256 KiB of original payloads, reading at most 1,966,080 encoded source bytes.
+These input limits are separate from retained SQLite history.
 
 `history.ts` is the main-process broker. It caps frame bytes, rate, queue count,
 queue bytes and requests before passing work to `history-worker.ts`. The worker
