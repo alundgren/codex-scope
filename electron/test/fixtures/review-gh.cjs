@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 const fs = require("node:fs");
+const crypto = require("node:crypto");
 const path = require("node:path");
 const args = process.argv.slice(2);
 const endpoint = args[3];
@@ -49,7 +50,50 @@ const special = [
   { filename: "large.ts", status: "modified", patch: "x".repeat(140000) },
   { filename: "truncated.ts", status: "modified", patch: "@@ -1,5 +1,5 @@\n one" },
 ];
-if (/\/pulls\/\d+$/.test(endpoint)) {
+special.push(
+  { filename: "link.ts", status: "modified" },
+  { filename: "dependency", status: "modified" },
+);
+const names = [
+  ...special.map((x) => x.filename),
+  "src/old.ts",
+  ...Array.from({ length: 3000 }, (_, i) => `src/file-${i}.ts`),
+];
+const blobId = (name) => crypto.createHash("sha1").update(name).digest("hex");
+if (endpoint === "graphql") {
+  const expression =
+    args.find((x) => x.startsWith("expression="))?.slice("expression=".length) || "";
+  const parent = expression.slice(expression.indexOf(":") + 1);
+  const result = {
+    data: {
+      repository: {
+        object: {
+          __typename: "Tree",
+          entries: names
+            .filter((name) => path.posix.dirname(name) === (parent || "."))
+            .map((name) => ({
+              name: path.posix.basename(name),
+              mode: name === "link.ts" ? 0o120000 : name === "dependency" ? 0o160000 : 0o100644,
+              type: name === "dependency" ? "commit" : "blob",
+              oid: blobId(name),
+            })),
+        },
+      },
+    },
+  };
+  if (state.mode === "maximum-tree" || state.mode === "tree-pressure") {
+    const entries = result.data.repository.object.entries;
+    const total = state.mode === "maximum-tree" ? 10000 : 10001;
+    while (entries.length < total)
+      entries.push({
+        name: `unused-${entries.length}`,
+        mode: 0o100644,
+        type: "blob",
+        oid: "f".repeat(40),
+      });
+  }
+  output(result);
+} else if (/\/pulls\/\d+$/.test(endpoint)) {
   output({
     number: Number(endpoint.split("/").at(-1)),
     title: "Prevent duplicate checkout orders",
@@ -72,10 +116,11 @@ else if (endpoint.includes("/files?")) {
       };
     }),
   );
-} else if (endpoint.includes("/contents/")) {
-  if (endpoint.includes("asset.bin")) output(Buffer.from([0, 1, 2, 3]));
-  else if (endpoint.includes("missing.txt")) process.exit(1);
-  else if (endpoint.includes("large.ts")) output("x".repeat(300000));
+} else if (endpoint.includes("/git/blobs/")) {
+  const name = names.find((name) => blobId(name) === endpoint.split("/").at(-1));
+  if (name === "asset.bin") output(Buffer.from([0, 1, 2, 3]));
+  else if (name === "missing.txt") process.exit(1);
+  else if (name === "large.ts") output("x".repeat(300000));
   else if (state.longSource)
     output(Array.from({ length: 19000 }, (_, i) => `line ${i}`).join("\n"));
   else output(Array.from({ length: 300 }, (_, i) => `source line ${i + 1}`).join("\n"));

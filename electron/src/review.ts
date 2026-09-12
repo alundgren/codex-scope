@@ -121,8 +121,10 @@ export function pngDimensions(bytes: Buffer) {
     throw new Error("The PNG is incomplete or has unsupported trailing data.");
   return { width, height };
 }
-async function readScreenshot(file: string): Promise<Buffer> {
-  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+async function readScreenshot(file: string, signal?: AbortSignal): Promise<Buffer> {
+  if (!(await lstat(file)).isFile()) throw new Error("Choose a regular PNG screenshot file.");
+  if (signal?.aborted) throw new Error("Screenshot attachment cancelled.");
+  const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const stat = await handle.stat();
     if (!stat.isFile() || stat.size > L.imageBytes)
@@ -130,6 +132,7 @@ async function readScreenshot(file: string): Promise<Buffer> {
     const buffer = Buffer.alloc(stat.size + 1);
     let count = 0;
     while (count < buffer.length) {
+      if (signal?.aborted) throw new Error("Screenshot attachment cancelled.");
       const { bytesRead } = await handle.read(buffer, count, buffer.length - count, count);
       if (!bytesRead) break;
       count += bytesRead;
@@ -234,6 +237,8 @@ export class PRReview {
   private selectedFile: (ReviewFile & { patch?: string }) | null = null;
   private loaded: { key: string; rows: ReviewRow[] } | null = null;
   private images: ReviewImage[] = [];
+  private incompleteImages = new Set<string>();
+  private imageCleanupFailed = false;
   private controller: AbortController | null = null;
   private pending: Promise<ReviewReply> | null = null;
   private initialized = false;
@@ -302,9 +307,21 @@ export class PRReview {
     }
   }
   private async clearImages() {
-    for (const image of this.images)
-      await rm(path.join(this.directory, `image-${image.id}.png`), { force: true });
-    this.images = [];
+    try {
+      for (const image of this.images)
+        await rm(path.join(this.directory, `image-${image.id}.png`), { force: true });
+      for (const file of this.incompleteImages) {
+        await rm(file, { force: true });
+        this.incompleteImages.delete(file);
+      }
+      this.images = [];
+      this.imageCleanupFailed = false;
+    } catch {
+      this.imageCleanupFailed = true;
+      throw new Error(
+        "Screenshot cleanup failed. End the review or restart Scope before attaching more files.",
+      );
+    }
   }
   async request(request: ReviewRequest): Promise<ReviewReply> {
     if (this.pending) return { error: "A PR operation is running. Cancel it or wait." };
@@ -344,6 +361,59 @@ export class PRReview {
     } catch {
       throw new Error("GitHub returned invalid or incomplete data.");
     }
+  }
+  private async source(
+    repository: string,
+    revision: string,
+    name: string,
+    signal: AbortSignal,
+  ): Promise<Buffer> {
+    const [owner, project] = repository.split("/");
+    const parts = name.split("/"),
+      leaf = parts.pop()!;
+    const query =
+      "query($owner:String!,$project:String!,$expression:String!){repository(owner:$owner,name:$project){object(expression:$expression){__typename ... on Tree{entries{name mode oid type}}}}}";
+    const raw = await runGh(
+      [
+        "api",
+        "--hostname",
+        "github.com",
+        "graphql",
+        "-f",
+        `query=${query}`,
+        "-f",
+        `owner=${owner}`,
+        "-f",
+        `project=${project}`,
+        "-f",
+        `expression=${revision}:${parts.join("/")}`,
+      ],
+      signal,
+      this.directory,
+      this.executable,
+    );
+    let tree: any;
+    try {
+      tree = JSON.parse(raw.toString("utf8"))?.data?.repository?.object;
+    } catch {
+      throw new Error("GitHub source entry metadata is invalid.");
+    }
+    if (tree?.__typename !== "Tree" || !Array.isArray(tree.entries))
+      throw new Error("Source directory is unavailable or unsupported at this revision.");
+    if (tree.entries.length > L.treeEntries)
+      throw new Error("Source directory exceeds the 10,000-entry limit. This source is omitted.");
+    const entries = tree.entries.filter((entry: any) => entry?.name === leaf);
+    if (entries.length !== 1) throw new Error("Source entry is unavailable at this revision.");
+    const entry = entries[0];
+    if (entry.type !== "blob" || ![0o100644, 0o100755].includes(entry.mode))
+      throw new Error("Symlink and submodule source is unsupported. No source lines were loaded.");
+    if (!oid(entry.oid)) throw new Error("Source blob identity is invalid.");
+    return (await this.api(
+      `repos/${repository}/git/blobs/${entry.oid}`,
+      signal,
+      L.sourceBytes,
+      true,
+    )) as Buffer;
   }
   private async metadata(
     target: { repository: string; number: number },
@@ -525,12 +595,12 @@ export class PRReview {
               "The fork repository is unavailable. Supplied diff evidence remains readable.",
             );
           const name = r.mode === "base" ? (file.previousPath ?? file.path) : file.path;
-          const bytes = (await this.api(
-            `repos/${repository}/contents/${name.split("/").map(encodeURIComponent).join("/")}?ref=${r.mode === "base" ? pr.diffBase : pr.head}`,
+          const bytes = await this.source(
+            repository,
+            r.mode === "base" ? pr.diffBase : pr.head,
+            name,
             signal,
-            L.sourceBytes,
-            true,
-          )) as Buffer;
+          );
           let text: string;
           try {
             text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -565,23 +635,41 @@ export class PRReview {
     }
     if (r.action === "images") return { images: this.images };
     if (r.action === "attach") {
-      if (this.images.length >= L.images)
+      if (this.imageCleanupFailed)
+        throw new Error(
+          "Screenshot cleanup failed. End the review or restart Scope before attaching more files.",
+        );
+      if (this.images.length + this.incompleteImages.size >= L.images)
         throw new Error("Four screenshots are already attached. Remove one to add another.");
       const selected = await this.picker();
       if (!selected) return { images: this.images };
       if (signal.aborted) throw new Error("Screenshot attachment cancelled.");
-      const bytes = await readScreenshot(selected);
+      const bytes = await readScreenshot(selected, signal);
       const dimensions = pngDimensions(bytes);
       const id = randomUUID();
       const name = path.basename(selected).slice(0, 200);
-      await writeFile(path.join(this.directory, `image-${id}.png`), bytes, {
-        mode: 0o600,
-        flag: "wx",
-      });
-      if (signal.aborted) {
-        await rm(path.join(this.directory, `image-${id}.png`));
-        throw new Error("Screenshot attachment cancelled.");
+      const destination = path.join(this.directory, `image-${id}.png`);
+      this.incompleteImages.add(destination);
+      try {
+        await writeFile(destination, bytes, { mode: 0o600, flag: "wx", signal });
+        if (signal.aborted) throw new Error("Screenshot attachment cancelled.");
+      } catch {
+        try {
+          await rm(destination, { force: true });
+          this.incompleteImages.delete(destination);
+        } catch {
+          this.imageCleanupFailed = true;
+          throw new Error(
+            "Screenshot save and cleanup failed. End the review or restart Scope before attaching more files.",
+          );
+        }
+        throw new Error(
+          signal.aborted
+            ? "Screenshot attachment cancelled."
+            : "Screenshot could not be saved. Check available storage and retry.",
+        );
       }
+      this.incompleteImages.delete(destination);
       this.images.push({
         repository: pr.repository,
         number: pr.number,

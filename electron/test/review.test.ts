@@ -1,6 +1,12 @@
-import { test, expect } from "vite-plus/test";
+import { test, expect, vi } from "vite-plus/test";
 import { mkdtemp, writeFile, readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, writeFile: vi.fn(actual.writeFile), rm: vi.fn(actual.rm) };
+});
 import { PRReview, parsePR, parsePatch, pngDimensions, runGh } from "../src/review.ts";
 const fixture = path.resolve("test/fixtures/review-gh.cjs");
 async function setup(initial: unknown = {}) {
@@ -57,10 +63,29 @@ test("pinned fork and rename source use correct repositories and comparison base
     const requests = (await readFile(path.join(root, "review-requests.jsonl"), "utf8"))
       .trim()
       .split("\n")
-      .map((x) => JSON.parse(x).args[3]);
-    expect(requests).toContain(`repos/example/shop/contents/src/old.ts?ref=${pr.diffBase}`);
-    expect(requests).toContain(`repos/contributor/shop/contents/src/renamed.ts?ref=${pr.head}`);
-    expect(requests.filter((x: string) => x.includes("/contents/"))).toHaveLength(2);
+      .map((line) => JSON.parse(line).args as string[]);
+    expect(
+      requests.some(
+        (args) => args.includes(`expression=${pr.diffBase}:src`) && args.includes("owner=example"),
+      ),
+    ).toBe(true);
+    expect(
+      requests.some(
+        (args) => args.includes(`expression=${pr.head}:src`) && args.includes("owner=contributor"),
+      ),
+    ).toBe(true);
+    for (const [repository, name] of [
+      ["example/shop", "src/old.ts"],
+      ["contributor/shop", "src/renamed.ts"],
+    ])
+      expect(
+        requests.some((args) =>
+          args.includes(
+            `repos/${repository}/git/blobs/${createHash("sha1").update(name).digest("hex")}`,
+          ),
+        ),
+      ).toBe(true);
+    expect(requests.filter((args) => args.some((x) => x.includes("/git/blobs/")))).toHaveLength(2);
   } finally {
     await review.close();
     await rm(root, { recursive: true, force: true });
@@ -223,6 +248,127 @@ test("browsing a new file page keeps the selected source available", async () =>
         })
       ).content?.rows.length,
     ).toBeGreaterThan(0);
+  } finally {
+    await review.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("FIFO screenshots reject promptly and leave the review usable", async () => {
+  const root = await mkdtemp("/tmp/scope-review-fifo-"),
+    file = path.join(root, "supplied.png");
+  execFileSync("mkfifo", [file]);
+  const review = new PRReview(path.join(root, "review"), async () => file, fixture);
+  try {
+    const pr = (await review.request({ action: "open", input: "example/shop #148" })).pr!;
+    const start = performance.now();
+    const result = await review.request({ action: "attach", id: pr.id });
+    expect(result.error).toContain("regular");
+    expect(performance.now() - start).toBeLessThan(500);
+    expect(await review.request({ action: "refresh", id: pr.id })).toEqual({ changed: false });
+    expect(await readdir(path.join(root, "review"))).toEqual([]);
+  } finally {
+    await review.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+test("partial writes are removed and failed cleanup blocks attachment until End recovers", async () => {
+  const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  const root = await mkdtemp("/tmp/scope-review-write-"),
+    file = path.join(root, "supplied.png"),
+    directory = path.join(root, "review");
+  await writeFile(
+    file,
+    Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    ),
+  );
+  const review = new PRReview(directory, async () => file, fixture);
+  try {
+    const pr = (await review.request({ action: "open", input: "example/shop #148" })).pr!;
+    vi.mocked(writeFile).mockImplementation(async (destination, ...args) => {
+      if (
+        typeof destination === "string" &&
+        destination.startsWith(path.join(directory, "image-"))
+      ) {
+        await actual.writeFile(destination, Buffer.alloc(32), { mode: 0o600 });
+        throw new Error("ENOSPC");
+      }
+      return actual.writeFile(destination, ...args);
+    });
+    for (let i = 0; i < 5; i++) {
+      expect((await review.request({ action: "attach", id: pr.id })).error).toContain(
+        "could not be saved",
+      );
+      expect(await readdir(directory)).toEqual([]);
+    }
+    vi.mocked(rm).mockImplementation(async (destination, ...args) => {
+      if (typeof destination === "string" && destination.startsWith(path.join(directory, "image-")))
+        throw new Error("EACCES");
+      return actual.rm(destination, ...args);
+    });
+    expect((await review.request({ action: "attach", id: pr.id })).error).toContain(
+      "save and cleanup failed",
+    );
+    expect(await readdir(directory)).toHaveLength(1);
+    expect((await review.request({ action: "attach", id: pr.id })).error).toContain(
+      "cleanup failed",
+    );
+    expect(await readdir(directory)).toHaveLength(1);
+    expect((await review.request({ action: "images", id: pr.id })).images).toEqual([]);
+    vi.mocked(rm).mockImplementation(actual.rm);
+    vi.mocked(writeFile).mockImplementation(actual.writeFile);
+    expect(await review.request({ action: "end", id: pr.id })).toEqual({});
+    expect(await readdir(directory)).toEqual([]);
+    const next = (await review.request({ action: "open", input: "example/shop #149" })).pr!;
+    expect((await review.request({ action: "attach", id: next.id })).images).toHaveLength(1);
+  } finally {
+    vi.mocked(rm).mockImplementation(actual.rm);
+    vi.mocked(writeFile).mockImplementation(actual.writeFile);
+    await review.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+test("symlink and submodule entries never become source line anchors", async () => {
+  const { root, review, pr } = await setup();
+  try {
+    await review.request({ action: "files", id: pr.id, page: 1 });
+    for (const name of ["link.ts", "dependency"]) {
+      const result = await review.request({
+        action: "content",
+        id: pr.id,
+        path: name,
+        mode: "head",
+        offset: 0,
+      });
+      expect(result.error).toContain("Symlink and submodule");
+      expect(result.content).toBeUndefined();
+    }
+    const requests = await readFile(path.join(root, "review-requests.jsonl"), "utf8");
+    expect(requests).not.toContain("/git/blobs/");
+  } finally {
+    await review.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("oversized parent directories omit source before reading a blob", async () => {
+  const { root, review, control, pr } = await setup();
+  try {
+    await review.request({ action: "files", id: pr.id, page: 1 });
+    await control({ mode: "tree-pressure" });
+    const result = await review.request({
+      action: "content",
+      id: pr.id,
+      path: "src/checkout/submit.ts",
+      mode: "head",
+      offset: 0,
+    });
+    expect(result.error).toContain("10,000-entry");
+    expect(await readFile(path.join(root, "review-requests.jsonl"), "utf8")).not.toContain(
+      "/git/blobs/",
+    );
   } finally {
     await review.close();
     await rm(root, { recursive: true, force: true });

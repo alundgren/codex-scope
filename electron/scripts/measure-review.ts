@@ -76,6 +76,7 @@ try {
     await expect(page.locator(".review-code-row")).toHaveCount(200);
     await pause(500);
   });
+  await set("maximum-tree");
   const largeSource = await measure(async () => {
     await menu("#review-side", "Head source");
     await expect(page.getByRole("button", { name: "head line 1", exact: true })).toBeVisible();
@@ -86,6 +87,7 @@ try {
     expect(await page.locator(".review-code-row").count()).toBe(200);
     await pause(700);
   });
+  await set("");
   const browse = await measure(async () => {
     for (let i = 0; i < 20; i++) {
       await menu("#review-files", "Next files");
@@ -103,7 +105,7 @@ try {
     .trim()
     .split("\n")
     .map((line) => JSON.parse(line).args[3] as string);
-  assert.equal(calls.filter((x) => x.includes("/contents/")).length, 1);
+  assert.equal(calls.filter((x) => x.includes("/git/blobs/")).length, 1);
   assert.equal(calls.filter((x) => x.includes("/files?")).length, 21);
   const chunk = (name: string, body: Buffer) => {
     const b = Buffer.alloc(body.length + 12);
@@ -188,6 +190,7 @@ try {
       manifest: 3010,
       filePagesRead: 21,
       sourceRequests: 1,
+      sourceTreeEntries: 10000,
       sourceLines: 19000,
       rendererRows: 200,
       screenshots: 4,

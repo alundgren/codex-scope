@@ -4,6 +4,7 @@ export const REVIEW_LIMITS = {
   patchBytes: 128 * 1024,
   pageFiles: 10,
   maxFiles: 3000,
+  treeEntries: 10000,
   rows: 200,
   maxLines: 20000,
   commandMs: 10000,

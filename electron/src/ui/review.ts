@@ -509,7 +509,7 @@ export function attachReview() {
             `Only the current ${L.pageFiles}-file page and one selected diff or source are retained. ${Math.max(0, (pr?.fileCount ?? 0) - L.maxFiles)} paths exceed the ${L.maxFiles}-file browsing limit. GitHub may omit binary or large patches. Diff limit: 128 KiB. Source limit: 256 KiB and 20,000 lines, displayed 200 lines at a time. Screenshots: four PNG files, 4 MiB and 4,194,304 pixels each. Evidence stays temporary until this review ends or Scope closes.`,
           ),
       },
-      { text: "Show conversation", action: () => chat("both") },
+      { text: "Show conversation", action: () => chat(innerWidth <= 720 ? "chat" : "both") },
       {
         text: "Reset divider",
         action: () => {

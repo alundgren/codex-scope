@@ -132,13 +132,15 @@ test("notebook walkthrough preserves pinned source and supplied evidence across 
     await page.getByRole("button", { name: "Replace review", exact: true }).click();
     await expect(page.locator("#review-revision")).toHaveText("Revision ddddddd");
     await expect(page.locator("#review-selection")).toHaveText("Select a source line");
+    await expect(page.locator(".review-code-row")).toHaveCount(200);
+    await expect(page.locator("#review-cancel")).toBeHidden();
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].setContentSize(390, 760),
     );
     await expect.poll(() => page.evaluate(() => innerWidth)).toBe(390);
     await shot("13-narrow-review");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
-    await page.locator("#review-chat-toggle").click();
+    await openMenu(page, "#review-more", "Show conversation");
     await expect(page.locator("#review-chat")).toBeVisible();
     await shot("14-narrow-chat");
     await page.locator("#review-chat-toggle").click();
@@ -205,6 +207,13 @@ test("notebook GitHub errors, cancellation and unsupported source recover", asyn
     await openMenu(page, "#review-side", "Head source");
     await expect(page.locator("#review-status")).toContainText("Binary");
     await page.screenshot({ path: info.outputPath("binary.png") });
+    for (const name of ["link.ts", "dependency"]) {
+      await page.locator("#review-files").click();
+      await page.getByRole("menuitem").filter({ hasText: name }).click();
+      await openMenu(page, "#review-side", "Head source");
+      await expect(page.locator("#review-status")).toContainText("Symlink and submodule");
+      await page.screenshot({ path: info.outputPath(`${name}-unsupported.png`) });
+    }
     await page.locator("#review-files").click();
     await page.getByRole("menuitem", { name: /src\/renamed.ts/ }).click();
     await expect(page.getByRole("button", { name: "base line 2", exact: true })).toBeVisible();
