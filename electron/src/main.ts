@@ -187,10 +187,11 @@ app
       event.sender === window.webContents &&
       event.senderFrame === window.webContents.mainFrame &&
       event.senderFrame?.url === PAGE;
-    let settingsBusy = false;
     for (const operation of ["settings", "saveSettings", "capture"] as const) {
       ipcMain.handle(`scope:${operation}`, async (event, value) => {
-        if (!trusted(event) || settingsBusy) throw new Error("Settings are busy. Try again.");
+        const stopping = operation === "capture" && value === false;
+        if (!trusted(event) || (!stopping && history.savingSettings))
+          throw new Error("Settings are busy. Wait for the current save to finish.");
         if (operation === "capture" && typeof value !== "boolean")
           throw new Error("Invalid capture request.");
         if (
@@ -205,16 +206,11 @@ app
             !validModel(value.model))
         )
           throw new Error("Check the connection and model settings.");
-        settingsBusy = true;
-        try {
-          return await (operation === "settings"
-            ? history.call("settings")
-            : operation === "capture"
-              ? history.call("capture", { start: value })
-              : history.call("saveSettings", { value }));
-        } finally {
-          settingsBusy = false;
-        }
+        return operation === "settings"
+          ? history.call("settings")
+          : operation === "capture"
+            ? history.call("capture", { start: value })
+            : history.call("saveSettings", { value });
       });
     }
     ipcMain.on("scope:ack", (event, kind) => {

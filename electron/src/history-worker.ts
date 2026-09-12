@@ -82,6 +82,7 @@ let state: HistoryStatus & { retainedBytes: number; evicted: number } = {
 let activation = 0;
 let model = defaultModel;
 let settingsError: string | undefined;
+let settingsSave: HistoryStatus["settingsSave"];
 let commandLineOverride = !workerData.optionalConnection;
 function settings() {
   return {
@@ -128,7 +129,7 @@ function notify() {
 }
 
 function snapshot() {
-  return { ...state, view: search?.status(), maximumTransactionMs, maximumDiskBytes };
+  return { ...state, settingsSave, view: search?.status(), maximumTransactionMs, maximumDiskBytes };
 }
 
 function entriesIn(location: string, maximum: number) {
@@ -233,6 +234,9 @@ function openDatabase() {
   sequence = 0;
   state = {
     generation: Atomics.load(shared, 0),
+    capturing: false,
+    synthetic: !!workerData.synthetic,
+    transport: state.transport,
     connectionId: randomUUID(),
     total: 0,
     accepted: 0,
@@ -546,6 +550,10 @@ port.on("message", async (message: WorkerRequest) => {
       try {
         const value = validateSettings(message.value, connectionConfig);
         if (!workerData.settingsFile) throw new Error("Settings unavailable");
+        if (faults.settingsDelay)
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(5000, faults.settingsDelay!)),
+          );
         await savePreferences(workerData.settingsFile, value);
         stopInput();
         connectionConfig = { endpoint: value.endpoint, token: value.token };
@@ -555,12 +563,11 @@ port.on("message", async (message: WorkerRequest) => {
         settingsError = undefined;
         result = settings();
       } catch {
-        result = {
-          ...settings(),
-          error:
-            "Settings were not saved. Check the origin URL, token, model and private settings directory, then try again.",
-        };
+        settingsError =
+          "Settings were not saved. Check the origin URL, token, model and private settings directory, then try again.";
+        result = settings();
       }
+      settingsSave = { id: request, result: settings() };
     } else if (operation === "capture") {
       if (message.start) startInput();
       else stopInput();

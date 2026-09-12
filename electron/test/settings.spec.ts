@@ -1,5 +1,5 @@
 import { test, expect, _electron } from "@playwright/test";
-import { mkdtemp, writeFile, readFile, stat, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, writeFile, readFile, stat, mkdir, rm, chmod } from "node:fs/promises";
 import path from "node:path";
 import { fakeCollector, fixtureEvent } from "./fake-collector.ts";
 
@@ -235,5 +235,112 @@ test("unavailable imported credentials and failed saves recover, saved launch st
   } finally {
     await app.close();
     await server.close();
+  }
+});
+
+test("slow saves retain ownership, report pending and publish the eventual result", async ({}, info) => {
+  const root = await mkdtemp("/tmp/scope-slow-settings-");
+  const first = await fakeCollector(),
+    second = await fakeCollector();
+  await writeFile(root + "/token", "synthetic-test-token", { mode: 0o600 });
+  await writeFile(
+    root + "/connection.json",
+    JSON.stringify({ endpoint: first.endpoint, tokenFile: root + "/token" }),
+    { mode: 0o600 },
+  );
+  const app = await _electron.launch({
+    args: [path.resolve("dist/app"), "--history-test", `--scope-test-root=${root}`],
+    chromiumSandbox: true,
+    recordVideo: { dir: info.outputPath("video") },
+  });
+  const page = await app.firstWindow();
+  const video = page.video()!;
+  try {
+    await page.waitForSelector('html[data-ready="true"]');
+    await page.locator("#capture").click();
+    await expect(page.locator(".connection")).toHaveText("Connected");
+    first.event(fixtureEvent);
+    await expect(page.locator("#count")).toHaveText("1 retained");
+    await page.locator("#functions summary").click();
+    await page.locator('[data-tool="settings"]').click();
+    await page.locator("#collector-url").fill(second.endpoint);
+    await app.evaluate(async () => {
+      await globalThis.scopeHistory.call("test", { faults: { settingsDelay: 4500 } });
+    });
+    await page.locator("#settings-save").click();
+    await expect(page.locator("#settings-status")).toContainText("Still saving settings");
+    await expect(page.locator("#settings-save")).toBeDisabled();
+    await expect(page.locator(".connection")).toHaveText("Connected");
+    await page.screenshot({ path: info.outputPath("01-pending-save.png") });
+    expect(
+      await page.evaluate(async () => {
+        try {
+          await window.scope.saveSettings({
+            endpoint: "http://127.0.0.1:9",
+            token: "other",
+            model: "gpt-5.6-luna",
+          });
+          return false;
+        } catch {
+          return true;
+        }
+      }),
+    ).toBe(true);
+    expect(
+      await app.evaluate(
+        () =>
+          [...globalThis.scopeHistory.pending.values()].filter(
+            (request) => request.operation === "saveSettings",
+          ).length,
+      ),
+    ).toBe(1);
+    await expect(page.locator("#capture")).toBeEnabled();
+    const stopStarted = performance.now();
+    await page.locator("#capture").click();
+    await expect(page.locator(".connection")).toHaveText("Stopped");
+    expect(performance.now() - stopStarted).toBeLessThan(2500);
+    await expect(page.locator("#settings-save")).toBeDisabled();
+    await page.screenshot({ path: info.outputPath("01b-stopped-during-save.png") });
+    await page.locator("#clear").click();
+    await page.locator("#clear").click();
+    await expect
+      .poll(async () => (await page.evaluate(() => window.scope.status())).generation)
+      .toBe(2);
+    await page.waitForTimeout(300);
+    await expect(page.locator(".connection")).toHaveText("Stopped");
+    await expect(page.locator("#settings-status")).toHaveText("Settings saved.");
+    await expect(page.locator(".connection")).toHaveText("Stopped");
+    await expect(page.locator("#settings-save")).toBeEnabled();
+    expect((await page.evaluate(() => window.scope.settings())).endpoint).toBe(second.endpoint);
+    expect(JSON.parse(await readFile(root + "/preferences.json", "utf8")).endpoint).toBe(
+      second.endpoint,
+    );
+    await page.screenshot({ path: info.outputPath("02-delayed-success.png") });
+    await page.locator("#capture").click();
+    await expect(page.locator(".connection")).toHaveText("Connected");
+    const savedBytes = await readFile(root + "/preferences.json");
+    await page.locator("#collector-url").fill(first.endpoint);
+    await chmod(root, 0o500);
+    await page.locator("#settings-save").click();
+    await expect(page.locator("#settings-status")).toContainText("Still saving settings");
+    await expect(page.locator("#settings-status")).toContainText("Settings were not saved");
+    await expect(page.locator(".connection")).toHaveText("Connected");
+    expect(await readFile(root + "/preferences.json")).toEqual(savedBytes);
+    expect((await page.evaluate(() => window.scope.settings())).endpoint).toBe(second.endpoint);
+    await page.screenshot({ path: info.outputPath("03-delayed-failure.png") });
+    await chmod(root, 0o700);
+    await app.evaluate(async () => {
+      await globalThis.scopeHistory.call("test", { faults: { settingsDelay: 0 } });
+    });
+    await page.locator("#settings-save").click();
+    await expect(page.locator("#settings-status")).toHaveText("Settings saved.");
+    await expect(page.locator(".connection")).toHaveText("Stopped");
+    await page.screenshot({ path: info.outputPath("04-retry-recovered.png") });
+  } finally {
+    await chmod(root, 0o700);
+    await app.close();
+    await video.saveAs(info.outputPath("slow-save.webm"));
+    await first.close();
+    await second.close();
   }
 });

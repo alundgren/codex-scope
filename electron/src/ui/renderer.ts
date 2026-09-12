@@ -256,7 +256,7 @@ function summary(value: HistoryStatus) {
   liveButton.disabled =
     !count || filterPending || clearPending || !!value.clearing || !!value.error;
   copy.disabled = selectedId === null || copyPending || !!value.error;
-  filters.disable(!!value.error);
+  filters.disable(!!value.error || !!value.clearing);
   for (const button of entries.querySelectorAll("button"))
     button.disabled = clearPending || !!value.clearing || !!value.error;
   positionMarkers();
@@ -307,8 +307,10 @@ function stopGesture() {
 }
 function receive(value: HistoryStatus) {
   if (value.generation < generation) return;
+  const cleared = !!latest.clearing && !value.clearing;
+  const newGeneration = value.generation !== generation;
   analyzer.receive(value);
-  if (value.generation !== generation) {
+  if (newGeneration) {
     generation = value.generation;
     queryId++;
     targetId = 0;
@@ -322,9 +324,8 @@ function receive(value: HistoryStatus) {
     cancelWork();
     relock();
     empty();
-    filters.refresh();
   }
-  const changed = value.accepted !== latest.accepted || value.total !== latest.total;
+  const changed = cleared || value.accepted !== latest.accepted || value.total !== latest.total;
   if (value.error) {
     queryNotice = "";
     queryFailed = false;
@@ -335,6 +336,7 @@ function receive(value: HistoryStatus) {
     relock();
   }
   summary(value);
+  if ((newGeneration || cleared) && !value.clearing && !value.error) filters.refresh();
   tools.receive(value);
   if (!value.starting) document.documentElement.dataset.ready = "true";
   if (value.error) {
@@ -498,7 +500,7 @@ function requestInspection(id: number | null = selectedId) {
   return requestNavigation(id === null && live ? { kind: "live" } : { kind: "select", id });
 }
 async function requestNavigation(target: NavigationTarget) {
-  if (filterPending || clearPending || latest.error) return;
+  if (filterPending || clearPending || latest.clearing || latest.error) return;
   targetId++;
   wanted = { generation, queryId, targetId, filter: filters.value(), target, rows: rowCount() };
   lastRows = wanted.rows;

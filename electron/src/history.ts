@@ -104,15 +104,20 @@ class History extends EventEmitter {
         result?: Reply<HistoryOperations[keyof HistoryOperations]["result"]>;
       }) => {
         if (message.notification) this.worker.postMessage({ operation: "ack" });
+        const request = this.pending.get(message.request);
+        if (request) {
+          this.pending.delete(message.request);
+          clearTimeout(request.timer);
+        }
         if (message.status && message.status.generation === this.generation) {
           this.status = message.status;
           this.emit("status", this.snapshot());
         }
-        const request = this.pending.get(message.request);
         if (!request) return;
-        this.pending.delete(message.request);
-        clearTimeout(request.timer);
-        if (request.generation !== this.generation && request.operation !== "close")
+        if (
+          request.generation !== this.generation &&
+          !["close", "settings", "saveSettings", "capture"].includes(request.operation)
+        )
           request.resolve({ stale: true });
         else request.resolve(message.result ?? { error: "History operation failed." });
       },
@@ -123,9 +128,21 @@ class History extends EventEmitter {
     });
     this.ready = this.call("open");
   }
+  get savingSettings() {
+    return [...this.pending.values()].some((request) => request.operation === "saveSettings");
+  }
   snapshot() {
     return {
       ...this.status,
+      // Clear waits for obsolete recording work without releasing its request slots early.
+      clearing:
+        this.status.clearing ||
+        [...this.pending.values()].some(
+          (request) =>
+            request.generation !== this.generation &&
+            !["close", "settings", "saveSettings", "capture"].includes(request.operation),
+        ),
+      settingsSaving: this.savingSettings,
       localDrops: this.localDrops,
       rateDrops: this.rateDrops,
       unknownGap: this.unknownGap,
@@ -173,6 +190,8 @@ class History extends EventEmitter {
       : [data: HistoryOperations[Operation]["data"]]
   ): Promise<Reply<HistoryOperations[Operation]["result"]>> {
     const data = args[0] ?? {};
+    if (operation === "saveSettings" && this.savingSettings)
+      return Promise.resolve({ error: "Settings are still saving. Wait for the result." });
     const control = operation === "clear" || operation === "close" || operation === "capture";
     if (this.closed)
       return Promise.resolve({
@@ -185,7 +204,12 @@ class History extends EventEmitter {
     return new Promise<Reply<HistoryOperations[Operation]["result"]>>((resolve) => {
       // A timed-out request keeps its slot until the worker replies or exits.
       const timer = setTimeout(
-        () => resolve({ error: "History operation timed out. Try again.", timedOut: true }),
+        () =>
+          resolve(
+            operation === "saveSettings"
+              ? { pending: request }
+              : { error: "History operation timed out. Try again.", timedOut: true },
+          ),
         LIMITS.requestMs,
       );
       this.pending.set(request, {
@@ -195,6 +219,7 @@ class History extends EventEmitter {
         operation,
       });
       this.peakPending = Math.max(this.peakPending, this.pending.size);
+      if (operation === "saveSettings") this.emit("status", this.snapshot());
       try {
         this.worker.postMessage({ request, generation: this.generation, operation, ...data });
       } catch {
@@ -327,6 +352,8 @@ class History extends EventEmitter {
       : undefined;
     this.status = {
       generation: this.generation,
+      capturing: this.status.capturing,
+      synthetic: this.status.synthetic,
       total: 0,
       accepted: 0,
       first: null,

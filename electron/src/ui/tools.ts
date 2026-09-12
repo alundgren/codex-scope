@@ -1,4 +1,4 @@
-import type { HistoryStatus } from "../types.ts";
+import type { HistoryStatus, ConnectionSettings, Reply } from "../types.ts";
 import { connectionInput } from "../connection-input.ts";
 import { requiredElement } from "./elements.ts";
 export function attachTools(analyzer: { show(open: boolean): void }, journal: () => void) {
@@ -14,6 +14,27 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
     busy = false,
     initialized = false;
   let view = "idle";
+  let pendingSave: number | null = null;
+  let settingsSave: HistoryStatus["settingsSave"];
+  function unlockSave() {
+    busy = false;
+    save.disabled = capture.disabled = endpoint.disabled = token.disabled = model.disabled = false;
+  }
+  function saved(value: Reply<ConnectionSettings>) {
+    if (value.error) status.textContent = value.error;
+    else if ("endpoint" in value) {
+      apply(value);
+      status.textContent = "Settings saved.";
+    } else
+      status.textContent =
+        "The save result could not be confirmed. Restart Scope and check Settings.";
+  }
+  function settleSave() {
+    if (!pendingSave || settingsSave?.id !== pendingSave) return;
+    saved(settingsSave.result);
+    pendingSave = null;
+    unlockSave();
+  }
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-tool]")];
   function show(next: string) {
     view = next;
@@ -99,28 +120,29 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
       event.preventDefault();
       if (busy) return;
       busy = true;
-      save.disabled = capture.disabled = true;
+      save.disabled = capture.disabled = endpoint.disabled = token.disabled = model.disabled = true;
+      status.textContent = "Saving settings…";
       try {
         const value = await window.scope.saveSettings({
           endpoint: endpoint.value,
           token: token.value,
           model: model.value.trim(),
         });
-        if (value.error) status.textContent = value.error;
-        else {
-          apply(value);
-          status.textContent = "Settings saved.";
-        }
+        if (value.pending) {
+          pendingSave = value.pending;
+          status.textContent = "Still saving settings. You can stop capture while you wait.";
+          capture.disabled = !capturing;
+          settleSave();
+        } else saved(value);
       } catch {
         status.textContent = "Settings were not saved. Check the values and try again.";
       } finally {
-        busy = false;
-        save.disabled = capture.disabled = false;
+        if (!pendingSave) unlockSave();
       }
     },
   );
   capture.addEventListener("click", async () => {
-    if (busy) return;
+    if (busy && !(pendingSave && capturing)) return;
     busy = true;
     capture.disabled = save.disabled = true;
     const start = !capturing;
@@ -134,16 +156,27 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
       show("settings");
       status.textContent = "Capture could not change. Try again.";
     } finally {
-      busy = false;
-      capture.disabled = save.disabled = false;
+      if (!pendingSave) {
+        busy = false;
+        save.disabled = false;
+      }
+      capture.disabled = busy && !(pendingSave && capturing);
     }
   });
   show("idle");
   return {
     receive(value: HistoryStatus) {
       capturing = !!value.capturing;
+      settingsSave = value.settingsSave;
+      settleSave();
+      if (pendingSave && value.error) {
+        status.textContent =
+          "The save result could not be confirmed. Restart Scope and check Settings.";
+        pendingSave = null;
+        unlockSave();
+      }
       capture.textContent = capturing ? "Stop capture" : "Start capture";
-      capture.disabled = busy || !!value.error;
+      capture.disabled = (busy && !(pendingSave && capturing)) || !!value.error;
       if (!initialized) {
         initialized = true;
         if (value.synthetic) show("journal");
