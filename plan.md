@@ -61,7 +61,7 @@ Done when a real supported Codex session has the same policy and output behavior
 - [x] Measure a short synthetic overload profile and verify bounded queue use.
 - [ ] Test private HTTPS proxy delivery and route isolation through Tailscale Serve.
 - [ ] Verify rejection from another OS account and measure sustained isolated collector CPU/RSS.
-- [x] Add guided Linux setup, a durable recovery record, permanent runtime copies, optional Tailscale Serve, interactive capture/collector-stop checks, and ownership-preserving uninstall. Include an install guide and recorded synthetic terminal walkthroughs.
+- [x] Add guided Linux setup, a durable recovery record, permanent runtime copies, optional Tailscale Serve, interactive capture/collector-stop checks, and ownership-preserving uninstall. Include an install guide and recorded synthetic terminal walkthroughs linked in PR #12. Keep reproduction details and validation limits in `docs/linux-validation.md`; generated evidence is removed from the branch contents.
 - [ ] Run the guided installer end to end on a live account with private HTTPS delivery; separately verify the eventual UI connection. Synthetic host-command and approval fixtures do not complete these checks.
 - [x] Change the default loopback port to 4319 and report port conflicts separately from path/token failures. Guided setup suggests an available port and preserves existing listeners.
 

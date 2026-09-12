@@ -117,10 +117,52 @@ remains incomplete until the relevant outstanding checks pass.
 
 ## Guided setup validation
 
-The guided installer adds isolated transaction tests, actual Codex registration
-checks, a generated-unit parser check, and a temporary systemd service delivery
-check. [Terminal recordings and screenshots](validation/linux-install/README.md)
-cover prompts, cancellation, recovery, and conservative removal. That record
-distinguishes real subprocess checks from simulated host-service, approval, and
-Tailscale operations. The guided flow itself has not yet been run end to end
-against a live account and private HTTPS proxy.
+Linux x86_64, Python 3.14.4, Codex CLI 0.153.4, and systemd 259.5 were used
+for this development check on 2026-09-11. No live account hooks or persistent
+Tailscale routes were installed during implementation validation.
+
+- `make -C linux test` covers the collector and observer plus guided setup,
+  rollback, privacy refusal, command/output limits, edited resources, ownership
+  changes, symlink parents, existing installations, and copied runtime imports.
+- `make -C linux probe` checks actual isolated Codex registrations and untrusted
+  status. It does not start a model session or establish event coverage.
+- `make -C linux service-check` validates the generated unit with
+  `systemd-analyze --user verify`, starts a uniquely named temporary user service,
+  checks authenticated synthetic delivery, stops it, and checks the absent
+  receiver. The temporary unit is collected afterward.
+
+The synthetic terminal scenarios cover missing prerequisites, declined
+configuration inspection, Ctrl+C rollback, local capture and collector shutdown,
+uninstall, preservation of edited services, optional Tailscale setup, and
+recovery of an interrupted installation record. The terminal output was replayed
+in xterm.js at 120 columns by 42 rows and visually inspected. It contains only
+synthetic paths and configuration, with no tokens or captured payloads.
+Screenshots and recordings are linked in [PR #12](https://github.com/alundgren/codex-scope/pull/12).
+Generated evidence is not needed to build or run the installer.
+
+The PTY fixture uses the real copied collector, observer, and diagnostic viewer
+for local scenarios, with synthetic input. Host service commands, Codex approval
+metadata, and Tailscale operations are simulated. Remote HTTPS delivery and
+real interactive hook approval are therefore **not established by this
+walkthrough**. The interrupted-record case simulates a crash before the final
+success record, rather than cutting power to this VM. Real systemd behavior and
+Codex registration are checked separately as described above.
+
+The earlier user-reported live smoke test is recorded in `plan.md`. It is not a
+substitute for running this new guided installer end to end on a live account.
+Actual private HTTPS proxy delivery, cross-device UI connectivity, other Codex
+versions, broader event coverage, and macOS behavior remain unverified.
+
+To repeat the PTY scenarios with the optional development-only `pexpect`
+package available:
+
+```sh
+make -C linux
+python3 linux/scripts/record_setup.py /tmp/scope-install-walkthrough
+```
+
+Do not run two copies of the PTY fixture simultaneously: each intentionally
+uses the same suggested local port where available. The recorder never invokes
+live host service or Tailscale mutations. Review the resulting `.cast` files
+with an asciicast player or a terminal emulator. `pexpect`, xterm.js, Playwright,
+and Chromium are validation tools only; none is shipped by the installer.

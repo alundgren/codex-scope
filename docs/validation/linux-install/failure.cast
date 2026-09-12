@@ -1,8 +1,0 @@
-{"version": 2, "width": 120, "height": 42, "title": "Synthetic guided setup: failure"}
-[0.235, "o", "Synthetic walkthrough: host service/route commands and approvals are simulated.\r\nThe local collector and observer run normally; no live account files are used.\r\n"]
-[0.237, "o", "Codex Scope setup\r\n"]
-[0.238, "o", "Use Tailscale to connect from another device? [y/N]: "]
-[0.289, "o", "n\r\n"]
-[0.29, "o", "Codex configuration directory [/tmp/scope-setup-test-locbmlrn/.codex]: "]
-[0.342, "o", "\r\nRead Codex config.toml and hooks.json here, and check local services? [y/N]: "]
-[0.394, "o", "y\r\nStopped: Missing codex. Install Codex CLI, then run setup again.\r\n"]
