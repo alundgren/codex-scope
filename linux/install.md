@@ -1,8 +1,14 @@
 # Install the Linux collector
 
-Use a normal Linux account with systemd user services, Python 3.11 or newer,
-Make, a C compiler, and Codex CLI. Setup names missing prerequisites and stops;
-it does not install packages or run sudo. Tailscale is optional.
+Use a normal Linux account with systemd user services and Codex CLI. The
+installed collector, observer, and recovery command are native Rust
+executables. They need neither Python nor Bun. Tailscale is optional.
+
+Build from the checkout with a Rust toolchain, or place prebuilt `codex-scope`
+and `codex-scope-observer` beside `linux/install.sh`. In a source checkout, the
+script runs a release Cargo build before guided setup so source updates cannot
+silently use older executables. A prebuilt pair beside the script starts
+directly:
 
 ```sh
 git clone https://github.com/alundgren/codex-scope.git
@@ -10,10 +16,19 @@ cd codex-scope
 ./linux/install.sh
 ```
 
-Setup asks whether to use Tailscale and suggests `~/.codex` for existing Codex
-configuration. It checks for `config.toml`, then asks permission before reading
-that file, `hooks.json`, and the relevant local service settings. It does not
-read transcripts or display configuration contents, tokens, or captured payloads.
+You can also build explicitly and run the native command:
+
+```sh
+cargo build --locked --release --manifest-path linux/Cargo.toml --bins
+./linux/target/release/codex-scope setup
+```
+
+Setup names missing prerequisites and stops. It does not install packages or
+run sudo. It asks whether to use Tailscale and suggests `~/.codex` for existing
+Codex configuration. It checks for `config.toml`, then asks permission before
+reading that file, `hooks.json`, and the relevant local service settings. It
+does not read transcripts or display configuration contents, tokens, or
+captured payloads. JSON and TOML with duplicate keys are rejected.
 
 Accept the suggested directories and available ports, or customize them. Paths
 must be below your home directory, outside the checkout, without symlink
@@ -32,6 +47,11 @@ An automatic rehearsal installs and uninstalls hooks in a private temporary
 configuration. An isolated app-server probe checks all twelve registrations
 against your installed Codex. There is no version allowlist. These checks do
 not start a model session, grant trust, or prove real-session compatibility.
+You can run the same registration probe independently:
+
+```sh
+./linux/target/release/codex-scope probe
+```
 
 Before changing live files, setup prints the selected paths, endpoint, service,
 and hook count and asks for approval. Afterward:
@@ -58,9 +78,11 @@ also persists. Setup prints the endpoint, token-file path, and an SSH copy
 command for the other machine. Configure your UI with that endpoint and bearer
 token. The diagnostic test does not establish UI or cross-device compatibility.
 
-The compiled observer and Python package are copied to the chosen application
-directory. Service commands, hook commands, credentials, and recovery tools
-have no dependency on the clone; the clone can be removed afterward.
+The two native executables are copied to the chosen application directory.
+Another copy of `codex-scope` and a shell launcher provide permanent recovery
+tools. Service commands, hook commands, credentials, and recovery tools have no
+dependency on the checkout or a language toolchain. The checkout can be removed
+afterward.
 
 ## Inspect, verify, and uninstall
 
@@ -81,6 +103,10 @@ in-place upgrade.
 ~/.local/state/codex-scope-installer/manage.sh uninstall
 ```
 
+The copied executable also accepts `codex-scope manage ACTION`. Both entry
+points ask permission before reading the installation record and selected
+configuration.
+
 Uninstall removes unchanged owned hooks, the service, the dedicated Serve
 listener, and application files. It never resets all Tailscale routes or
 restores the whole Codex configuration over later edits. Changed or duplicate
@@ -98,8 +124,9 @@ purged after successful uninstall:
 ~/.local/state/codex-scope-installer/manage.sh purge
 ```
 
-Purge refuses edited recovery tools. After purge, a fresh installation is
-possible. In-place upgrades are intentionally not implemented.
+Purge refuses edited or unexpected recovery files before deleting retained
+credentials or backups. After purge, a fresh installation is possible.
+In-place upgrades are intentionally not implemented.
 
 ## Failure and recovery
 
@@ -112,6 +139,13 @@ Do not edit Codex hooks, the Scope unit, or its Serve listener concurrently with
 setup/removal. Comparisons detect many changes but cannot make independent
 editors, systemd, and Tailscale share a transaction. Cleanup preserves ambiguous
 resources and reports incomplete recovery rather than claiming success.
+
+Configuration, command output, and probe output each have a 4 MiB limit.
+Commands and the full app-server exchange have a 20-second deadline. Setup
+terminates child process groups on failure so inherited output pipes cannot
+keep it waiting. Native executable copies have a 64 MiB limit; the development
+binary tested during this port was 51 MiB, while release binaries are smaller.
+These limits bound setup work separately from the collector's capture budgets.
 
 No credentials or command output are included in setup error logs. For a
 collector startup failure, inspect the local service status:
@@ -127,7 +161,41 @@ to configure Serve, be logged in, and have HTTPS certificates enabled. Existing
 foreground Serve handlers or Tailscale Services require manual configuration;
 setup stops rather than rewriting them. Tailnet access rules still apply.
 
-See the [Tailscale Serve reference](https://tailscale.com/docs/reference/tailscale-cli/serve)
-for private HTTPS listeners and persistent `--bg` configuration. Scope uses
-`serve --https=PORT off` to remove only its listener, never `serve reset` or
-Funnel.
+Scope uses `serve --https=PORT off` to remove only its private listener, never
+`serve reset` or Funnel. See the
+[Tailscale Serve reference](https://tailscale.com/docs/reference/tailscale-cli/serve).
+
+## Development validation
+
+Linux build, tests, the isolated Codex probe, and the temporary systemd check
+use Cargo or shell directly. They do not require the Electron workspace:
+
+```sh
+cargo test --manifest-path linux/Cargo.toml
+./linux/target/debug/codex-scope probe
+./linux/scripts/check_service.sh
+```
+
+The service check creates a uniquely named temporary user service, sends one
+synthetic event, verifies authenticated receipt, stops the service, and checks
+that the observer succeeds with no receiver. It removes its service and
+temporary files afterward. Its optional argument selects a loopback port.
+
+For development-only terminal evidence, build the release binaries and run:
+
+```sh
+node linux/scripts/record_setup.ts .artifacts/visual/native-setup
+node linux/scripts/render_setup.ts .artifacts/visual/native-setup
+```
+
+The recorder uses a real PTY and native CLI with an isolated temporary home.
+Its Codex registration/approval metadata, service commands, and Tailscale
+prerequisite response are synthetic. It runs the real native collector and
+observer for the live marker and stopped-collector checks. Scenarios cover
+read consent denial, missing prerequisites, probe failure, Tailscale
+prerequisites, symlinked service enablement refusal, cancellation rollback,
+install/inspect/uninstall/purge, edited
+service preservation, and interrupted-install recovery. The renderer needs the
+workspace's development Playwright dependency and browser; it does not change
+the Linux build or installed prerequisites. Generated casts, PNGs and video stay
+under ignored `.artifacts/visual/`.

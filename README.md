@@ -24,11 +24,10 @@ No offline recording is planned, in this or later releases. Events generated whi
 
 ## Explore the stream
 
-[Run the Electron viewer](electron/README.md) with synthetic data or a configured collector. [Integrated regression validation](docs/electron-regression-validation.md) documents independent visual/resource commands, the complete scenario matrix and measured Linux limits. [Transport validation](docs/electron-transport-validation.md) records connection, failure and resource checks. [Search and navigation evidence](docs/electron-navigation-validation.md) records the current checks and limits. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
+[Run the Electron viewer](electron/README.md) with synthetic data or a configured collector. [Port validation](docs/port-validation.md) records the current commands, results and limitations. The earlier [integrated regression report](docs/electron-regression-validation.md), [transport report](docs/electron-transport-validation.md) and [navigation report](docs/electron-navigation-validation.md) retain historical evidence. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
 
-The [combined Electron review](docs/electron-final-review.md) records the final
-corrections to Clear and worker failure handling, fresh recordings and resource validation
-of the complete implementation.
+The [previous Electron review](docs/electron-final-review.md) records corrections
+to Clear and worker failure handling before the port.
 
 - Follow incoming events, or freeze the view while capture continues.
 - Filter by session, hook type, and free text across retained payloads.
@@ -40,7 +39,9 @@ There is no historical playback. SQLite storage, sidecars, queries and pending o
 
 ## Run from a clone
 
-Run `make -C linux test` to build and test the Linux implementation without Electron. [Linux development](linux/README.md) includes synthetic capture commands and tested tool versions. [Electron development](electron/README.md) documents its independent install, build, test and launch commands, validated under Linux Xvfb. Signing, notarization, automatic updates, and a Mac installer are outside the initial build.
+Install the pinned Rust toolchain to build Linux, and Bun plus Vite+ for repository development commands. Run `vp install` for JavaScript tooling, `vp run build:linux` and `vp run test:linux` for native Linux work, or `vp run build:electron` for the viewer. Electron tests need the display setup documented below. Linux can also build and test with Cargo directly without installing Electron or Bun. [Linux development](linux/README.md) includes synthetic capture commands and tested tool versions. [Electron development](electron/README.md) documents its independent install, build, test and launch commands, validated under Linux Xvfb. Signing, notarization, automatic updates, and a Mac installer are outside the initial build.
+
+`linux/` owns the Rust observer, collector, installer, management tools, dependencies, and tests. Installed Linux executables need neither Bun nor Python. `electron/` is TypeScript compiled for Electron's embedded Node and Chromium, including its existing `node:sqlite` history worker. Bun manages JavaScript dependencies and `vp` provides development commands for both applications. Cargo remains the native Rust compiler and test runner.
 
 `linux/` owns Linux code, dependencies, commands, and tests. `electron/` owns the viewer and its independent tooling. `protocol/` contains the shared wire contract and synthetic fixtures; neither application imports the other's implementation. Root `AGENTS.md` records project principles.
 

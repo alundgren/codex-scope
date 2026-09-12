@@ -21,21 +21,22 @@ restart, and there is no replay or recovery of missed events.
 
 ## Clean Linux checkout
 
-Tested with Node 24.21.0, npm 11.19.0, Ubuntu 26.04.1 x64 and Xvfb. Electron
+Commands below use the pinned workspace `vp` command from `node_modules/.bin`. Add that directory to your development shell PATH, or invoke it by its relative path.
+
+Tested with Node 24.21.0, Bun 1.3.14, Ubuntu 26.04.1 x64 and Xvfb. Electron
 44.3.0 embeds Node 24.20.0 and SQLite 3.53.4. Playwright 1.63.0 is used only for
 development validation. Linux needs Electron's shared libraries, including
 NSS, ATK, X11, GBM, ALSA and CUPS, plus Xvfb and xauth. The combined
 validation and Electron test commands also need Openbox and `xprop` from
 `x11-utils` to test actual minimization. On Ubuntu, install those development
 prerequisites with `sudo apt-get install --no-install-recommends openbox x11-utils`. Check
-`ldd node_modules/electron/dist/electron` for missing libraries after installing.
+`ldd "$(node -p 'require("electron")')"` for missing libraries after installing.
 No Electron commands or dependencies are installed in `linux/`.
 
 ```bash
+bun install --frozen-lockfile
 cd electron
-npm ci
-npx install-electron
-npx playwright install ffmpeg
+../node_modules/.bin/vp run setup
 ```
 
 The installer verifies the Electron archive against the package checksums. On
@@ -43,21 +44,22 @@ hosts that restrict unprivileged user namespaces, configure the supplied
 sandbox helper after each fresh runtime installation:
 
 ```bash
-sudo chown root:root node_modules/electron/dist/chrome-sandbox
-sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
+electron_sandbox="$(node -p 'require("node:path").join(require("node:path").dirname(require("electron")), "chrome-sandbox")')"
+sudo chown root:root "$electron_sandbox"
+sudo chmod 4755 "$electron_sandbox"
 ```
 
 The app and tests keep sandboxing and GPU acceleration enabled. Playwright
 sets `chromiumSandbox: true` explicitly.
 
 ```bash
-npm run build
-xvfb-run -a -s '-screen 0 1600x1000x24' npm test
-xvfb-run -a npm start
+vp run build
+xvfb-run -a -s '-screen 0 1600x1000x24' vp run test
+xvfb-run -a vp run start
 ```
 
-On a desktop with a display, use `npm start`. With no connection settings,
-startup uses synthetic mode. `npm start -- --synthetic` selects it explicitly. Use `npm start -- --fixtures-only`
+On a desktop with a display, use `vp run start`. With no connection settings,
+startup uses synthetic mode. `vp run start -- --synthetic` selects it explicitly. Use `vp run start -- --fixtures-only`
 to keep the initial recording finite while exercising inspection. The
 `--history-test` switch exposes fault injection only to the Electron main-process
 debugger and accepts `--scope-test-root` for an isolated owner directory. It
@@ -68,7 +70,7 @@ adds no renderer data injection or filesystem API. These switches are for automa
 Create a private JSON configuration outside Git with two fields:
 
 ```json
-{"endpoint":"https://collector.example.net","tokenFile":"/absolute/private/viewer.token"}
+{ "endpoint": "https://collector.example.net", "tokenFile": "/absolute/private/viewer.token" }
 ```
 
 The configuration and token must be regular files owned by the current account,
@@ -79,7 +81,7 @@ The default configuration is `connection.json` in Electron's application user
 data directory, separate from temporary recordings. To use another private file:
 
 ```bash
-npm start -- --connection-config=/absolute/private/connection.json
+vp run start -- --connection-config=/absolute/private/connection.json
 ```
 
 The endpoint is an origin only, optionally followed by `/`. Credentials, paths,
@@ -102,13 +104,14 @@ work and starts a new recording and connection only after successful cleanup.
 
 ## Build and validation
 
-`npm run build` copies local application sources and synthetic fixtures into
-`dist/app`, runnable with `node_modules/.bin/electron dist/app`. There is no
-runtime package dependency, embedded server, formatter, framework or extra
-OS process. One bounded Node worker owns SQLite and ingestion. Tests and
-Playwright's FFmpeg binary are excluded from the bundle.
+`vp run build` compiles TypeScript with Vite+ Pack and bundles the renderer with Vite+.
+The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter, framework or extra
+OS process. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
+Playwright's FFmpeg binary are excluded from the bundle. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and synthetic fixtures enter `dist/app`.
 
-`npm test` builds the production bundle, then runs adapter and fake-server transport checks and actual Electron integration tests. Tests use isolated private owner directories and synthetic data.
+`vp run check` runs Vite+ formatting, lint, and strict TypeScript checks. `vp run dev` builds and starts Electron with synthetic data; rerun it after edits. Unit tests run through Vite+ Vitest on Node, and desktop scenarios use Playwright with actual Electron.
+
+`vp run test` runs unit and fake-server transport checks, builds the production bundle, and runs actual Electron integration tests. Tests use isolated private owner directories and synthetic data.
 Search tests also cover literal punctuation, matches outside previews, full-ID
 collisions, several hooks, cancellation during SQLite execution, timed queries,
 stale filter/target replies, paging choices and gesture eviction.
@@ -122,27 +125,27 @@ queue/rate bounds, real SQLite write/full errors, simulated low disk headroom,
 eviction, delayed Clear work, timed keyboard confirmation, cleanup failure,
 second instances, hide/minimize, force kill/relaunch and normal close.
 
-The real collector check is a separate command and is never part of `npm test`.
-It needs Python and this clone's landed Linux collector, starts isolated
+The real collector check is a separate command and is never part of `vp run test`.
+It needs this clone's Rust collector binary built from the repository root with `cargo build --manifest-path linux/Cargo.toml --bins`, starts isolated
 loopback configuration, sends one synthetic datagram and removes the temporary
 files. It does not install hooks, change trust or configure a proxy:
 
 ```bash
-xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:collector
+xvfb-run -a -s '-screen 0 1600x1000x24' vp run test:collector
 ```
 
 Run the complete visual workflow, including the unchanged reference and an artifact manifest:
 
 ```bash
-setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' npm run validate:visual
+setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' vp run validate:visual
 ```
 
 Run the integrated resource workflow separately from recordings or other Electron tests:
 
 ```bash
-setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' npm run validate:resources
-npm run check:resources
-npm run check:resources -- --prove-failure
+setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' vp run validate:resources
+vp run check:resources
+vp run check:resources -- --prove-failure
 ```
 
 The resource command builds the app and runs three empty-window/app trials,
@@ -150,7 +153,7 @@ including bounded capture, search, repeated eviction, hidden/minimized capture,
 bursts, stalled storage and failure/recovery. Append `-- --runs=1` for a single
 trial. Reports go under ignored `measurements/regression/`. Missing required
 metrics or exceeded checked-in thresholds return failure. Visual artifacts go
-under ignored `validation/visual/`; inspect the screenshots and recordings.
+under ignored `../.artifacts/visual/electron-report/`; inspect the screenshots and recordings.
 See [integrated regression validation](../docs/electron-regression-validation.md)
 for metric definitions, machine prerequisites, measured variation, limits and
 the complete handoff scenario matrix.
@@ -166,14 +169,14 @@ or macOS performance, energy use, sleep, native lifecycle or setup.
 
 ## Ownership and limits
 
-`history.cjs` is the main-process broker. It caps frame bytes, rate, queue count,
-queue bytes and requests before passing work to `history-worker.cjs`. The worker
+`history.ts` is the main-process broker. It caps frame bytes, rate, queue count,
+queue bytes and requests before passing work to `history-worker.ts`. The worker
 owns the authenticated transport, accepted text, metadata, local event order, SQLite statements, bounded
 transactions, oldest-row eviction and file cleanup. It returns at most five
 summaries and one selected payload. No list of every retained ID or payload
 enters either UI thread. The renderer replaces only its latest pending request
 and rejects older recording generations, filter identities and requested targets.
-`search.cjs` runs literal matching inside SQLite through a JavaScript function,
+`search.ts` runs literal matching inside SQLite through a JavaScript function,
 using the same predicate for accepted-arrival counts. It checks a shared
 cancellation value and a 250 ms deadline while SQLite visits rows. Rank queries
 scan at most the fixed retained history and return bounded results. There is no

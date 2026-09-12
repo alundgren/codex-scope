@@ -5,28 +5,31 @@
   "description": "Temporary live hook event history inspector",
   "license": "MIT",
   "type": "module",
-  "main": "src/main.cjs",
-  "engines": {
-    "node": ">=24.0.0"
-  },
+  "main": "dist/app/main.mjs",
   "scripts": {
-    "start": "electron .",
-    "build": "node scripts/build.mjs",
-    "test": "npm run test:unit && node scripts/desktop.mjs npx playwright test",
-    "pretest": "npm run build",
-    "test:unit": "node --test test/recording.test.mjs test/search.test.mjs test/transport.test.mjs test/resource-thresholds.test.mjs",
-    "test:electron": "node scripts/desktop.mjs npx playwright test",
-    "measure": "node scripts/measure.mjs",
-    "measure:history": "node scripts/measure-history.mjs",
-    "measure:navigation": "node scripts/measure-navigation.mjs",
-    "test:collector": "node scripts/collector-smoke.mjs",
-    "measure:transport": "node scripts/measure-transport.mjs",
-    "validate:visual": "node scripts/validate-visual.mjs",
-    "validate:resources": "npm run build && node scripts/desktop.mjs node scripts/validate-resources.mjs",
-    "check:resources": "node scripts/check-resources.mjs"
+    "dev": "vp run build && vp exec electron dist/app --synthetic",
+    "start": "vp run build && vp exec electron dist/app",
+    "build": "vp exec node build.ts",
+    "check": "vp check",
+    "check:types": "vp exec tsc --project tsconfig.json && vp exec tsc --project tsconfig.tools.json",
+    "test": "vp run test:unit && vp run test:electron",
+    "test:unit": "vp test run",
+    "test:electron": "vp run build && vp exec node scripts/desktop.ts vp exec playwright test",
+    "measure": "vp exec node scripts/measure.ts",
+    "measure:history": "vp exec node scripts/measure-history.ts",
+    "measure:navigation": "vp exec node scripts/measure-navigation.ts",
+    "test:collector": "vp exec node scripts/collector-smoke.ts",
+    "measure:transport": "vp exec node scripts/measure-transport.ts",
+    "validate:visual": "vp exec node scripts/validate-visual.ts",
+    "validate:resources": "vp run build && vp exec node scripts/desktop.ts vp exec node scripts/validate-resources.ts",
+    "check:resources": "vp exec node scripts/check-resources.ts",
+    "setup": "vp exec install-electron && vp exec playwright install ffmpeg"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "electron": "44.3.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   }
 }

@@ -1,42 +1,101 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Codex Scope</title>
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="renderer.js"></script>
-</head>
-<body>
-  <main>
-    <header><h1>Event journal</h1><span class="connection" role="status">Starting…</span></header>
-    <div class="toolbar">
-      <input id="search" class="search" aria-label="Search retained payloads and metadata" placeholder="Search payloads…" maxlength="512">
-      <select id="session" aria-label="Filter by session"><option value="">All sessions</option></select>
-      <details class="hooks" id="hooks"><summary id="hook-label">All hooks</summary><div class="hookmenu" id="hookmenu"></div></details>
-    </div>
-    <div class="mode"><span id="mode" role="status">Live</span><span id="count"></span></div>
-    <div id="notice" role="status"></div>
-    <div class="workspace">
-      <div class="journal">
-        <div class="rail">
-          <time id="oldest"></time><div class="railtrack" id="scrubber" role="slider" tabindex="-1" aria-label="Scrub retained events, oldest at top, Live at bottom" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-disabled="true"><div id="ticks"></div><div id="pin"></div></div><button class="live" id="live" aria-label="Follow live arrivals">Live</button>
-        </div>
-        <div id="entries" aria-label="Journal events"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Codex Scope</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="renderer.ts"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Event journal</h1>
+        <span class="connection" role="status">Starting…</span>
+      </header>
+      <div class="toolbar">
+        <input
+          id="search"
+          class="search"
+          aria-label="Search retained payloads and metadata"
+          placeholder="Search payloads…"
+          maxlength="512"
+        />
+        <select id="session" aria-label="Filter by session">
+          <option value="">All sessions</option>
+        </select>
+        <details class="hooks" id="hooks">
+          <summary id="hook-label">All hooks</summary>
+          <div class="hookmenu" id="hookmenu"></div>
+        </details>
       </div>
-      <section class="inspector" aria-label="Accepted payload">
-        <div class="payloadmeta"><div id="metadata">Opening temporary recording…</div><button id="copy" disabled>Copy JSON</button></div>
-        <div class="payloadbody">
-          <div id="payload" tabindex="0" role="region" aria-label="Complete original JSON payload"><pre id="json"></pre></div>
-          <div id="scrollbar" role="scrollbar" aria-label="Scroll payload" aria-controls="payload" aria-orientation="vertical"
-            aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="-1" hidden><div id="thumb"></div></div>
+      <div class="mode"><span id="mode" role="status">Live</span><span id="count"></span></div>
+      <div id="notice" role="status"></div>
+      <div class="workspace">
+        <div class="journal">
+          <div class="rail">
+            <time id="oldest"></time>
+            <div
+              class="railtrack"
+              id="scrubber"
+              role="slider"
+              tabindex="-1"
+              aria-label="Scrub retained events, oldest at top, Live at bottom"
+              aria-orientation="vertical"
+              aria-valuemin="0"
+              aria-valuemax="0"
+              aria-valuenow="0"
+              aria-disabled="true"
+            >
+              <div id="ticks"></div>
+              <div id="pin"></div>
+            </div>
+            <button class="live" id="live" aria-label="Follow live arrivals">Live</button>
+          </div>
+          <div id="entries" aria-label="Journal events"></div>
         </div>
-        <div id="copy-status" role="status"></div>
-      </section>
-    </div>
-    <footer><span id="retention">Temporary recording · Deleted when the app closes.</span><button class="clear" id="clear" aria-label="Unlock Clear history" disabled>
-      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 9V6a4 4 0 0 1 8 0v3"/><rect x="4" y="9" width="12" height="9" rx="2"/><path d="M10 12v3"/></svg><span id="clear-label">Clear</span>
-    </button></footer>
-  </main>
-</body>
+        <section class="inspector" aria-label="Accepted payload">
+          <div class="payloadmeta">
+            <div id="metadata">Opening temporary recording…</div>
+            <button id="copy" disabled>Copy JSON</button>
+          </div>
+          <div class="payloadbody">
+            <div
+              id="payload"
+              tabindex="0"
+              role="region"
+              aria-label="Complete original JSON payload"
+            >
+              <pre id="json"></pre>
+            </div>
+            <div
+              id="scrollbar"
+              role="scrollbar"
+              aria-label="Scroll payload"
+              aria-controls="payload"
+              aria-orientation="vertical"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+              tabindex="-1"
+              hidden
+            >
+              <div id="thumb"></div>
+            </div>
+          </div>
+          <div id="copy-status" role="status"></div>
+        </section>
+      </div>
+      <footer>
+        <span id="retention">Temporary recording · Deleted when the app closes.</span
+        ><button class="clear" id="clear" aria-label="Unlock Clear history" disabled>
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M6 9V6a4 4 0 0 1 8 0v3" />
+            <rect x="4" y="9" width="12" height="9" rx="2" />
+            <path d="M10 12v3" /></svg
+          ><span id="clear-label">Clear</span>
+        </button>
+      </footer>
+    </main>
+  </body>
 </html>

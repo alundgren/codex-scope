@@ -1,5 +1,9 @@
 # Live transport validation on Linux
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 Issue #8 connects the actual Electron viewer to protocol version 1. All input
 and evidence here are synthetic. The independent suite uses a bounded fake
 collector; a separate command runs the landed Linux collector and sends one

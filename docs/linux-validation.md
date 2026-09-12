@@ -1,5 +1,9 @@
 # Linux validation
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 These results were measured on 2026-09-11 using Linux x86_64, Python 3.14.4,
 GCC 15.2.0, and Codex CLI 0.153.4. Tests use synthetic inputs and temporary
 directories. No account hooks were installed and no hook trust was changed.

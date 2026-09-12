@@ -14,7 +14,7 @@ for inspection, copying, status and Clear. The worker parses accepted input,
 stores original payload text and metadata in local recording order, and evicts
 oldest rows within fixed limits. The sandboxed, isolated renderer displays at
 most five neighboring summaries and one complete original payload as text.
-Plain local HTML/CSS/JavaScript supplies the selected journal and custom payload
+Local HTML/CSS and compiled TypeScript supply the selected journal and custom payload
 scrollbar. No runtime package or extra OS process is added.
 
 Each application recording starts in Live. A configured collector supplies live
@@ -91,8 +91,8 @@ C4Container
     System_Ext(codex, "Codex on Linux", "Runs supported hook events")
     System_Ext(serve, "Tailscale Serve", "Proxies the collector's loopback endpoint")
     System_Boundary(scope, "codex-scope") {
-        Container(observer, "Observer helper on Linux", "C executable", "Attempts one bounded local payload handoff")
-        Container(collector, "Collector on Linux", "Python local service", "Forwards events to one connected viewer with bounded buffering")
+        Container(observer, "Observer helper on Linux", "Rust executable", "Attempts one bounded local payload handoff")
+        Container(collector, "Collector on Linux", "Rust local service", "Forwards events to one connected viewer with bounded buffering")
         Container(viewer, "Viewer on macOS", "Electron", "Owns the connection, history lifecycle, and inspection UI")
         ContainerDb(history, "Recording on macOS", "SQLite", "Stores a bounded temporary history for this app run")
     }
@@ -106,7 +106,7 @@ C4Container
 
 The [network illustration](diagrams/topology.svg) shows the physical placement. Linux ingestion uses a Unix datagram socket with account credentials in a private directory. The viewer uses a separate loopback HTTP listener. Only that HTTP listener may be proxied.
 
-`linux/` and `electron/` own independent application tooling and tests. The shared [protocol](../protocol/README.md) defines an authenticated NDJSON stream and separate heartbeat requests, with synthetic fixtures for Mac development without the collector. The observer has no Python startup dependency; Python runs only in the collector and management tools.
+`linux/` and `electron/` own independent application tooling and tests. The shared [protocol](../protocol/README.md) defines an authenticated NDJSON stream and separate heartbeat requests, with synthetic fixtures for Mac development without the collector. All Linux components compile to native Rust executables. The observer has its own small entry point; the collector and management commands share the application executable. No JavaScript runtime or native addon is used on Linux. Bun and Vite+ are development tools; Cargo builds and tests the independent Linux crate. Electron uses TypeScript compiled for its embedded Node/Chromium runtime and retains `node:sqlite`.
 
 ## Capture contract
 
@@ -212,8 +212,7 @@ Linux runtime choices, limits, and commands are recorded in [Linux development](
 
 ## Guided Linux setup
 
-`linux/install.sh` starts an interactive Python installer using only the standard
-library. It checks prerequisites, requests permission to inspect selected
+`linux/install.sh` builds and starts the native Rust installer. It checks prerequisites, requests permission to inspect selected
 configuration, probes Codex registration in isolation, and rehearses hook
 removal before committing live changes. It copies the runtime outside the
 checkout and owns one user service and an optional dedicated Tailscale listener.
@@ -231,3 +230,12 @@ window. These are defensive setup limits, not measured collector performance
 budgets. Runtime queues and payload limits remain those of the collector.
 The recovery copy and backups remain private until explicitly purged. No captured
 event payload is saved by setup.
+
+The port retains Electron's sandboxed renderer, context isolation and bounded
+SQLite worker. Vite+ bundles the TypeScript main process, preload and renderer;
+Bun and compiler packages stay outside the application output. This follows the
+current Electron [performance guidance](https://www.electronjs.org/docs/latest/tutorial/performance)
+on measuring the application, bundling code and keeping expensive work off the
+UI threads, and its [security guidance](https://www.electronjs.org/docs/latest/tutorial/security)
+on sandboxing and context isolation. The retained worker is included in whole-app
+measurements in [port validation](port-validation.md).

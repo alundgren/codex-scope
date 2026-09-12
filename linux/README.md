@@ -1,95 +1,82 @@
 # Linux capture development
 
-The observer and collector build and run independently of Electron. There are
-no third-party Python packages. Use Linux, a C11 compiler, Make, and Python
-3.11 or later. For guided installation, start with [install.md](install.md). The tested environment uses Python 3.14.4, pinned in
-`.python-version`, GCC 15.2.0, and Codex CLI 0.153.4. Setup probes the installed Codex executable for registration compatibility;
-it does not enforce an exact version. Real-session checks are still required.
+The observer, collector, installer and management tools are native Rust programs.
+They build and test independently of Electron. Source builds need the pinned
+Rust toolchain, a C compiler and a system linker. Installed binaries need the matching Linux
+system libraries, with no Python, Bun, Node or Rust runtime installation.
+Start with [install.md](install.md) for guided installation.
 
-From the repository root:
+From the repository root, with Bun and Vite+ development tooling installed:
 
 ```sh
-make -C linux
-make -C linux test
-make -C linux probe
-make -C linux benchmark
-make -C linux load-check
+vp run build:linux
+vp run test:linux
+vp run check:linux
+vp run probe:linux
+vp run measure:linux
 ```
 
-The probe creates a temporary isolated Codex configuration, calls the installed
-app-server's `hooks/list`, and deletes the temporary files. It does not change
-the account's hooks or trust. It verifies registration and untrusted status,
-not real event emission or policy behavior.
+Cargo alone is sufficient for Linux development:
 
-See [validation](../docs/linux-validation.md) for measured results and remaining
-checks. Production capture acceptance remains pending real-session checks.
+```sh
+cargo build --manifest-path linux/Cargo.toml --release
+cargo test --manifest-path linux/Cargo.toml
+linux/target/release/codex-scope probe
+cargo run --release --manifest-path linux/Cargo.toml --example observer_measurements
+cargo run --release --manifest-path linux/Cargo.toml --example runtime_measurements
+```
+
+The probe creates an isolated temporary Codex configuration and asks the installed
+app-server to list its registrations. It verifies registration and untrusted
+status, not real event emission or policy behavior. It leaves account hooks and
+trust unchanged. See [port validation](../docs/port-validation.md) for current
+results and remaining checks. The [earlier Linux report](../docs/linux-validation.md)
+records the previous implementation.
 
 ## Local synthetic run
 
-Run these commands from `linux/`. Paths below are ignored local test files,
-not deployment defaults. The token command refuses to overwrite an existing
-file and never prints the token.
+From the repository root, create an ignored private test token and start the
+collector. Token creation refuses existing files and never prints the token.
 
 ```sh
-mkdir -m 700 -p ../runtime
-python3 -m scope.token ../runtime/viewer.token
-python3 -m scope.collector --runtime-dir ../runtime/collector --token-file ../runtime/viewer.token
+mkdir -m 700 -p runtime
+linux/target/release/codex-scope token --token-file runtime/viewer.token
+linux/target/release/codex-scope collector --runtime-dir runtime/collector --token-file runtime/viewer.token
 ```
 
-In another terminal, also from `linux/`:
+In another terminal:
 
 ```sh
-python3 -m scope.viewer --endpoint http://127.0.0.1:4319 --token-file ../runtime/viewer.token --seconds 10
+linux/target/release/codex-scope viewer --endpoint http://127.0.0.1:4319 --token-file runtime/viewer.token --seconds 10
 ```
 
 While that client is connected, send a synthetic event from a third terminal:
 
 ```sh
-./build/observer ../runtime/collector/ingest.sock < ../protocol/fixtures/pre-tool-use.json
+linux/target/release/codex-scope-observer runtime/collector/ingest.sock < protocol/fixtures/pre-tool-use.json
 ```
 
-The client prints counts, never payloads. It records nothing. Stop the collector
-with Ctrl+C. The runtime directory contains only its lock and socket while
-running; no event files are created. A crash can leave a stale socket, which a
-new collector removes only after acquiring the account-local collector lock.
+The diagnostic client prints counts, never payloads. It records nothing. Stop
+the collector with Ctrl+C. Its runtime directory contains only a lock and socket
+while running. A restarted collector removes a stale socket only after acquiring
+the collector lock.
 
 ## Explicit hook installation
 
-These low-level hook commands remain available for development. Prefer the
-guided installer for permanent installation, service setup, and removal. A
-basic user-reported live install/capture/stop/uninstall trial passed; broader
-real-session checks in `plan.md` remain incomplete.
+Run `linux/target/release/codex-scope setup` for guided installation and use its
+installed management command to inspect, verify or remove the installation.
+The flow asks before reading configuration and before making changes. It adds
+its own handlers without wrapping another hook command or changing hook trust.
+Review the exact entries in Codex `/hooks` and start a new session for testing.
 
-Use absolute paths when installing. Substitute the intended account's Codex
-configuration directory, a stable compiled observer path, and its collector
-socket path:
-
-```sh
-python3 -m scope.install install --config-dir /absolute/codex-config --observer /absolute/observer --socket /absolute/runtime/ingest.sock
-python3 -m scope.install uninstall --config-dir /absolute/codex-config
-```
-
-Installation adds handlers to `hooks.json` without changing inline hooks in
-`config.toml`. Codex may warn when both representations exist in one layer;
-they remain additive. The installer leaves trust unchanged. Review the exact
-entries in Codex `/hooks`. Use a new session for validation; hot-reload behavior
-has not been tested.
-
-The installer quotes observer and socket paths, redirects its own handler's
-output, and normalizes failures to exit zero. This also covers a removed
-observer binary. It never wraps or rewrites another hook's command. Missing
-binary behavior within a real Codex session still needs validation.
-
-`codex-scope-owned.json` records exact owned groups. Configuration replacement
-is atomic, with a durable ownership journal so interrupted edits can be
-recovered by rerunning install or uninstall. Unchanged owned entries are
-removed; edited or duplicate entries remain. The installer serializes its own
-writers and detects changes made before its final configuration replacement.
-Do not edit `hooks.json` concurrently: other editors do not use its lock, and
-there is a short comparison-to-replacement interval. Unknown config fields
-and unrelated entries survive; JSON formatting is normalized. Symlink files,
-duplicate keys, oversized configuration, and directories writable by others
-are refused.
+Handler output is redirected and failures are normalized to exit zero, including
+when the observer executable has been removed. Ownership records identify exact
+entries so removal preserves edited or duplicate entries and unrelated settings.
+Configuration writes are atomic and recorded durably for interrupted recovery.
+Do not edit configuration concurrently with setup. Other editors do not use its
+lock, so a short comparison-to-replacement interval remains. Unknown fields are
+preserved; JSON formatting is normalized. Symlink files, duplicate JSON keys,
+oversized configuration and directories writable by others are refused.
 
 ## Runtime limits
 

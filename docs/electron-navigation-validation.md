@@ -1,5 +1,9 @@
 # Search and navigation validation on Linux
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 Validated for issue #7 on 2026-09-11. All inputs and evidence are synthetic.
 The actual Electron app searches temporary SQLite history while intake
 continues. Full accepted text and metadata use case-insensitive literal
