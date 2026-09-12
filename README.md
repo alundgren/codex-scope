@@ -2,7 +2,7 @@
 
 A live inspector for Codex hook events. Capture on a Linux host, inspect on a Mac, and keep a bounded, temporary history while the viewer is open.
 
-Linux capture, guided installation, and the Electron history viewer are implemented for synthetic testing. The viewer stores bounded temporary SQLite history, searches full accepted payloads and metadata, filters by session and hooks, and preserves reading position while arrivals continue. The version 1 live transport is implemented and tested with the landed collector using synthetic input on Linux. Real-session compatibility, private HTTPS proxy checks and macOS validation remain. Start with [guided Linux installation](linux/install.md), [Linux development](linux/README.md), [Electron development](electron/README.md) and [remaining work](plan.md).
+Codex Scope includes Linux capture, guided installation, and an Electron history viewer with synthetic development mode. The viewer stores bounded temporary SQLite history, searches full accepted payloads and metadata, filters by session and hooks, and preserves reading position while arrivals continue. The viewer uses the version 1 live transport contract. Real-session compatibility, private HTTPS proxy checks and macOS validation remain. Start with [guided Linux installation](linux/install.md), [Linux development](linux/README.md), [Electron development](electron/README.md) and [remaining work](plan.md).
 
 Codex must keep working when capture fails. Missing events are acceptable; blocking a session, changing a hook decision, or exhausting the laptop's resources is not.
 
@@ -18,16 +18,13 @@ One Linux capture host serves one macOS viewer. Multiple Codex sessions can appe
 
 Observers receive the payloads Codex supplies to supported hook events. They do not wrap existing hook commands, inspect their output, read transcripts, or collect environment variables. Accepted payloads retain their original fields. Oversized or excess events are dropped instead of silently truncated.
 
-An explicit install command registers account-level observers while preserving existing hooks. Uninstall removes only unchanged entries owned by codex-scope. A basic live install, capture, collector-stop, and uninstall trial passed; broader compatibility and performance checks remain incomplete. Codex's own hook trust process still applies.
+An explicit install command registers account-level observers while preserving existing hooks. Uninstall removes only unchanged entries owned by codex-scope. Broader compatibility and performance checks remain incomplete. Codex's own hook trust process still applies.
 
 No offline recording is planned, in this or later releases. Events generated while disconnected can be lost permanently. The viewer distinguishes known drops from intervals where the loss count is unknown.
 
 ## Explore the stream
 
-[Run the Electron viewer](electron/README.md) with synthetic data or a configured collector. [Port validation](docs/port-validation.md) records the current commands, results and limitations. The earlier [integrated regression report](docs/electron-regression-validation.md), [transport report](docs/electron-transport-validation.md) and [navigation report](docs/electron-navigation-validation.md) retain historical evidence. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
-
-The [previous Electron review](docs/electron-final-review.md) records corrections
-to Clear and worker failure handling before the port.
+[Run the Electron viewer](electron/README.md) with synthetic data or a configured collector. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
 
 - Follow incoming events, or freeze the view while capture continues.
 - Filter by session, hook type, and free text across retained payloads.

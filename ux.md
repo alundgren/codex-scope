@@ -11,7 +11,7 @@ Clear uses the specified two-activation lock and starts an empty new recording.
 Eviction, known drops, storage pressure and cleanup failures appear in the
 existing status area.
 
-Search, full-session-ID filtering and multi-select hooks now apply to retained
+Search, full-session-ID filtering and multi-select hooks apply to retained
 events and matching arrival counts. The journal pin is an interactive scrubber
 with a distinct Live endpoint. Filter choices page within fixed limits, and a
 query timeout keeps the previous selection visibly identified while offering
@@ -21,12 +21,8 @@ before the first connection and across gaps. The status area distinguishes the
 latest collector lifetime drop totals from local viewer drops. Reconnect keeps a
 held selection and payload offset; Clear starts a new recording and connection. Payloads display as original text without formatting expansion. Metadata
 and previews may use visible ellipses; the payload and Copy JSON preserve
-complete accepted text. These are the current delivery details of the experience
-below. [Navigation evidence](docs/electron-navigation-validation.md) and
-[transport evidence](docs/electron-transport-validation.md) cover the actual app
-on Linux, including a separate synthetic smoke check with the landed collector.
-[Integrated regression validation](docs/electron-regression-validation.md) maps the complete experience to repeatable actual-app checks and inspected synthetic evidence. Private HTTPS proxy behavior, real Codex compatibility and macOS behavior remain
-unverified.
+complete accepted text. Private HTTPS proxy behavior, real Codex compatibility
+and macOS behavior remain unverified.
 
 Use “Codex Scope” in the window title. Event journal is the single view title. Do not add subheadings, event numbers, a Back to events button, a timestamp-jump button, or a separate Go live toolbar button. The journal and selected payload remain visible together. At narrow widths, put the payload below the journal instead of replacing it.
 

@@ -1,12 +1,12 @@
 # Deployment
 
-Start with [guided Linux installation](../linux/install.md) for a permanent collector and optional private HTTPS listener. A basic live Linux smoke test has passed; guided live deployment and private proxy validation remain outstanding. The Electron viewer supports synthetic fixtures and the version 1 live connection. The Rust/TypeScript port needs its own validation evidence; earlier Python/C results do not establish the new runtime behavior.
+Start with [guided Linux installation](../linux/install.md) for a permanent collector and optional private HTTPS listener. The Electron viewer supports synthetic fixtures and the version 1 live connection. Guided live deployment, private proxy behavior and macOS validation remain outstanding.
 
 ## Machines and connection
 
 Use a Linux host that runs Codex and a Mac that runs the Electron viewer. They can communicate through a private tailnet. No GUI is needed on the Linux host, and the Mac initiates the live connection.
 
-On Linux, the collector will expose its viewer API on a configurable loopback port. Tailscale Serve can proxy that service over HTTPS within the tailnet. For example, after starting a collector listening on the illustrative port 4319:
+On Linux, the collector exposes its viewer API on a configurable loopback port. Tailscale Serve can proxy that service over HTTPS within the tailnet. For example, after starting a collector listening on the illustrative port 4319:
 
 ```sh
 # Example only; first inspect existing Serve routes and choose an unused port.

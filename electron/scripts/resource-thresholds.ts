@@ -27,7 +27,7 @@ export interface ResourceReport {
     workloads: Record<string, ResourceWorkload>;
   }[];
 }
-// Linux VM regression limits are calibrated in docs/electron-regression-validation.md.
+// Linux regression ceilings; metric definitions are in electron/README.md.
 export const thresholds = Object.freeze({
   startupMs: 2000,
   peakRssBytes: 900 * 1024 * 1024,

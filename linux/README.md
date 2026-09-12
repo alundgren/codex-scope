@@ -29,9 +29,8 @@ cargo run --release --manifest-path linux/Cargo.toml --example runtime_measureme
 The probe creates an isolated temporary Codex configuration and asks the installed
 app-server to list its registrations. It verifies registration and untrusted
 status, not real event emission or policy behavior. It leaves account hooks and
-trust unchanged. See [port validation](../docs/port-validation.md) for current
-results and remaining checks. The [earlier Linux report](../docs/linux-validation.md)
-records the previous implementation.
+trust unchanged. Real-session coverage, policy coexistence and private proxy
+checks remain in [the plan](../plan.md).
 
 ## Local synthetic run
 

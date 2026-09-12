@@ -23,12 +23,10 @@
 /tmp/
 /local/
 
-# UX evidence belongs in pull requests, not Git history
-/.artifacts/visual/
-/docs/evidence/**/*.png
-/docs/evidence/**/*.webm
-/docs/validation/**/*.png
-/docs/validation/**/*.webm
+# Generated evidence belongs only in GitHub PR attachments
+/.artifacts/
+/docs/evidence/
+/docs/validation/
 
 # Dependencies and generated output
 node_modules/
@@ -52,4 +50,3 @@ playwright-report/
 
 # Synthetic development measurements and private desktop tools
 /electron/measurements/
-/.artifacts/tools/

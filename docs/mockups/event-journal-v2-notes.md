@@ -2,19 +2,9 @@
 
 Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. This is the sole UI build target.
 
-The prototype and this document are UI deliverables only. The [Electron implementation](../../electron/README.md) now supports bounded temporary SQLite history, continuous synthetic arrivals, held reading, original-text inspection and copying, the custom payload scrollbar and timed Clear. [History validation](../electron-history-validation.md) records actual-app evidence separately from this prototype. Full filters and scrubbing now have [recorded Electron evidence](../electron-navigation-validation.md). Version 1 live input now has [transport evidence](../electron-transport-validation.md), including a separate synthetic smoke check with the landed collector. [Integrated regression validation](../electron-regression-validation.md) maps every acceptance row below to the current independent Electron suite and recorded evidence. Real hook compatibility, private proxy behavior and macOS behavior remain unverified. Demo controls outside the window are not application controls.
-
-The parallel Linux handoff establishes these ownership boundaries. Preserve them when implementing or resolving branch conflicts.
-
-| Location | Responsibility |
-| --- | --- |
-| `linux/` | Linux agent owns observer, collector, installation tools, dependencies, commands, and tests. |
-| `electron/` | UI implementation owns the Mac app, dependencies, commands, synthetic development mode, and tests. |
-| `protocol/` | Linux agent authors the initial wire contract and shared synthetic fixtures. Keep it small and free of application implementation logic. |
-| `AGENTS.md` | Linux agent authors project principles without implementation details. |
-| `plan.md` | Linux agent updates Linux progress. Add Electron progress only when actual implementation begins and reconcile concurrent edits. |
-| `docs/architecture.md`, `docs/deployment.md` | Linux agent updates tested capture behavior and commands. Coordinate later Electron additions. |
-| `ux.md`, `docs/mockups/event-journal-v2*` | Selected UI behavior, reference prototype, and build handoff. |
+The prototype is a synthetic design reference. Demo controls outside the window
+are not application controls. Real hook compatibility, private proxy behavior
+and macOS behavior remain unverified.
 
 Linux and Electron must install, build, and test independently. Neither imports the other's implementation. Electron must offer a synthetic-data development mode without a running collector. Use the existing `protocol/` contract and fixtures through a small input adapter; do not establish a competing transport contract from the demo's JavaScript objects.
 
@@ -38,8 +28,6 @@ Clear confirmation lives in the renderer, but recording deletion must be atomic 
 
 The UI mockup intentionally simplifies several implementation concerns. Its fixture objects are generated locally and serialized for display, IDs and filters are held in arrays, text search runs immediately, new arrivals are manually injected, retention is capped at 60 demo events, and ticks represent every event. It lacks SQLite eviction, cancelable database queries, durable settings, real connection setup, and actual cleanup failures. Do not copy those shortcuts into the application's data handling. The demo opens historical inspection; production starts Live. Demo reconnection illustrates a notice but does not test the wire protocol.
 
-Implement in reviewable stages: establish an independently runnable Electron shell with synthetic data; implement journal filtering, scrub navigation, and payload inspection; implement custom scrolling and timed clear confirmation; connect the renderer to bounded local history; then consume the agreed protocol through the transport adapter. Keep the UI runnable with fixtures at every stage. Pin dependencies and document exact commands inside `electron/` once those commands exist and have been tested. Do not document invented launch commands as operational.
-
 | Acceptance check | Required result |
 | --- | --- |
 | Start with fixtures | Codex Scope title, one Event journal view title, no subheadings or event numbers, session and hook filters, neutral Live state. |
@@ -56,5 +44,3 @@ Implement in reviewable stages: establish an independently runnable Electron she
 | Lose and restore the connection | Retained history survives, gap losses remain unknown, no replay is requested, history inspection stays held. |
 | Evict, time out, or fill storage | Explain the condition and keep bounded, responsive navigation through available history. |
 | Close, hide, minimize, crash | Close quits and cleans up; hide/minimize keep capture; next launch cleans abandoned recordings. Linux VM evidence completes current delivery; macOS native checks remain later refinement. |
-
-Browser validation of the prototype covered drag and keyboard scrubbing, custom thumb dragging and keyboard scrolling, payload-position preservation during arrivals, session and text filtering, three-second automatic relocking, two-click clearing, recovery after clear, reconnection notices, and desktop and narrow layouts. No browser errors or narrow-window horizontal overflow were observed. These results do not complete production acceptance checks for the collector, SQLite, security isolation, bounded resource use, or macOS lifecycle.

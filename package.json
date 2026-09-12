@@ -12,7 +12,8 @@
     "test": "vp run test:linux && vp run test:electron",
     "test:linux": "cargo test --manifest-path linux/Cargo.toml",
     "test:electron": "vp -C electron run test",
-    "check": "vp run check:tools && vp run check:linux && vp run check:electron",
+    "check": "vp run check:evidence && vp run check:tools && vp run check:linux && vp run check:electron",
+    "check:evidence": "node scripts/check-evidence.mjs",
     "check:linux": "cargo fmt --manifest-path linux/Cargo.toml --check && cargo clippy --manifest-path linux/Cargo.toml --all-targets -- -D warnings",
     "check:electron": "vp -C electron run check",
     "dev": "vp -C electron run dev",
@@ -20,7 +21,7 @@
     "test:collector": "cargo build --manifest-path linux/Cargo.toml --bins && vp -C electron run build && vp -C electron exec node scripts/desktop.ts vp run test:collector",
     "probe:linux": "cargo run --manifest-path linux/Cargo.toml --bin codex-scope -- probe",
     "measure:linux": "cargo run --release --manifest-path linux/Cargo.toml --example observer_measurements && cargo run --release --manifest-path linux/Cargo.toml --example runtime_measurements",
-    "check:tools": "vp fmt --check linux/scripts package.json tsconfig.json && vp lint linux/scripts && vp exec tsc -p tsconfig.json",
+    "check:tools": "vp fmt --check scripts linux/scripts package.json tsconfig.json && vp lint scripts linux/scripts && vp exec tsc -p tsconfig.json",
     "test:service:linux": "cargo build --manifest-path linux/Cargo.toml --bins && sh linux/scripts/check_service.sh",
     "validate:setup": "cargo build --release --manifest-path linux/Cargo.toml --bins && vp exec node linux/scripts/record_setup.ts && vp exec node linux/scripts/render_setup.ts"
   },
