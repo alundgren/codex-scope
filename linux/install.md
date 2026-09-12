@@ -34,8 +34,9 @@ Setup names missing prerequisites and stops. It does not install packages or
 run sudo. It asks whether to use Tailscale and suggests `~/.codex` for existing
 Codex configuration. It checks for `config.toml`, then asks permission before
 reading that file, `hooks.json`, and the relevant local service settings. It
-does not read transcripts or display configuration contents, tokens, or
-captured payloads. JSON and TOML with duplicate keys are rejected.
+does not read transcripts or display configuration contents or captured payloads.
+For Tailscale installations, it displays the saved token in the pairing URL.
+JSON and TOML with duplicate keys are rejected.
 
 Accept the suggested directories and available ports, or customize them. Paths
 must be below your home directory, outside the checkout, without symlink
@@ -82,8 +83,13 @@ input, not coverage of every hook event or a latency budget.
 On success, the collector runs as `codex-scope.service`, enabled for the user
 at startup. If selected, a dedicated private Tailscale Serve HTTPS listener
 also persists. Setup prints the endpoint, token-file path, and an SSH copy
-command for the other machine. Configure your UI with that endpoint and bearer
-token. The diagnostic test does not establish UI or cross-device compatibility.
+command for the other machine. With Tailscale, it also prints a pairing URL
+(`https://<tailnet-host>:<port>/?token=<token>`) to paste into the app settings.
+The URL uses the saved token and is displayed again whenever setup opens an
+existing installation, including when no upgrade is needed, and by
+`manage.sh inspect`. Keep this URL private because it contains the bearer token.
+Local-only installations do not display a pairing URL. The diagnostic test does
+not establish UI or cross-device compatibility.
 
 The two native executables are copied to the chosen application directory.
 Another copy of `codex-scope` and a shell launcher provide permanent recovery

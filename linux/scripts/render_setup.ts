@@ -47,9 +47,11 @@ for (const cast of casts) {
       ["upgraded", "Upgrade finished."],
       ["unchanged", "already match this build"],
       ["restored", "Previous executables restored."],
+      ["pairing", "/?token="],
+      ["pairing-unavailable", "Pairing URL unavailable:"],
     ] as const) {
       if (
-        (name === "success" || name.startsWith("upgrade")) &&
+        (name === "success" || name === "pairing" || name.startsWith("upgrade")) &&
         full.includes(trigger) &&
         !captured.has(state)
       ) {
