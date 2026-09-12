@@ -62,6 +62,9 @@ returned zero, but the isolated resource command still returned 143 after saving
 a complete passing report. The cause was not established. The separate resource
 checker and its deliberately failing input check both returned their expected
 statuses. Interactive-shell behavior elsewhere was not tested.
+Smaller direct and Vite+-wrapped actual Electron launch/close probes returned
+zero, and deliberate failures returned seven. They did not reproduce the 143
+exit, so no speculative process-cleanup change was made.
 
 ## Native Linux results
 
