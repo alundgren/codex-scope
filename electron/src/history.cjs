@@ -65,7 +65,9 @@ class History extends EventEmitter {
     this.closed = true;
     this.queue = [];
     this.queueBytes = 0;
-    this.status = { ...this.status, error: 'Temporary history is unavailable. Restart the app to try again.', starting: false };
+    const transport = this.status.transport ? { ...this.status.transport, state: 'disconnected', reason: null,
+      requiresRestart: true, coverageUnknown: true, retryPending: false, requests: 0, processing: 0 } : undefined;
+    this.status = { ...this.status, transport, error: 'Temporary history is unavailable. Restart the app to try again.', starting: false };
     for (const request of this.pending.values()) { clearTimeout(request.timer); request.resolve({ error: this.status.error }); }
     this.pending.clear();
     this.emit('status', this.snapshot());
@@ -164,7 +166,8 @@ class History extends EventEmitter {
     this.localDrops = 0;
     this.rateDrops = 0;
     this.unknownGap = false;
-    this.status = { generation: this.generation, total: 0, accepted: 0, first: null, last: null, drops: {}, clearing: true };
+    const transport = this.status.transport ? { state: 'disconnected', reason: null, coverageUnknown: true, collectorTotals: null } : undefined;
+    this.status = { generation: this.generation, total: 0, accepted: 0, first: null, last: null, drops: {}, clearing: true, transport };
     this.emit('status', this.snapshot());
     const result = await this.call('clear');
     if (result.error) {

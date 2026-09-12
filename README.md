@@ -2,7 +2,7 @@
 
 A live inspector for Codex hook events. Capture on a Linux host, inspect on a Mac, and keep a bounded, temporary history while the viewer is open.
 
-Linux capture and the Electron history viewer are implemented for synthetic testing. The viewer stores bounded temporary SQLite history, searches full accepted payloads and metadata, filters by session and hooks, and preserves reading position while arrivals continue. Live transport, real-session compatibility and macOS validation remain. Start with [Linux development](linux/README.md), [Electron development](electron/README.md) and [remaining work](plan.md).
+Linux capture and the Electron history viewer are implemented for synthetic testing. The viewer stores bounded temporary SQLite history, searches full accepted payloads and metadata, filters by session and hooks, and preserves reading position while arrivals continue. The version 1 live transport is implemented and tested with the landed collector using synthetic input on Linux. Real-session compatibility, private HTTPS proxy checks and macOS validation remain. Start with [Linux development](linux/README.md), [Electron development](electron/README.md) and [remaining work](plan.md).
 
 Codex must keep working when capture fails. Missing events are acceptable; blocking a session, changing a hook decision, or exhausting the laptop's resources is not.
 
@@ -20,11 +20,11 @@ Observers receive the payloads Codex supplies to supported hook events. They do 
 
 An explicit install command registers account-level observers while preserving existing hooks. Uninstall removes only unchanged entries owned by codex-scope. These commands are tested against isolated configuration; actual account installation and real-session behavior remain unverified. Codex's own hook trust process still applies.
 
-No offline recording is planned, in this or later releases. Events generated while disconnected can be lost permanently. The viewer will distinguish known drops from intervals where the loss count is unknown.
+No offline recording is planned, in this or later releases. Events generated while disconnected can be lost permanently. The viewer distinguishes known drops from intervals where the loss count is unknown.
 
 ## Explore the stream
 
-[Run the Electron viewer](electron/README.md) with synthetic data. [Search and navigation evidence](docs/electron-navigation-validation.md) records the current checks and limits. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
+[Run the Electron viewer](electron/README.md) with synthetic data or a configured collector. [Transport validation](docs/electron-transport-validation.md) records connection, failure and resource checks. [Search and navigation evidence](docs/electron-navigation-validation.md) records the current checks and limits. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
 
 - Follow incoming events, or freeze the view while capture continues.
 - Filter by session, hook type, and free text across retained payloads.

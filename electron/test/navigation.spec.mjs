@@ -276,6 +276,7 @@ test('a late navigation reply cannot display a target evicted after its database
   try {
     await append(app, Array.from({ length: 135 }, () => source[4]), 75);
     await page.locator('#scrubber').press('End'); await page.locator('#scrubber').press('ArrowUp');
+    await expect(page.locator('#entries')).toHaveAttribute('aria-busy', 'false');
     const held = await selected(page);
     await app.evaluate(() => {
       const history = globalThis.scopeHistory;
@@ -283,13 +284,17 @@ test('a late navigation reply cannot display a target evicted after its database
       history.navigate = async (...args) => {
         history.navigate = navigate;
         const result = await navigate(...args);
-        await new Promise(resolve => setTimeout(resolve, 700));
+        globalThis.lateTargetReady = true;
+        await new Promise(resolve => { globalThis.releaseLateTarget = resolve; });
         return result;
       };
     });
     await page.locator('#scrubber').press('Home');
+    await expect.poll(() => app.evaluate(() => globalThis.lateTargetReady)).toBe(true);
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setContentSize(900, 760));
     await append(app, Array.from({ length: 6 }, () => source[4]), 75);
     const retained = await state(app);
+    await app.evaluate(() => globalThis.releaseLateTarget());
     expect(Number(held)).toBeGreaterThan(retained.first.id);
     await expect(page.locator('#notice')).toContainText('event was evicted');
     await expectSelected(page, retained.first.id);
