@@ -116,6 +116,30 @@ states; keep attached evidence and detailed run reports out of it. Remove the
 plan after parity and move any lasting instructions into the appropriate docs.
 Preserve concurrent Linux and UI work when reconciling shared documents.
 
+## Repository discovery
+
+- Start with the relevant application's README for ownership and commands,
+  `docs/architecture.md` for responsibilities, `ux.md` for interaction
+  decisions, and `protocol/README.md` for the wire contract. Session diagnosis
+  is documented in `docs/session-analysis.md`. Read the documents needed for
+  the task, not every guide by default.
+- Confirm unfamiliar source paths with `rg --files` before searching them.
+  Narrow searches to the relevant subsystem and terms. If results are too
+  large, refine the query rather than treating a truncated prefix as complete.
+- When the active workflow calls for a scout and delegation is authorized,
+  use it before broad repository or feature-history exploration. Give it a
+  bounded discovery question and follow the shared scout protocol. Do not
+  repeat its pending searches; afterward, verify the cited source needed for
+  decisions and investigate remaining gaps.
+- Retain confirmed requirements, source locations, and revision identities in
+  session context. Revisit them when the source changes, a contradiction
+  appears, or an unresolved question needs more detail. Targeted verification
+  of scout evidence is still required; avoid restarting broad discovery.
+- For a history comparison, establish the repository, target revisions, and
+  relevant merge base once, then use path-limited logs or diffs. Recheck those
+  facts when refs change or the comparison requires it. Keep these working
+  notes in session context or ignored local files, not committed run reports.
+
 ## Linux test startup and troubleshooting
 
 Prepare the display and Electron sandbox before starting a long suite. Treat
