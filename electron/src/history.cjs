@@ -74,7 +74,8 @@ class History extends EventEmitter {
   }
   call(operation, data = {}) {
     const control = operation === 'clear' || operation === 'close';
-    if (this.closed || this.pending.size >= LIMITS.requests - (control ? 0 : 1)) return Promise.resolve({ error: 'History is busy. Try again.' });
+    if (this.closed) return Promise.resolve({ error: this.status.error ?? 'Temporary history is unavailable. Restart the app to try again.' });
+    if (this.pending.size >= LIMITS.requests - (control ? 0 : 1)) return Promise.resolve({ error: 'History is busy. Try again.' });
     const request = ++this.nextRequest;
     return new Promise(resolve => {
       // A timed-out request keeps its slot until the worker replies or exits.
@@ -127,6 +128,7 @@ class History extends EventEmitter {
         this.queueBytes -= item.bytes;
       }
       const result = await this.call('append', { frames, connectionId: this.status.connectionId });
+      if (generation !== this.generation) break;
       if (result.error) {
         this.localDrops += this.queue.length + (result.timedOut ? 0 : frames.length);
         this.unknownGap ||= !!result.timedOut;
@@ -157,6 +159,7 @@ class History extends EventEmitter {
     return this.call('choices', { field, cursor, direction });
   }
   async clear(generation) {
+    if (this.closed) return this.call('clear');
     if (generation !== this.generation || this.status.clearing || !this.status.total) return { stale: true };
     this.generation++;
     Atomics.store(this.shared, 0, this.generation);

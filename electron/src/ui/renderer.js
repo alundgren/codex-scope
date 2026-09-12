@@ -51,8 +51,8 @@ function positionMarkers() {
   scrubber.setAttribute('aria-valuemax', String(count));
   scrubber.setAttribute('aria-valuenow', String(Math.max(0, value)));
   scrubber.setAttribute('aria-valuetext', live && count ? 'Live, following new matching events' : selectedValue || 'No matching events');
-  scrubber.setAttribute('aria-disabled', String(!count || filterPending || clearPending));
-  scrubber.tabIndex = count && !filterPending && !clearPending ? 0 : -1;
+  scrubber.setAttribute('aria-disabled', String(!count || filterPending || clearPending || !!latest.error));
+  scrubber.tabIndex = count && !filterPending && !clearPending && !latest.error ? 0 : -1;
   const ticks = document.querySelector('#ticks');
   const tickCount = Math.min(count, 64);
   if (ticks.children.length !== tickCount) ticks.replaceChildren(...Array.from({ length: tickCount }, () => element('i', 'tick', '')));
@@ -115,14 +115,17 @@ function summary(value) {
   const count = view?.count ?? (hasFilters() ? null : value.total);
   const arrivals = live || !view ? 0 : Math.max(0, view.arrivals - heldAt);
   const countNode = document.querySelector('#count');
-  countNode.textContent = count === null ? queryFailed ? 'Search stopped' : 'Searching…' : `${count} ${hasFilters() ? 'matching' : 'retained'}${arrivals ? ` · ${arrivals} new` : ''}`;
+  countNode.textContent = count === null ? value.error ? 'History unavailable' : queryFailed ? 'Search stopped' : 'Searching…' : `${count} ${hasFilters() ? 'matching' : 'retained'}${arrivals ? ` · ${arrivals} new` : ''}`;
   countNode.dataset.matching = String(count ?? 0);
   countNode.dataset.arrivals = String(arrivals);
   const oldestMatch = gesture?.first ?? view?.first;
   document.querySelector('#oldest').textContent = hasFilters() ? oldestMatch ? time(oldestMatch.receivedAt) : count ? 'Oldest match' : '' : value.first ? time(value.first.receivedAt) : '';
   document.querySelector('#retention').textContent = value.first ? `Retained from ${time(value.first.receivedAt)} UTC · Deleted when the app closes.` : transport || value.starting ? 'Temporary recording · Waiting for events.' : 'Temporary synthetic recording · Waiting for events.';
-  clear.disabled = !value.total || clearPending || !!value.clearing;
-  liveButton.disabled = !count || filterPending || !!value.clearing;
+  clear.disabled = !value.total || clearPending || !!value.clearing || !!value.error;
+  liveButton.disabled = !count || filterPending || clearPending || !!value.clearing || !!value.error;
+  copy.disabled = selectedId === null || copyPending || !!value.error;
+  filters.disable(!!value.error);
+  for (const button of entries.querySelectorAll('button')) button.disabled = clearPending || !!value.clearing || !!value.error;
   positionMarkers();
 }
 function empty(message = latest.transport ? 'No events have arrived.' : 'No synthetic events have arrived.', reset = false) {
@@ -140,7 +143,7 @@ function empty(message = latest.transport ? 'No events have arrived.' : 'No synt
   status.textContent = ''; copy.disabled = true; copy.textContent = 'Copy JSON';
   updateScroll(); positionMarkers(); busy();
 }
-function busy() { entries.setAttribute('aria-busy', String(loading || filterPending)); }
+function busy() { entries.setAttribute('aria-busy', String(!latest.error && (loading || filterPending))); }
 function cancelWork() {
   wanted = null;
   targetId++;
@@ -161,10 +164,14 @@ function receive(value) {
     stopGesture(); cancelWork(); relock(); empty(); filters.refresh();
   }
   const changed = value.accepted !== latest.accepted || value.total !== latest.total;
-  if (value.error) { queryNotice = ''; queryFailed = false; }
+  if (value.error) {
+    queryNotice = ''; queryFailed = false;
+    clearTimeout(filterTimer); filterPending = false;
+    stopGesture(); cancelWork(); relock();
+  }
   summary(value);
   if (value.error) {
-    cancelWork();
+    busy();
     if (selectedId === null) empty('Temporary history is unavailable.');
     document.documentElement.dataset.ready = 'true';
     return;
@@ -218,7 +225,7 @@ function render(result) {
     line.append(element('span', 'hook', item.hook), stamp);
     button.append(line, element('span', 'preview', item.preview), element('span', 'eventsession mono', item.session ?? 'No session'));
     button.addEventListener('click', () => {
-      if (filterPending) return;
+      if (filterPending || clearPending || latest.error) return;
       stopGesture(); hold(); position = result.position + index - selectedIndex;
       evictionNotice = ''; summary(latest); requestInspection(item.id);
     });
@@ -279,13 +286,14 @@ async function requestNavigation(target) {
   }
 }
 function changeFilter(_value, delay) {
+  if (latest.error) return;
   queryId++; heldAt = 0; evictionNotice = ''; queryNotice = 'Searching…'; queryFailed = false;
   stopGesture(); cancelWork(); clearTimeout(filterTimer);
   filterPending = true; busy(); summary(latest);
   filterTimer = setTimeout(() => { filterPending = false; requestInspection(live ? null : selectedId); }, delay);
 }
 function seek(rank, snapshot = navigationSnapshot()) {
-  if (!snapshot?.count || filterPending || clearPending) return;
+  if (!snapshot?.count || filterPending || clearPending || latest.error) return;
   const next = Math.max(0, Math.min(snapshot.count, Math.round(rank)));
   if (next === snapshot.count) { live = true; heldAt = 0; } else hold();
   position = next; evictionNotice = ''; summary(latest);
@@ -298,7 +306,7 @@ function movePointer() {
 }
 scrubber.addEventListener('pointerdown', event => {
   const snapshot = navigationSnapshot();
-  if (!snapshot?.count || filterPending || clearPending || event.button !== 0) return;
+  if (!snapshot?.count || filterPending || clearPending || latest.error || event.button !== 0) return;
   const rect = scrubber.getBoundingClientRect();
   gesture = { snapshot, first: activeView()?.first, pointerId: event.pointerId, top: rect.top, height: rect.height };
   scrubber.setPointerCapture(event.pointerId); scrubber.focus(); pointerPosition = event.clientY; movePointer();
@@ -335,7 +343,7 @@ document.querySelector('.journal').addEventListener('wheel', event => {
   seek((live ? snapshot?.count : position) + Math.sign(event.deltaY), snapshot);
 }, { passive: false });
 copy.addEventListener('click', async () => {
-  if (selectedId === null || copyPending) return;
+  if (selectedId === null || copyPending || latest.error) return;
   const id = selectedId;
   const copyGeneration = generation;
   copyPending = true;
@@ -343,7 +351,7 @@ copy.addEventListener('click', async () => {
   status.textContent = '';
   const success = await window.scope.copyPayload(copyGeneration, id);
   copyPending = false;
-  copy.disabled = selectedId === null;
+  copy.disabled = selectedId === null || !!latest.error;
   if (selectedId !== id || generation !== copyGeneration) return;
   copy.textContent = success ? 'Copied' : 'Copy JSON';
   status.textContent = success ? '' : 'Copy failed. Try Copy JSON again, or select and copy the original text.';
@@ -365,12 +373,8 @@ async function activateClear() {
   clearPending = true;
   clear.disabled = true;
   const oldGeneration = generation;
-  generation++;
-  live = true;
-  heldAt = 0;
-  evictionNotice = '';
-  clearTimeout(filterTimer); filterPending = false; queryId++; targetId = 0;
-  stopGesture(); cancelWork(); queryNotice = ''; queryFailed = false; empty();
+  clearTimeout(filterTimer); filterPending = false;
+  stopGesture(); cancelWork(); summary(latest);
   try {
     const result = await window.scope.clear(oldGeneration);
     if (result.error) document.querySelector('#notice').textContent = result.error;
@@ -398,7 +402,10 @@ document.addEventListener('visibilitychange', () => {
   else window.scope.status().then(receive);
 });
 window.scope.onHidden(() => { relock(); stopGesture(); });
-liveButton.addEventListener('click', () => { stopGesture(); live = true; heldAt = 0; evictionNotice = ''; summary(latest); requestInspection(null); });
+liveButton.addEventListener('click', () => {
+  if (liveButton.disabled) return;
+  stopGesture(); live = true; heldAt = 0; evictionNotice = ''; summary(latest); requestInspection(null);
+});
 new ResizeObserver(() => {
   const notice = document.querySelector('#notice');
   notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;

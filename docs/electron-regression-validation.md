@@ -303,7 +303,7 @@ actual app with synthetic data. Reference files are explicitly named reference.
 
 | Handoff scenario | Automated check and inspected recording |
 | --- | --- |
-| Start with fixtures | `inspector.spec.mjs`, [inspector walkthrough](evidence/electron-regressions/walkthrough.webm); title, allowed controls, neutral Live, five neighboring rows and exact original text. |
+| Start with fixtures | `inspector.spec.mjs`, [inspector walkthrough](evidence/electron-regressions/walkthrough.webm); title, allowed controls, neutral Live, bounded neighboring rows and exact original text. |
 | Scrub in both directions | `navigation.spec.mjs`, [scrubber](evidence/electron-regressions/scrubber-walkthrough.webm); pointer, emulated touch, wheel, rows, all arrows, Page keys, Home and End. |
 | Select newest versus Live | [Scrubber](evidence/electron-regressions/scrubber-walkthrough.webm); newest remains held until the separate Live endpoint. |
 | Receive while inspecting | [History](evidence/electron-regressions/history-walkthrough.webm), [filters](evidence/electron-regressions/filters-walkthrough.webm) and [transport](evidence/electron-regressions/transport-walkthrough.webm) preserve selected ID, neighboring rows, original maximum text and nonzero offset; only matching arrivals count. Resource heldCapture repeats it. |

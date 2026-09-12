@@ -225,6 +225,60 @@ test('Clear rejects delayed input and query results; intake queue is bounded', a
   } finally { await app.close(); await video.saveAs(info.outputPath('late-work.webm')); }
 });
 
+test('an old intake timeout after Clear preserves newly accepted events and counters', async ({}, info) => {
+  const { app, page, video } = await launch(info);
+  try {
+    await expect.poll(() => app.evaluate(() => globalThis.scopeHistory.pending.size)).toBe(0);
+    await fault(app, { delay: 3500 });
+    await app.evaluate((_electron, message) => {
+      const history = globalThis.scopeHistory;
+      history.append(history.generation, history.status.connectionId,
+        JSON.stringify({ ...message, sequence: 100, connection_id: history.status.connectionId }));
+    }, source[2]);
+    await clear(page);
+    await fault(app, { delay: 0 });
+    const accepted = await app.evaluate((_electron, message) => {
+      const history = globalThis.scopeHistory;
+      return [1, 2].map(sequence => history.append(history.generation, history.status.connectionId,
+        JSON.stringify({ ...message, sequence, connection_id: history.status.connectionId })));
+    }, source[3]);
+    expect(accepted).toEqual([true, true]);
+    expect((await state(app)).queuedCount).toBe(2);
+    await expect.poll(async () => (await state(app)).total).toBe(2);
+    await expect.poll(() => app.evaluate(() => globalThis.scopeHistory.pending.size)).toBe(0);
+    expect(await state(app)).toMatchObject({ generation: 2, total: 2, accepted: 2,
+      localDrops: 0, rateDrops: 0, unknownGap: false, queuedCount: 0, queuedBytes: 0 });
+    await page.locator('#live').click();
+    await expect(page.locator('#json')).toHaveText(source[3].payload);
+    await expect(page.locator('#notice')).toBeEmpty();
+    await capture(page, info, 'clear-old-timeout-recovered');
+  } finally { await app.close(); await video.saveAs(info.outputPath('clear-old-timeout.webm')); }
+});
+
+test('worker failure while confirming Clear preserves visible history until restart', async ({}, info) => {
+  const { app, page, video } = await launch(info);
+  try {
+    await page.locator('button[data-event="4"]').click();
+    await expect(page.locator('#payload')).toHaveAttribute('data-event', '4');
+    await page.locator('#scrollbar').press('PageDown');
+    const offset = await page.locator('#payload').evaluate(node => node.scrollTop);
+    expect(offset).toBeGreaterThan(0);
+    await app.evaluate(() => {
+      const history = globalThis.scopeHistory, clear = history.clear.bind(history);
+      history.clear = async generation => { await history.worker.terminate(); return clear(generation); };
+    });
+    await page.locator('#clear').click();
+    await page.locator('#clear').click();
+    await expect(page.locator('#notice')).toContainText('Temporary history is unavailable. Restart the app');
+    await expect(page.locator('#json')).toHaveText(source[4].payload);
+    expect(await page.locator('#payload').evaluate(node => node.scrollTop)).toBe(offset);
+    expect(await state(app)).toMatchObject({ generation: 1, total: 5 });
+    await expect(page.locator('#entries')).toHaveAttribute('aria-busy', 'false');
+    await expect(page.locator('#clear')).toBeDisabled();
+    await capture(page, info, 'clear-worker-failed');
+  } finally { await app.close(); await video.saveAs(info.outputPath('clear-worker-failure.webm')); }
+});
+
 test('cleanup failure isolates old history and exits within its deadline', async ({}, info) => {
   const { app, page, root, video } = await launch(info);
   const old = await fault(app, { cleanup: true });
