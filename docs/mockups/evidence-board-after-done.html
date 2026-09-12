@@ -1,0 +1,324 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Codex Scope · board</title><style>:root{--bg:#F2EADE;--surface:#EADFCD;--raised:#E0D2BD;--line:#C1AF9A;--field:#F9F6F0;--text:#604939;--muted:#66574D;--accent:#784F26;--link:#3D5D71;--ok:#3D6034;--danger:#8F3A2D}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 system-ui,sans-serif}button,input,textarea,select{font:inherit;color:inherit}button{cursor:pointer;background:transparent;border:1px solid var(--line);border-radius:8px;padding:8px 14px;line-height:1.4}button:hover{background:var(--raised)}button:disabled{opacity:.5;cursor:not-allowed}button.primary{background:var(--accent);color:var(--field);border-color:var(--accent)}button.quiet{border-color:transparent}button.selected{background:var(--raised);border-color:var(--text)}button.danger{color:var(--danger)}input,textarea,select{background:var(--field);border:1px solid var(--line);padding:11px 13px;border-radius:8px;min-width:0}input:focus,textarea:focus,button:focus-visible,select:focus{outline:2px solid var(--link);outline-offset:3px}input[type=checkbox]{width:18px;height:18px;accent-color:var(--accent)}textarea{resize:vertical;min-height:110px;width:100%}h1{font-size:32px;line-height:1.2;letter-spacing:-.015em;font-weight:600;margin:0 0 18px}p{margin:0 0 18px;max-width:72ch}b,strong{font-weight:600}small,.muted{font-size:13.5px;color:var(--muted)}code,pre,.mono{font:400 13.5px/1.8 ui-monospace,monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:0}svg text{font-family:system-ui,sans-serif;fill:var(--text)}a{color:var(--link)}.demo-strip{display:flex;justify-content:space-between;gap:20px;padding:8px 22px;background:var(--raised);font-size:13.5px}.appbar{height:70px;display:flex;align-items:center;gap:14px;padding:0 26px;border-bottom:1px solid var(--line)}.brand{font-weight:600;margin-right:16px}.grow{flex:1}.status{font-size:13.5px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--line);margin-right:8px}.dot.live{background:var(--ok)}.page{padding:34px;max-width:1660px;margin:auto}.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}.stack{display:flex;flex-direction:column;gap:18px}.home{max-width:860px;padding-top:72px}.search{width:100%;margin:22px 0 18px}.function-list{border-top:1px solid var(--line)}.function{width:100%;text-align:left;border:0;border-radius:0;border-bottom:1px solid var(--line);display:flex;gap:22px;align-items:center;padding:24px 12px}.function .glyph{font-size:28px;width:44px}.function b{display:block;font-size:19px}.function small{display:block;margin-top:5px}.empty{padding:60px 30px;text-align:center}.empty p{margin:0 auto 22px}.split-settings{display:grid;grid-template-columns:210px minmax(0,720px);gap:44px;max-width:1100px;margin:30px auto}.settings-nav{display:flex;flex-direction:column;gap:8px;align-items:stretch}.settings-nav button{text-align:left}.field-label{display:flex;flex-direction:column;gap:7px}.settings-form{display:flex;flex-direction:column;gap:23px}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:20px}.review-heading{display:flex;justify-content:space-between;gap:24px;align-items:center;margin-bottom:22px}.review-heading h1{font-size:28px;margin-bottom:6px}.review-heading small{display:block}.review-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:26px}.stage{background:var(--field);border-radius:12px;min-height:490px;overflow:hidden;position:relative}.stage-top{padding:12px 20px;background:var(--surface);display:flex;justify-content:space-between;gap:14px;font-size:13.5px}.evidence{padding:24px}.code-row{display:grid;grid-template-columns:38px 1fr;padding:7px 10px;font-family:ui-monospace,monospace;font-size:14px;overflow-wrap:anywhere}.code-row.add{background:#e1e6d8}.code-row.mark{outline:2px solid var(--accent);outline-offset:-2px;border-radius:5px;background:#ead7b9}.code-row .ln{color:var(--muted)}.note{display:flex;gap:12px;align-items:start;padding:16px;margin-top:20px;background:var(--surface);border-radius:8px}.chat{display:flex;flex-direction:column;min-height:490px;border-left:1px solid var(--line);padding-left:25px}.chat-log{flex:1;max-height:420px;overflow:auto;padding-bottom:18px}.message{padding:12px 0 18px}.message.you{margin-left:24px;padding:14px;background:var(--surface);border-radius:9px}.message small{display:block;margin-bottom:7px}.message p{margin:0}.composer{margin-top:18px}.composer textarea{min-height:80px}.composer .row{margin-top:9px}.lens-tabs{display:flex;gap:8px;flex-wrap:wrap}.scene-list{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.scene-list button{flex:1;text-align:left}.scene-list small{display:block}.walkthrough .review-layout{grid-template-columns:minmax(0,1fr) 310px}.walkthrough .stage{min-height:510px}.walkthrough .scene-list{counter-reset:step}.notebook .review-layout{grid-template-columns:180px minmax(0,1fr) 320px;gap:24px}.notebook .lens-tabs{flex-direction:column;align-items:stretch}.notebook .lens-tabs button{text-align:left;border-color:transparent}.notebook .stage{background:transparent;border-radius:0}.notebook .evidence{background:var(--field);border-radius:10px}.notebook .stage-top{border-radius:8px;margin-bottom:18px}.paper-text{padding:20px 0}.board .review-layout{grid-template-columns:minmax(0,1fr) 320px}.board .stage{background:var(--surface);overflow:auto}.board-grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;padding:24px}.board-card{background:var(--field);border-radius:10px;padding:18px;position:relative;min-height:180px}.board-card.active-card{outline:2px solid var(--accent)}.board-card button{margin-top:15px}.board-card p{margin:12px 0}.board-card small{display:block}.board-link{grid-column:1/-1;text-align:center;margin:-18px 0;color:var(--link);font-size:13.5px}.fake-app{color:var(--text);padding:28px 32px;max-width:700px;margin:auto}.store-nav{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:18px}.cart-line{display:flex;justify-content:space-between;padding:25px 0;border-bottom:1px solid var(--line)}.product-image{width:90px;height:80px;background:var(--raised);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:40px}.app-failure{margin-top:24px;color:var(--danger);padding:14px 18px;background:#f0ddd1;border-radius:8px}.annotation{position:absolute;right:30px;bottom:32px;background:var(--surface);border:2px solid var(--accent);border-radius:10px;padding:12px 18px;max-width:270px}.annotation:before{content:'↖';position:absolute;font-size:38px;top:-46px;left:12px;color:var(--accent)}.diagram{width:100%;height:300px}.footer-actions{display:flex;justify-content:space-between;gap:14px;align-items:center;margin-top:18px;flex-wrap:wrap}.finding-list{margin-top:24px}.finding{display:flex;gap:14px;align-items:start;padding:15px 0;border-bottom:1px solid var(--line)}.finding button{margin-left:auto}.dialog-backdrop{position:fixed;inset:0;background:#29201988;display:grid;place-items:center;padding:24px;z-index:20}.dialog{background:var(--bg);width:min(800px,100%);border-radius:14px;padding:28px;max-height:90vh;overflow:auto}.dialog.narrow{width:min(530px,100%)}.dialog h1{font-size:28px}.dialog textarea{min-height:260px;margin:20px 0}.dialog .preview{background:var(--field);border-radius:8px;padding:20px;margin:20px 0;max-height:390px;overflow:auto}.dialog .preview p{white-space:pre-wrap}.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--field);padding:12px 22px;border-radius:8px;z-index:30}.timeline{display:grid;grid-template-columns:240px 1fr;gap:30px;margin-top:25px}.event-list{border-top:1px solid var(--line)}.event-list>div{padding:16px;border-bottom:1px solid var(--line)}.paused-banner{background:var(--raised);padding:12px 18px;border-radius:8px;margin-bottom:16px}.menu-result{display:block;width:100%;text-align:left;margin-top:8px}.progress-line{height:4px;background:var(--line);border-radius:2px;margin:20px 0}.progress-line:before{content:'';display:block;width:45%;height:4px;background:var(--accent)}.prompt-layout{display:grid;grid-template-columns:200px 1fr;gap:24px}.prompt-layout nav{display:flex;flex-direction:column;gap:7px}.prompt-layout button{text-align:left}.prompt-editor textarea{min-height:230px}.prompt-editor .row{margin-top:14px}.blank-result{padding:25px;text-align:center}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}@media(min-width:1500px){.review-layout{grid-template-columns:minmax(0,1fr) 390px}}@media(max-width:1050px){.page{padding:24px}.review-layout,.walkthrough .review-layout,.board .review-layout{grid-template-columns:minmax(0,1fr) 300px;gap:18px}.notebook .review-layout{grid-template-columns:140px minmax(0,1fr)}.notebook .chat{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);padding:20px 0;min-height:200px}.notebook .chat-log{max-height:180px}.brand{display:none}.board-grid{grid-template-columns:1fr}.board-link{grid-column:auto}}@media(max-width:760px){.demo-strip{font-size:12px}.appbar{padding:12px;height:auto;flex-wrap:wrap}.page{padding:20px}.review-heading{align-items:start;flex-direction:column}.review-layout,.walkthrough .review-layout,.board .review-layout,.notebook .review-layout,.split-settings,.prompt-layout,.timeline{grid-template-columns:1fr}.chat{border-left:0;border-top:1px solid var(--line);padding:20px 0;min-height:300px}.notebook .lens-tabs,.settings-nav{flex-direction:row;flex-wrap:wrap}.home{padding-top:35px}.status{display:none}.stage{min-height:400px}.scene-list button{min-width:130px}.fake-app{padding:20px}.annotation{max-width:210px;right:15px;bottom:10px}.dialog{padding:20px}}
+
+[hidden]{display:none!important}
+.review-layout .stage{min-height:430px}.chat{min-height:430px}.chat-log{max-height:370px}.chat-log::-webkit-scrollbar,.dialog::-webkit-scrollbar{width:6px}.chat-log::-webkit-scrollbar-thumb,.dialog::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}.walkthrough .stage{min-height:460px}.board .stage{min-height:430px}
+</style><div id="root"></div><script>const IDEA="board";const MODELS=[
+  {
+    "id": "gpt-6-astra",
+    "displayName": "GPT-6-Astra",
+    "hidden": false,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      },
+      {
+        "reasoningEffort": "ultra",
+        "description": "Maximum reasoning with automatic task delegation"
+      }
+    ]
+  },
+  {
+    "id": "gpt-reserve",
+    "displayName": "GPT-Reserve",
+    "hidden": true,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      }
+    ]
+  },
+  {
+    "id": "gpt-5.6-sol",
+    "displayName": "GPT-5.6-Sol",
+    "hidden": false,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      },
+      {
+        "reasoningEffort": "ultra",
+        "description": "Maximum reasoning with automatic task delegation"
+      }
+    ]
+  },
+  {
+    "id": "gpt-5.6-terra",
+    "displayName": "GPT-5.6-Terra",
+    "hidden": false,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      },
+      {
+        "reasoningEffort": "ultra",
+        "description": "Maximum reasoning with automatic task delegation"
+      }
+    ]
+  },
+  {
+    "id": "gpt-5.6-luna",
+    "displayName": "GPT-5.6-Luna",
+    "hidden": false,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      }
+    ]
+  },
+  {
+    "id": "gpt-5.5",
+    "displayName": "GPT-5.5",
+    "hidden": false,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      }
+    ]
+  },
+  {
+    "id": "gpt-5.3-codex-spark",
+    "displayName": "GPT-5.3-Codex-Spark",
+    "hidden": false,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      }
+    ]
+  },
+  {
+    "id": "codex-auto-review",
+    "displayName": "Codex Auto Review",
+    "hidden": true,
+    "supportedReasoningEfforts": [
+      {
+        "reasoningEffort": "low",
+        "description": "Fast responses with lighter reasoning"
+      },
+      {
+        "reasoningEffort": "medium",
+        "description": "Balances speed and reasoning depth for everyday tasks"
+      },
+      {
+        "reasoningEffort": "high",
+        "description": "Greater reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "xhigh",
+        "description": "Extra high reasoning depth for complex problems"
+      },
+      {
+        "reasoningEffort": "max",
+        "description": "Maximum reasoning depth for the hardest problems"
+      }
+    ]
+  }
+];
+const names={desk:'Review desk',walkthrough:'Guided walkthrough',notebook:'Lens notebook',board:'Evidence board'};
+const state={page:'home',analysisMode:'journal',analysisTab:'Results',settings:'review',model:'',effort:'',diagnosis:'',diagnosisEffort:'',stream:false,analyzing:false,feedbackTab:'author',feedbackAuthor:'',feedbackAgent:'',review:false,follow:false,lens:'Overview',view:'Changes',scene:0,evidenceMissing:false,highlight:false,arrow:false,markView:'Changes',stale:false,failed:false,prompt:'Review instructions',prompts:{},messages:[],findings:[true,true],suggestion:false,modelFailure:false};
+state.revision='b8e42ad';
+const promptNames=['Review instructions','Lens · Security','Lens · UX','Lens · Performance','Lens · Architecture','Walkthrough','View control','Visual artifacts','Finding summary','Agent handoff'];
+const systemPrompts={
+'Review instructions':'Review the pinned PR revision with the user. Separate observed facts from hypotheses. Use the local GitHub CLI for GitHub access. Keep one conversation across all lenses. Do not post feedback until the user explicitly chooses to send the preview.',
+'Walkthrough':'Guide the user through the PR intent, relevant source paths, supplied evidence, and findings. Use the same conversation for questions and detours. Do not run the application under review. Identify the revision and separate evidence from assumptions.',
+'View control':'Use Scope controls to show relevant evidence. Honor paused following. Anchor highlights and drawings to evidence identifiers and the current revision. Report failed or stale targets. Keep annotations removable.',
+'Visual artifacts':'Create a small diagram only when it explains the behavior better than prose. Cite the source files and revision. Use bounded declarative content rather than executable HTML.',
+'Finding summary':'Lead with a compact bullet list. Each finding must be one sentence in the format <area>-<impact>: <description>. Use concrete consequences and remove duplicates.',
+'Agent handoff':'Provide sufficient source locations, observations, reproduction steps, uncertainty, and checks for the author and their agent to evaluate the findings independently. Include a suggested fix only when the user or review agent proposed one during this review. Identify its author.'};
+const $=s=>document.querySelector(s);const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const btn=(label,action,cls='',extra='')=>`<button class="${cls}" data-action="${action}" ${extra}>${label}</button>`;
+function notify(t){$('.toast')?.remove();const e=document.createElement('div');e.className='toast';e.role='status';e.textContent=t;document.body.append(e);setTimeout(()=>e.remove(),4200)}
+function render(){document.body.className=IDEA;$('#root').innerHTML=`<div class="demo-strip"><span>Concept ${Object.keys(names).indexOf(IDEA)+1} · ${names[IDEA]} · Interactive mockup</span><span>Synthetic PR and evidence · No commands or comments are sent</span></div><header class="appbar"><span class="brand">◌ &nbsp; Codex Scope</span>${btn('Functions ⌘K','menu')}${btn('Home','nav:home','quiet')}${btn('PR review','nav:review',state.page==='review'?'selected':'quiet')}${btn('Analysis','nav:analysis',state.page==='analysis'?'selected':'quiet')}<span class="grow"></span><span class="status"><i class="dot ${state.stream?'live':''}"></i>Streaming ${state.stream?'on':'off'}</span>${btn('Settings','nav:settings',state.page==='settings'?'selected':'')}</header><main class="page ${state.page==='home'?'home':''}">${({home:home,settings:settings,analysis:analysis,review:review})[state.page]()}</main>`}
+function home(){return `<h1>What would you like to do?</h1><p>Open a tool when you need it.</p><input class="search" id="home-search" aria-label="Search functionality" placeholder="Search functionality…"><div class="function-list"><button class="function" data-action="nav:review" data-search="pr review walkthrough code"><span class="glyph">⌁</span><span><b>Review a pull request</b><small>Read the changes, inspect evidence, and work through feedback with Codex.</small></span><span class="grow"></span>→</button><button class="function" data-action="nav:analysis" data-search="analysis sessions tracker analyzer diagnosis"><span class="glyph">◴</span><span><b>Track and analyze sessions</b><small>Streaming is ${state.stream?'on':'off'}. ${state.stream?'Open the session timeline.':'Start it here when you are ready.'}</small></span><span class="grow"></span>→</button><button class="function" data-action="nav:settings" data-search="settings url token model prompts"><span class="glyph">⚙</span><span><b>Settings</b><small>Connection, Codex models, and editable review prompts.</small></span><span class="grow"></span>→</button></div><p id="no-functions" class="blank-result" hidden>No matching functions.</p><p class="muted" style="margin-top:28px">Reviews last until Scope closes. Starting a review leaves session streaming off.</p>`}
+function modelField(kind,label){const val=kind==='review'?state.model:state.diagnosis;return `<label class="field-label">${label}<button data-action="models:${kind}" style="text-align:left">${esc(val||'Choose from local Codex models…')} <span style="float:right">⌄</span></button></label><label class="field-label">Reasoning effort<select data-effort="${kind}"><option value="">Choose effort…</option>${(MODELS.find(x=>x.id===val)?.supportedReasoningEfforts||[]).map(x=>`<option value="${x.reasoningEffort}" ${(kind==='review'?state.effort:state.diagnosisEffort)===x.reasoningEffort?'selected':''}>${x.reasoningEffort}</option>`).join('')}</select></label>`}
+function settings(){return `<h1>Settings</h1><div class="split-settings"><nav class="settings-nav" aria-label="Settings categories">${[['analysis','Session analysis'],['review','PR review'],['prompts','Review prompts']].map(([id,n])=>btn(n,'settings:'+id,state.settings===id?'selected':'quiet')).join('')}</nav><div class="settings-form">${state.settings==='analysis'?`<label class="field-label">Collector URL<input placeholder="https://your-collector.example/events" autocomplete="off"></label><label class="field-label">Collector token<input placeholder="Enter token" type="password" autocomplete="off"></label>${modelField('diagnosis','Diagnosis model')}<p class="muted">Streaming and diagnosis stay off after startup. Start them from Analysis.</p>${btn('Save settings','save','primary')}`:state.settings==='review'?`${modelField('review','Review model')}<p class="muted">Choices come from the installed Codex CLI, including hidden models. Nothing is preselected. This mockup uses a captured catalog and never starts an agent.</p><p>Each review keeps one conversation while Scope is open. Switching lenses keeps that conversation.</p>${btn('Edit review prompts','settings:prompts')}${btn('Save settings','save','primary')}`:`<div class="prompt-layout"><nav aria-label="Prompt">${promptNames.map(n=>btn(esc(n),'prompt:'+n,state.prompt===n?'selected':'quiet')).join('')}</nav><div class="prompt-editor"><label class="field-label">${esc(state.prompt)}<textarea id="prompt-text">${esc(state.prompts[state.prompt]??getPrompt())}</textarea></label><p class="muted">${state.prompts[state.prompt]!==undefined?'Custom prompt':'System prompt'} · Saved changes apply on the next turn.</p><div class="row">${btn('Save prompt','save-prompt','primary')}${btn('Revert to system','revert-prompt')}</div><p class="muted" style="margin-top:20px">Prompt overrides do not change app permissions or posting controls.</p></div></div>`}</div></div>`}
+function getPrompt(){return systemPrompts[state.prompt]||`Examine the PR through the ${state.prompt.replace('Lens · ','')} lens. Reuse the current conversation and evidence. Explain a concrete user consequence, cite the relevant code, and test alternative explanations before retaining a finding.`}
+function analysis(){if(state.analysisMode==='analyzer')return analyzer();return `<div class="review-heading"><h1>Event journal</h1><div class="row">${btn(state.stream?'Stop streaming':'Start streaming','stream',state.stream?'':'primary')}${btn('Session analyzer','open-analyzer')}${btn('Connection settings','analysis-settings')}</div></div>${!state.stream?`<div class="empty"><p>Streaming is off.</p><p class="muted">Activate it to observe new events. Events missed while it is off cannot be recovered.</p></div>`:`<div class="row between"><span><i class="dot live"></i>Streaming synthetic events</span>${btn('Pause view','pause-analysis')}</div><div class="timeline"><div class="event-list"><div><b>Session 8c2a</b><br><small>codex-scope · feature/review</small></div><div>Session a931<br><small>website · fix/cart</small></div></div><div><div class="toolbar">${btn('Timeline','analysis-tab','selected')}${btn('Payload','analysis-tab')}${btn(state.analyzing?'Stop diagnosis':'Start diagnosis','diagnose')}</div><div class="event-list"><div><small>12:08:41</small> &nbsp; Turn started</div><div><small>12:08:43</small> &nbsp; Tool requested · read file</div><div><small>12:08:44</small> &nbsp; Tool completed</div><div><small>12:08:48</small> &nbsp; Turn completed</div></div><p class="muted" style="margin-top:20px">${state.analyzing?'Diagnosis running in this simulated view.':'Diagnosis is off. Starting streaming does not start an agent.'}</p></div></div>`}`}
+function analyzer(){return `<div class="review-heading"><h1>Session analyzer</h1><div class="row">${btn('Event journal','open-journal')}${btn('Analysis settings','analysis-settings')}</div></div><div class="toolbar"><label>Session <select><option>Choose a session…</option><option>codex-scope · feature/review · 8c2a</option></select></label>${btn(state.analyzing?'Stop diagnosis':'Start diagnosis','diagnose','primary')}<span class="grow"></span><small>Streaming ${state.stream?'on':'off'} · Diagnosis ${state.analyzing?'running':'off'}</small></div><nav class="toolbar" aria-label="Analysis view">${['Results','Search trail','Agent routing','Recommendations'].map(n=>btn(n,'analyzer-tab:'+n,state.analysisTab===n?'selected':'')).join('')}</nav><div class="empty"><p>${state.analyzing?'Sample analysis in progress.':'Choose a retained session and start diagnosis when you need it.'}</p><p class="muted">${state.analysisTab} will appear here. The journal keeps your event and payload position when you switch views.</p></div>`}
+function review(){if(!state.review)return `<h1>Review a pull request</h1><div style="max-width:760px;margin:40px auto" class="stack"><label class="field-label">Pull request<input id="pr-input" placeholder="owner/repo#123 or a GitHub PR URL"></label><p class="muted">Inspect changes through the installed GitHub CLI. The review uses source and supplied evidence. It does not run the application in the PR.</p>${state.model?`<p>Review model: <span class="mono">${esc(state.model)}</span>${state.effort?' · '+esc(state.effort):' · Choose an effort in Settings'}</p>`:`<p>Choose your review model and effort in Settings to start an agent.</p>`}<div class="row">${btn('Review settings','review-settings')}${btn('Start review','start-review','primary',(!state.model||!state.effort)?'disabled':'')}</div><hr style="border:0;border-top:1px solid var(--line);width:100%"><p>Explore this concept with a synthetic PR.</p><p class="muted">Sample review states are available without choosing a model. No agent runs.</p>${btn('Open sample review','sample')}</div>`;
+return `<div class="review-heading"><div><h1>Prevent duplicate checkout orders</h1><small>Example shop · PR #148 · <span class="mono">a17c2f9 → ${state.revision}</span> · 4 files · Synthetic sample</small></div><div class="row">${btn('Get feedback','feedback','primary')}${btn('End review','end-review')}</div></div>${state.stale?`<div class="paused-banner row between"><span>The PR changed. Current evidence belongs to ${state.revision}.</span>${btn('Review new revision','refresh-pr')}</div>`:''}${!state.follow?`<div class="paused-banner row between"><span>Following paused. Agent suggestions will not move your view.</span>${btn('Resume following','follow')}</div>`:''}<div class="toolbar">${btn(state.follow?'Pause following':'Following paused','follow')}${btn('Evidence limits','evidence-limits')}${btn('Demo states','demo-states','quiet')}<span class="grow"></span><small>One conversation · ${state.failed?'Disconnected':'Ready'} · Ends when Scope closes</small></div>${IDEA==='walkthrough'?scenes():''}<div class="review-layout">${IDEA==='notebook'?`<nav class="lens-tabs" aria-label="Review lens">${lenses()}</nav>`:''}<div>${IDEA==='desk'||IDEA==='board'?`<nav class="lens-tabs" aria-label="Review lens" style="margin-bottom:18px">${lenses()}</nav>`:''}${IDEA==='notebook'?`<div class="paper-text"><p>In the ${state.lens.toLowerCase()} lens, inspect the same PR and keep the conversation in context.</p></div>`:''}<div class="stage">${IDEA==='board'?board():stage()}</div><div class="footer-actions"><div class="row">${btn('Changes','view:Changes',state.view==='Changes'?'selected':'')}${btn('Visual evidence','view:Visual evidence',state.view==='Visual evidence'?'selected':'')}${btn('Sequence','view:Sequence',state.view==='Sequence'?'selected':'')}</div><div class="row">${btn('Highlight','highlight')}${btn('Draw arrow','arrow')}${btn('Clear marks','clear')}</div></div>${IDEA==='notebook'?findings():''}</div>${chat()}</div>${IDEA!=='notebook'?findings():''}`}
+function lenses(){return ['Overview','Security','UX','Performance','Architecture'].map(n=>btn(n,'lens:'+n,state.lens===n?'selected':'')).join('')}
+function scenes(){return `<nav class="scene-list" aria-label="Walkthrough stops">${[['Understand','Changes and intent'],['Trace','Follow the source'],['Inspect','Check supplied evidence'],['Discuss','Keep or dismiss findings']].map(([a,b],i)=>btn(`${i+1}. ${a}<small>${b}</small>`,'scene:'+i,state.scene===i?'selected':'')).join('')}</nav><div class="row between" style="margin-bottom:18px"><nav class="lens-tabs" aria-label="Review lens">${lenses()}</nav><div class="row">${btn('Previous','previous','',state.scene===0?'disabled':'')}${btn('Next stop','next','',state.scene===3?'disabled':'')}</div></div>`}
+function stage(){return `<div class="stage-top"><span>${state.view==='Changes'?'src/checkout/submit.ts':state.view==='Sequence'?'Checkout retry sequence':'Supplied image · checkout-retry.png'}</span><span>${state.view==='Visual evidence'?'Synthetic evidence':('Revision '+state.revision)}</span></div>${state.view==='Changes'?diff():state.view==='Sequence'?diagram():visualEvidence()}${state.arrow&&state.markView===state.view&&(state.view!=='Visual evidence'||!state.evidenceMissing)?`<div class="annotation">Could a retry explain both orders?<br><small>Added by review agent · ${btn('Remove','arrow','quiet')}</small></div>`:''}`}
+function diff(){return `<div class="evidence"><p class="muted">The request key is now created inside each submission attempt.</p>${[['38','export async function submitOrder(cart) {'],['39','  const key = crypto.randomUUID();'],['40','  return await orders.create({'],['41','    cart, idempotencyKey: key'],['42','  });'],['43','}']].map(([n,c])=>`<div class="code-row ${n==='39'||n==='41'?'add':''} ${state.highlight&&state.markView==='Changes'&&n==='39'?'mark':''}"><span class="ln">${n}</span><span>${esc(c)}</span></div>`).join('')}<div class="note"><span>↳</span><div>A retry gets a fresh key. Compare the failure state in the visual evidence.<br><small>Working hypothesis · Verify against the server contract</small></div></div>${btn('Ask agent to explain this line','explain','', 'style="margin-top:24px"')}</div>`}
+function diagram(){return `<div class="evidence"><svg class="diagram" viewBox="0 0 720 290" role="img" aria-label="Sequence diagram: browser retries an order with a new key and the API creates another order"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#784F26"/></marker></defs>${[100,355,610].map((x,i)=>`<rect x="${x-70}" y="10" width="140" height="40" rx="8" fill="#EADFCD"/><text x="${x}" y="36" text-anchor="middle" font-size="16">${['Browser','Orders API','Database'][i]}</text><line x1="${x}" y1="55" x2="${x}" y2="275" stroke="#C1AF9A" stroke-dasharray="5 5"/>`).join('')}<g fill="none" stroke="#784F26" stroke-width="2" marker-end="url(#arr)"><path d="M100 95 H350"/><path d="M355 125 H605"/><path d="M355 160 H105"/><path d="M100 205 H350"/><path d="M355 245 H605"/></g><g font-size="14"><text x="130" y="83">Submit · key A</text><text x="393" y="113">Create order 701</text><text x="157" y="148">Response lost</text><text x="128" y="193">Retry · key B</text><text x="393" y="233">Create order 702</text></g></svg><p class="muted">Agent-created explanation · submit.ts:39 and orders.ts:82 · Synthetic example</p>${btn('Show source','view:Changes')}</div>`}
+function visualEvidence(){if(state.evidenceMissing)return `<div class="empty"><p>This evidence is unavailable.</p><p class="muted">The referenced attachment could not be read. Code and the conversation remain available.</p>${btn('Retry loading evidence','retry-evidence','primary')}</div>`;return `<div class="fake-app"><div class="store-nav"><b>Field supply · Orders</b><span>Supplied screenshot</span></div><div class="cart-line"><span>Order 701<br><small>Garden hand fork · Qty 1</small></span><span>$28.00</span></div><div class="cart-line" style="${state.highlight&&state.markView==='Visual evidence'?'outline:2px solid var(--accent);outline-offset:6px;border-radius:5px':''}"><span>Order 702<br><small>Garden hand fork · Qty 1</small></span><span>$28.00</span></div><p class="muted" style="margin-top:28px">Synthetic stand-in for an image attached to the PR. Two order IDs are visible; the image alone does not establish what caused them.</p>${btn('Discuss this evidence','discuss-evidence')}</div>`}
+function board(){return `<div class="stage-top"><span>Evidence for PR #148</span><span>4 items · Drag to rearrange · Click to focus</span></div><div class="board-grid"><article draggable="true" class="board-card ${state.view==='Changes'?'active-card':''}"><small>Code · submit.ts:39</small><pre>const key = crypto.randomUUID();</pre><p>A new key is generated on every attempt.</p>${btn('Focus code','focus:Changes')}</article><article draggable="true" class="board-card ${state.view==='Visual evidence'?'active-card':''}"><small>Supplied image · Checkout retry</small><p>${state.evidenceMissing?'Attachment unavailable.':'The supplied image shows orders 701 and 702. What caused them?'}</p>${btn('Focus visual evidence','focus:Visual evidence')}</article><div class="board-link">${state.arrow?'↙ Agent annotation: check the retry key ↘':'Request key → retry behavior → finding'}</div><article draggable="true" class="board-card ${state.view==='Sequence'?'active-card':''}"><small>Agent artifact · Sequence</small><p>Browser → Orders API → Database<br>Retry with key B → Second order</p>${btn('Open diagram','focus:Sequence')}</article><article draggable="true" class="board-card"><small>Finding · UX-high</small><p>Retrying checkout can create a second order after a response is lost.</p>${btn('Discuss finding','explain')}${btn('Preview feedback','feedback','quiet')}</article></div>`}
+function chat(){return `<aside class="chat" aria-label="Review conversation"><div class="row between" style="margin-bottom:14px"><span class="muted">Codex</span><small>${state.failed?'Offline':'Same session'}</small></div><div class="chat-log"><div class="message you"><small>You</small><p>Walk me through the retry behavior. Can this create two orders?</p></div><div class="message"><small>Codex · ${esc(state.lens)} lens</small><p>The key is generated inside <code>submitOrder</code>. A second attempt receives a new key even when the cart is unchanged.</p></div><div class="message"><small>Codex</small><p>Let's compare the source with the supplied image. It shows two orders, but we still need to check whether retry behavior explains them.</p><div class="row" style="margin-top:14px">${btn('Show me','agent-show')}${btn('Create diagram','agent-diagram')}</div></div>${state.messages.map(t=>`<div class="message"><small>${t.role}</small><p>${esc(t.text)}</p></div>`).join('')}</div>${state.failed?`<div class="paused-banner">Codex disconnected. Your draft feedback remains here. ${btn('Reconnect','reconnect')}</div>`:''}<div class="composer"><label class="sr-only" for="chat-input">Talk to the review agent</label><textarea id="chat-input" placeholder="Ask, challenge a finding, or add a suggestion…" ${state.failed?'disabled':''}></textarea><div class="row between">${btn('Stop turn','stop-turn')}${btn('Send','send','primary',state.failed?'disabled':'')}</div></div></aside>`}
+function findings(){return `<div class="finding-list"><div class="row between"><span>${state.findings.filter(Boolean).length} findings retained</span>${btn('Add my suggestion','suggestion')}</div>${['ux-high: Retrying checkout can create a second order after a response is lost.','performance-low: Retrying immediately can repeat an expensive payment lookup.'].map((f,i)=>`<div class="finding"><input type="checkbox" aria-label="Include finding ${i+1}" data-finding="${i}" ${state.findings[i]?'checked':''}><span>${f}</span>${btn('Discuss','discuss:'+i,'quiet')}</div>`).join('')}</div>`}
+function modal(content,narrow=false){$('#modal')?.remove();const el=document.createElement('div');el.id='modal';el.className='dialog-backdrop';el.innerHTML=`<section class="dialog ${narrow?'narrow':''}" role="dialog" aria-modal="true"><div class="row between" style="margin-bottom:18px"><small>${names[IDEA]} · Mockup</small>${btn('Close','close','quiet')}</div>${content}</section>`;document.body.append(el);el.querySelector('input,textarea,button')?.focus()}
+function modelPicker(kind){modal(`<h1>Choose a model</h1><input class="search" id="model-search" placeholder="Search local Codex models…" aria-label="Search models"><p class="muted">Catalog captured from local Codex CLI 0.154.0. Hidden entries are included and labeled. Listing a model does not guarantee this account can run it.</p><div id="model-options">${MODELS.map(m=>`<button class="menu-result" data-model="${m.id}" data-kind="${kind}" data-search="${m.id.toLowerCase()}">${esc(m.displayName)} <small>${m.hidden?'Hidden in CLI picker':''}</small></button>`).join('')}</div><p id="no-models" class="blank-result" hidden>No matching models.</p>${btn('Simulate catalog unavailable','model-error','quiet')}`,true)}
+function feedback(){const items=['ux-high: Retrying checkout can create a second order after a response is lost.','performance-low: Retrying immediately can repeat an expensive payment lookup.'];const text=items.filter((_,i)=>state.findings[i]).map(x=>'- '+x).join('\n')||'No findings selected.';modal(`<h1>Preview feedback</h1><div class="toolbar">${btn('For the author','feedback-author','selected')}${btn('For their agent','feedback-agent')}</div><div class="preview" id="feedback-preview"><p>${esc(text)}</p></div><p class="muted">PR #148 · revision ${state.revision} · Review and edit before sharing.</p><div class="row">${btn('Edit text','edit-feedback')}${btn('Copy both handoffs','copy-feedback','primary')}${btn('Comment on PR…','comment-preview','',state.stale?'disabled':'')}</div>${state.stale?'<p class="muted">Refresh the changed PR before posting.</p>':''}`);state.feedbackAuthor=text;state.feedbackAgent=agentHandoff();state.feedbackTab='author';$('#modal').dataset.summary=text}
+function setFeedbackTab(){document.querySelectorAll('[data-action="feedback-author"],[data-action="feedback-agent"]').forEach(e=>e.classList.toggle('selected',e.dataset.action==='feedback-'+state.feedbackTab))}
+function saveFeedbackEdit(){const v=$('#feedback-edit')?.value;if(v!==undefined){if(state.feedbackTab==='author')state.feedbackAuthor=v;else state.feedbackAgent=v}}
+function agentHandoff(){const full=`PR #148 · reviewed revision ${state.revision}\n\nCheck our findings independently with the author before changing code.\n\nUX / high\nsrc/checkout/submit.ts:39 creates an idempotency key inside each attempt. The supplied sample image shows orders 701 and 702. It does not prove the trigger. A lost first response followed by retry is our hypothesis. Check that the server keys deduplication only by this request key. Proposed check for the author: reproduce with a delayed response and inspect order IDs. We did not run the PR app during this review. A test should assert one order across the retry. This is synthetic evidence in the mockup, not a verified real PR finding.\n\nPerformance / low\nsrc/server/orders.ts:82 repeats the payment lookup on immediate retries. Measure repeated calls under the same failure scenario before deciding whether to optimize. No production impact has been measured.${state.suggestion?'\n\nSuggestion from you\nKeep the request key for the lifetime of a checkout attempt, including retries. Evaluate invalidation when the cart changes.':''}`;let result=full;if(!state.findings[0])result=result.replace(/UX \/ high[\s\S]*?(?=Performance \/ low)/,'');if(!state.findings[1])result=result.replace(/Performance \/ low[\s\S]*?(?=\n\nSuggestion from you|$)/,'');return result}
+document.addEventListener('click',async e=>{const m=e.target.closest('[data-model]');if(m){if(m.dataset.kind==='review'){state.model=m.dataset.model;state.effort=''}else{state.diagnosis=m.dataset.model;state.diagnosisEffort=''}$('#modal').remove();render();return}const t=e.target.closest('[data-action]');if(!t)return;const a=t.dataset.action;const [op,...rest]=a.split(':');const value=rest.join(':');
+if(op==='analyzer-tab'){state.analysisTab=value;render()}else if(op==='nav'){state.page=value;render()}else if(op==='settings'){state.settings=value;render()}else if(op==='models')modelPicker(value);else if(op==='prompt'){state.prompt=value;render()}else if(op==='lens'){state.lens=value;state.messages.push({role:'Scope',text:`Viewing the ${value} lens. The review conversation is unchanged.`});render()}else if(op==='view'){state.view=value;render()}else if(op==='focus'){state.view=value;modal(`<h1>${esc(value)}</h1><div class="stage">${stage()}</div>`)}else if(op==='scene'){state.scene=Number(value);state.view=['Changes','Sequence','Visual evidence','Changes'][state.scene];render()}else if(op==='discuss'){state.messages.push({role:'You',text:'Check this finding. What evidence could disprove it?'});render()}else switch(a){
+case'menu':modal(`<h1>Functions</h1><input class="search" id="menu-search" placeholder="Search functionality…" aria-label="Search menu">${[['home','Home'],['review','PR review'],['analysis','Session analysis'],['settings','Settings']].map(([id,n])=>`<button class="menu-result" data-action="menu-nav:${id}" data-search="${n.toLowerCase()}">${n}</button>`).join('')}<p id="no-menu" class="blank-result" hidden>No matching functions.</p>`,true);break;
+case'close':$('#modal')?.remove();break;
+case'review-settings':state.page='settings';state.settings='review';render();break;
+case'open-analyzer':state.analysisMode='analyzer';render();break;
+case'open-journal':state.analysisMode='journal';render();break;
+case'analysis-settings':state.page='settings';state.settings='analysis';render();break;
+case'save':notify('Settings saved in this mockup. No connection or agent was started.');break;
+case'save-prompt':state.prompts[state.prompt]=$('#prompt-text').value;render();notify('Prompt saved for the next turn.');break;
+case'revert-prompt':delete state.prompts[state.prompt];render();notify('System prompt restored.');break;
+
+case'sample':state.review=true;state.follow=true;render();break;
+case'start-review':if(!$('#pr-input').value.trim()){notify('Enter a pull request first.');break}state.review=true;state.follow=true;render();notify('Sample review started. No GitHub or Codex request was made.');break;
+case'end-review':modal(`<h1>End this review?</h1><p>The conversation lasts only while Scope is open. Copy feedback before ending if you want to keep it.</p><div class="row">${btn('Preview feedback','feedback')}${btn('End review','confirm-end','danger')}</div>`,true);break;
+case'confirm-end':state.review=false;state.follow=false;state.messages=[];$('#modal').remove();render();break;
+case'follow':state.follow=!state.follow;render();break;
+case'evidence-limits':modal(`<h1>Evidence limits</h1><p>The sample includes 4 changed files, selected source excerpts, and one supplied image.</p><p>Code is pinned to revision ${state.revision}. The application in the PR has not been run. Missing, truncated, or outdated evidence must stay visible.</p><p class="muted">The real app reads GitHub only through the installed gh CLI.</p>${btn('Close','close')}`,true);break;
+case'retry-evidence':state.evidenceMissing=false;render();notify('Sample evidence available again.');break;
+case'discuss-evidence':state.markView='Visual evidence';state.highlight=true;state.arrow=true;state.messages.push({role:'You',text:'Does this image prove the retry caused both orders, or is that still a hypothesis?'});render();break;
+case'next':state.scene=Math.min(3,state.scene+1);state.view=['Changes','Sequence','Visual evidence','Changes'][state.scene];render();break;
+case'previous':state.scene=Math.max(0,state.scene-1);state.view=['Changes','Sequence','Visual evidence','Changes'][state.scene];render();break;
+case'highlight':state.markView=state.view;state.highlight=!state.highlight;render();break;
+case'arrow':state.markView=state.view;state.arrow=!state.arrow;render();break;
+case'clear':state.highlight=false;state.arrow=false;render();break;
+
+case'agent-show':case'explain':if(state.follow){state.view='Changes';state.markView='Changes';state.highlight=true;state.arrow=true;render()}else notify('Following paused. Agent suggests submit.ts:39. Your view stays here.');break;
+case'agent-diagram':if(state.follow){state.view='Sequence';render()}else notify('Diagram ready. Open Sequence when you are ready.');break;
+case'send':{const text=$('#chat-input').value.trim();if(!text)break;state.messages.push({role:'You',text},{role:'Codex · Simulated reply',text:'I will check that against the same PR revision. You can retain or dismiss the finding below.'});if(/suggest|keep.*key/i.test(text))state.suggestion=true;render();$('.chat-log').scrollTop=$('.chat-log').scrollHeight;break}
+case'stop-turn':notify('Turn stopped. The review conversation remains open.');break;
+case'feedback':feedback();break;
+case'feedback-author':saveFeedbackEdit();state.feedbackTab='author';setFeedbackTab();$('#feedback-preview').innerHTML=`<p>${esc(state.feedbackAuthor)}</p>`;break;
+case'feedback-agent':saveFeedbackEdit();state.feedbackTab='agent';setFeedbackTab();$('#feedback-preview').innerHTML=`<p>${esc(state.feedbackAgent)}</p>`;break;
+case'edit-feedback':$('#feedback-preview').innerHTML=`<textarea id="feedback-edit">${esc($('#feedback-preview').innerText)}</textarea>`;break;
+case'copy-feedback':{saveFeedbackEdit();const text=state.feedbackAuthor+'\n\nFor the author’s agent\n\n'+state.feedbackAgent;try{await navigator.clipboard.writeText(text);notify('Both handoffs copied.')}catch{notify('Clipboard unavailable. Select and copy the preview text.')}break}
+case'comment-preview':saveFeedbackEdit();modal(`<h1>Comment on PR #148</h1><p>This is the exact comment to review before sending.</p><textarea id="comment-body">${esc(state.feedbackAuthor+'\n\nFor the author’s agent\n\n'+state.feedbackAgent)}</textarea><div class="row">${btn('Back to preview','feedback')}${btn('Post this comment','post-comment','primary')}${btn('Simulate post failure','post-fail','quiet')}</div>`);break;
+case'post-comment':notify('Simulated comment sent. This mockup never contacts GitHub.');$('#modal').remove();break;
+case'post-fail':notify('Could not post. Your edited comment remains in this dialog.');break;
+case'suggestion':state.suggestion=!state.suggestion;notify(state.suggestion?'Suggestion added: keep the request key across retries. Included in the agent handoff.':'Suggestion removed from handoff.');break;
+case'stream':state.stream=!state.stream;if(!state.stream)state.analyzing=false;render();break;
+case'diagnose':if(!state.diagnosis||!state.diagnosisEffort){state.page='settings';state.settings='analysis';render();notify('Choose the diagnosis model and effort first.')}else{state.analyzing=!state.analyzing;render()}break;
+case'pause-analysis':notify('View paused. Capture continues in this simulated state.');break;
+case'analysis-tab':notify('Analysis details are intentionally simplified in this concept.');break;
+case'demo-states':modal(`<h1>Try another state</h1><div class="stack">${btn('PR changed during review','stale')}${btn('Codex disconnects','disconnect')}${btn('Evidence unavailable','evidence-missing')}</div>`,true);break;
+case'evidence-missing':state.evidenceMissing=true;state.view='Visual evidence';$('#modal').remove();render();break;
+case'stale':state.stale=true;$('#modal').remove();render();break;
+case'refresh-pr':state.stale=false;state.revision='c41f730';state.findings=[false,false];state.highlight=false;state.arrow=false;render();notify('New revision loaded. Previous marks cleared; findings need rechecking.');break;
+case'disconnect':state.failed=true;$('#modal').remove();render();break;
+case'reconnect':state.failed=false;render();notify('Reconnected in this simulated state.');break;
+case'model-error':modal(`<h1>Models unavailable</h1><p>The installed Codex CLI could not return its catalog. No fallback model has been selected.</p>${btn('Retry catalog lookup','retry-models','primary')}`,true);break;
+case'retry-models':modelPicker(state.settings==='analysis'?'diagnosis':'review');break;
+}
+if(op==='menu-nav'){state.page=value;$('#modal').remove();render()}
+});
+let draggedCard=null;document.addEventListener('dragstart',e=>{draggedCard=e.target.closest('.board-card')});document.addEventListener('dragover',e=>{if(e.target.closest('.board-card'))e.preventDefault()});document.addEventListener('drop',e=>{const target=e.target.closest('.board-card');if(target&&draggedCard&&target!==draggedCard){e.preventDefault();target.before(draggedCard);draggedCard=null}});
+document.addEventListener('change',e=>{if(e.target.dataset.effort){if(e.target.dataset.effort==='review')state.effort=e.target.value;else state.diagnosisEffort=e.target.value}if(e.target.dataset.finding!==undefined){state.findings[+e.target.dataset.finding]=e.target.checked;render()}});
+document.addEventListener('input',e=>{const selectors={'home-search':['.function','#no-functions'],'menu-search':['.menu-result','#no-menu'],'model-search':['[data-model]','#no-models']};const entry=selectors[e.target.id];if(!entry)return;let n=0;document.querySelectorAll(entry[0]).forEach(el=>{const match=el.dataset.search.includes(e.target.value.toLowerCase());el.hidden=!match;if(match)n++});$(entry[1]).hidden=n>0});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#modal')?.remove();if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();document.querySelector('[data-action="menu"]').click()}if(e.key==='Tab'&&$('#modal')){const all=[...$('#modal').querySelectorAll('button,input,textarea,select')].filter(x=>!x.disabled&&!x.hidden);if(e.shiftKey&&document.activeElement===all[0]){e.preventDefault();all.at(-1).focus()}else if(!e.shiftKey&&document.activeElement===all.at(-1)){e.preventDefault();all[0].focus()}}});
+render();
+</script></html>
