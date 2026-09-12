@@ -1,3 +1,4 @@
+import { validEffort, validModel } from "./model-types.ts";
 import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { runAnalysisCli, parseHandoff } from "./analysis-cli.ts";
@@ -12,8 +13,7 @@ import type {
 
 export const validSession = (session: unknown): session is string =>
   typeof session === "string" && session.length > 0 && Buffer.byteLength(session) <= 1024;
-export const validModel = (model: unknown): model is string =>
-  typeof model === "string" && /^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$/.test(model);
+export { validModel } from "./model-types.ts";
 export function parseFindings(text: string, snapshot: AnalysisSnapshot): AnalysisFinding[] {
   if (Buffer.byteLength(text) > 64 * 1024) throw new Error("Analysis response exceeded its limit.");
   const value: unknown = JSON.parse(text);
@@ -91,10 +91,11 @@ export class SessionAnalysis extends EventEmitter {
       version: this.version,
       activeRunId: this.activeId,
       handoffRunId: this.handoffId,
-      runs: this.runs.map(({ id, session, model, createdAt, state, error, usage }) => ({
+      runs: this.runs.map(({ id, session, model, effort, createdAt, state, error, usage }) => ({
         id,
         session,
         model,
+        effort,
         createdAt,
         state,
         error,
@@ -105,8 +106,8 @@ export class SessionAnalysis extends EventEmitter {
   get(id: string) {
     return this.runs.find((run) => run.id === id) ?? null;
   }
-  async start(session: string, model: string, source: string | null) {
-    if (!validSession(session) || !validModel(model))
+  async start(session: string, model: string, effort: string, source: string | null) {
+    if (!validSession(session) || !validModel(model) || !validEffort(effort))
       throw new Error("Choose a session and a valid Codex model identifier.");
     if (this.starting || this.task) throw new Error("An analysis is already running or stopping.");
     const previous = source === null ? null : this.get(source);
@@ -133,6 +134,7 @@ export class SessionAnalysis extends EventEmitter {
         id: randomUUID(),
         session,
         model,
+        effort,
         createdAt: new Date().toISOString(),
         state: "running",
         error: null,
@@ -160,6 +162,7 @@ export class SessionAnalysis extends EventEmitter {
     try {
       const response = await this.runner({
         model: run.model,
+        effort: run.effort,
         prompt: analysisPrompt(run.snapshot),
         signal: abort.signal,
         executable: this.executable,
@@ -196,6 +199,7 @@ export class SessionAnalysis extends EventEmitter {
       const response = await this.runner({
         purpose: "handoff",
         model: run.model,
+        effort: run.effort,
         prompt: handoffPrompt(packet),
         signal: abort.signal,
         executable: this.executable,

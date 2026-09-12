@@ -33,6 +33,7 @@ async function analysisInvoke(channel: string, generation: number, ...args: unkn
     analysisRequests--;
   }
 }
+let catalogPending: Promise<unknown> | null = null;
 let settingsBusy = false;
 async function settingsInvoke(operation: string, value?: unknown) {
   if (settingsBusy || (value !== undefined && JSON.stringify(value).length > 5000))
@@ -45,13 +46,24 @@ async function settingsInvoke(operation: string, value?: unknown) {
   }
 }
 const scope: ScopeAPI = {
+  models: () => {
+    if (catalogPending) throw new Error("Model discovery is already running.");
+    const request = ipcRenderer.invoke("scope:models");
+    catalogPending = request;
+    return request.finally(() => {
+      catalogPending = null;
+    });
+  },
+  cancelModels: () => {
+    if (catalogPending) ipcRenderer.send("scope:models-cancel");
+  },
   settings: () => settingsInvoke("settings"),
   saveSettings: (value) => settingsInvoke("saveSettings", value),
   capture: (start) => settingsInvoke("capture", start),
   analysisList: (generation) => analysisInvoke("scope:analysis-list", generation),
   analysisRun: (generation, id) => analysisInvoke("scope:analysis-run", generation, id),
-  analysisStart: (generation, session, model, source) =>
-    analysisInvoke("scope:analysis-start", generation, session, model, source),
+  analysisStart: (generation, session, model, effort, source) =>
+    analysisInvoke("scope:analysis-start", generation, session, model, effort, source),
   analysisCancel: async (generation) => {
     if (!Number.isSafeInteger(generation)) throw new Error("Invalid analysis cancellation.");
     analysisCancellation ??= ipcRenderer.invoke("scope:analysis-cancel", generation).finally(() => {

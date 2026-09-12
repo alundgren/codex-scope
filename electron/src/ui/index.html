@@ -60,15 +60,37 @@
               autocomplete="new-password"
           /></label>
           <p id="token-state">Enter a token.</p>
-          <label
-            >Diagnosis model<input
-              id="analysis-model"
-              value="gpt-5.6-luna"
-              list="analysis-models"
-              maxlength="120"
-              spellcheck="false"
-          /></label>
-          <datalist id="analysis-models"><option value="gpt-5.6-luna"></option></datalist>
+          <div class="model-pair">
+            <label
+              >Diagnosis model<select id="analysis-model">
+                <option value="">Choose a model</option>
+              </select></label
+            >
+            <label
+              >Diagnosis effort<select id="analysis-effort">
+                <option value="">Choose an effort</option>
+              </select></label
+            >
+          </div>
+          <div class="model-pair">
+            <label
+              >PR review model<select id="review-model">
+                <option value="">Choose a model</option>
+              </select></label
+            >
+            <label
+              >PR review effort<select id="review-effort">
+                <option value="">Choose an effort</option>
+              </select></label
+            >
+          </div>
+          <div>
+            <button id="model-refresh" type="button">Refresh models</button>
+            <button id="model-cancel" type="button" hidden>Cancel discovery</button>
+          </div>
+          <p id="model-status" role="status">
+            Open a model picker or refresh to read the local CLI catalog. No model turn starts.
+          </p>
 
           <p id="settings-override" hidden>
             Command-line connection settings were imported for this launch. Saving applies here; the

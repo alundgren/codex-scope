@@ -10,6 +10,7 @@ async function launch(info: TestInfo, missing = false) {
     args: [
       path.resolve("dist/app"),
       "--history-test",
+      `--catalog-test-cli=${path.resolve("test/fixtures/catalog-cli.cjs")}`,
       "--fixtures-only",
       `--scope-test-root=${root}`,
       `--analysis-test-cli=${missing ? "/missing/synthetic-codex" : path.resolve("test/fixtures/analysis-view-cli.cjs")}`,
@@ -66,7 +67,11 @@ async function openSession(page: Page, session = "analysis-session") {
 async function selectModel(page: Page, model: string) {
   await page.locator("#functions summary").click();
   await page.locator('[data-tool="settings"]').click();
-  await page.locator("#analysis-model").fill(model);
+  await page.locator("#model-refresh").click();
+  await expect(page.locator("#model-status")).toContainText("9 models");
+  await page.locator("#analysis-model").selectOption(model);
+  await expect(page.locator("#model-refresh")).toBeEnabled();
+  await page.locator("#analysis-effort").selectOption("low");
   await page.locator("#functions summary").click();
   await page.locator("#open-analysis").click();
 }
@@ -86,7 +91,7 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
     await page.locator("#capture").click();
     await expect(page.locator(".connection")).toHaveText("Stopped");
     await openSession(page);
-    await expect(page.locator("#analysis-start")).toBeEnabled();
+    await expect(page.locator("#analysis-start")).toBeDisabled();
     await capture(page, info, "01-model-choice");
     await analyze(page);
     await expect(page.locator(".analysis-call")).toHaveCount(12);
@@ -302,6 +307,7 @@ test("missing CLI gives a visible recoverable failure without losing evidence", 
   try {
     await append(app, calls().slice(0, 4));
     await openSession(page);
+    await selectModel(page, "gpt-5.6-luna");
     await page.locator("#analysis-start").click();
     await expect(page.locator("#analysis-run option")).toContainText("failed");
     await expect(page.locator("#analysis-status")).toContainText(/Codex|CLI|start|installed/);
@@ -371,6 +377,7 @@ test("unsafe analysis storage preserves evidence and recovers after cleanup", as
   try {
     await append(app, calls().slice(0, 4));
     await openSession(page);
+    await selectModel(page, "gpt-5.6-luna");
     const storage = path.join(root, "analysis");
     await mkdir(storage, { mode: 0o700 });
     const unexpected = path.join(storage, "unexpected.txt");
@@ -502,6 +509,7 @@ test("narrow journal keeps connection transitions visible", async ({}, info) => 
     args: [
       path.resolve("dist/app"),
       "--history-test",
+      `--catalog-test-cli=${path.resolve("test/fixtures/catalog-cli.cjs")}`,
       `--scope-test-root=${root}`,
       `--connection-config=${root}/connection.json`,
     ],

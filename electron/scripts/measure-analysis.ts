@@ -53,7 +53,12 @@ const app = await _electron.launch({
     "--history-test",
     "--fixtures-only",
     `--scope-test-root=${root}`,
-    ...(real ? [] : [`--analysis-test-cli=${path.resolve("test/fixtures/analysis-view-cli.cjs")}`]),
+    ...(real
+      ? []
+      : [
+          `--analysis-test-cli=${path.resolve("test/fixtures/analysis-view-cli.cjs")}`,
+          `--catalog-test-cli=${path.resolve("test/fixtures/catalog-cli.cjs")}`,
+        ]),
   ],
   chromiumSandbox: true,
 });
@@ -182,7 +187,13 @@ async function record(name: string, action: () => Promise<unknown>) {
 async function start(model: string, source: string | null = null): Promise<string> {
   const next = await page.evaluate(
     async ({ session, model, source }) =>
-      window.scope.analysisStart((await window.scope.status()).generation, session, model, source),
+      window.scope.analysisStart(
+        (await window.scope.status()).generation,
+        session,
+        model,
+        "low",
+        source,
+      ),
     { session, model, source },
   );
   assert(next.activeRunId, "Starting analysis returns an active run.");

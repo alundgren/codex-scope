@@ -41,7 +41,7 @@ all have fixed limits. The [Electron development guide](../electron/README.md)
 explains commands, ownership and resource limits.
 
 The worker also owns connection preferences and authenticated HTTP NDJSON transport. Settings reads expose the origin and token presence, never the saved token. Successful settings edits stop input; a separate activation identifier rejects delayed arrivals without clearing the recording or analysis generation. Local private
-settings store an HTTPS origin, token and diagnosis model in one bounded atomic private document. External connection files with token-file locations are read-only imports; literal loopback HTTP
+settings store an HTTPS origin, token and separate diagnosis/review model and effort selections in one bounded atomic private document. External connection files with token-file locations are read-only imports; literal loopback HTTP
 is accepted for same-host tests. Node HTTP APIs use separate connections for the
 stream and heartbeat, strict certificate checks, fixed deadlines and one retry
 timer. No redirects or replay requests are followed. Stream parsing uses a fixed
@@ -270,3 +270,5 @@ its completion. Source references and structured findings are validated before
 rendering. Full original payloads remain in bounded history; snapshots identify
 omissions and unavailable originals. No Linux collector or wire-protocol changes
 are needed.
+
+Local model discovery uses one transient installed `codex app-server` process. It initializes and exhausts `model/list` cursors including hidden entries, without starting a thread or turn, then removes its temporary files. Main validates the pair again before each restricted diagnosis or handoff invocation. Catalog and execution share bounded process/storage controls but retain their distinct protocols. Settings persistence records only explicit pairs and never adopts the CLI default. See the [catalog behavior and limits](../electron/README.md#local-model-catalog) and the [official app-server protocol](https://learn.chatgpt.com/docs/app-server).

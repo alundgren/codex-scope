@@ -1,3 +1,4 @@
+import { emptySelection } from "./model-types.ts";
 import { sessionEvidence } from "./analysis-evidence.ts";
 import { prepare, type Statement } from "./database.ts";
 import type {
@@ -24,7 +25,7 @@ import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { parseRecording, loadRecording, MAX_PAYLOAD_BYTES, MAX_FRAME_BYTES } from "./recording.ts";
 
-import { defaultModel, loadPreferences, savePreferences, validateSettings } from "./preferences.ts";
+import { loadPreferences, savePreferences, validateSettings } from "./preferences.ts";
 import { loadConnection } from "./connection.ts";
 import { Transport } from "./transport.ts";
 
@@ -80,7 +81,8 @@ let state: HistoryStatus & { retainedBytes: number; evicted: number } = {
   evicted: 0,
 };
 let activation = 0;
-let model = defaultModel;
+let diagnosis = emptySelection(),
+  review = emptySelection();
 let settingsError: string | undefined;
 let settingsSave: HistoryStatus["settingsSave"];
 let commandLineOverride = !workerData.optionalConnection;
@@ -88,7 +90,8 @@ function settings() {
   return {
     endpoint: connectionConfig?.endpoint ?? "",
     hasToken: !!connectionConfig?.token,
-    model,
+    diagnosis,
+    review,
     commandLineOverride,
     error: settingsError,
   };
@@ -523,9 +526,10 @@ port.on("message", async (message: WorkerRequest) => {
         try {
           const saved = await loadPreferences(workerData.settingsFile);
           if (saved) {
-            model = saved.model;
+            diagnosis = saved.diagnosis;
+            review = saved.review;
             if (!commandLineOverride && !workerData.synthetic) {
-              connectionConfig = saved;
+              connectionConfig = saved.endpoint ? saved : null;
               configError = false;
             }
           }
@@ -556,15 +560,16 @@ port.on("message", async (message: WorkerRequest) => {
           );
         await savePreferences(workerData.settingsFile, value);
         stopInput();
-        connectionConfig = { endpoint: value.endpoint, token: value.token };
-        model = value.model;
+        connectionConfig = value.endpoint ? { endpoint: value.endpoint, token: value.token } : null;
+        diagnosis = value.diagnosis;
+        review = value.review;
         configError = false;
         terminalReason = null;
         settingsError = undefined;
         result = settings();
       } catch {
         settingsError =
-          "Settings were not saved. Check the origin URL, token, model and private settings directory, then try again.";
+          "Settings were not saved. Check the origin URL, token, model choices and private settings directory, then try again.";
         result = settings();
       }
       settingsSave = { id: request, result: settings() };

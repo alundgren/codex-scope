@@ -250,11 +250,13 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
         "analysisRun",
         "analysisStart",
         "cancel",
+        "cancelModels",
         "capture",
         "choices",
         "clear",
         "copyPayload",
         "inspect",
+        "models",
         "navigate",
         "onAnalysis",
         "onHidden",
@@ -284,7 +286,7 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
       await page.evaluate(async () => {
         const generation = (await window.scope.status()).generation;
         const results = await Promise.allSettled([
-          window.scope.analysisStart(generation, "session", "bad;model", null),
+          window.scope.analysisStart(generation, "session", "bad;model", "low", null),
           window.scope.analysisRun(generation - 1, "old-run"),
           window.scope.analysisDecide(generation, "missing-run", "missing-finding", "kept"),
         ]);
