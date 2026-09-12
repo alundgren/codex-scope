@@ -353,7 +353,7 @@ fn show(job: &Installation) -> Result<()> {
         let remote = format!(
             "{}@{dns}:{}",
             host::username()?,
-            host::shell_quote(&job.record.data.join("viewer.token").to_string_lossy())
+            job.record.data.join("viewer.token").display()
         );
         println!("On your other machine, copy the token over SSH into a private directory:");
         println!("mkdir -p ~/.config/codex-scope && chmod 700 ~/.config/codex-scope");
