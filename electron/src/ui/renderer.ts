@@ -1,3 +1,4 @@
+import { attachTools } from "./tools.ts";
 import { attachAnalysis } from "./analysis.ts";
 import type {
   HistoryStatus,
@@ -114,7 +115,7 @@ function navigationSnapshot() {
     : null;
 }
 function positionMarkers() {
-  if (document.hidden || document.body.classList.contains("analysis-open")) return;
+  if (document.hidden || document.body.classList.contains("tool-open")) return;
   const snapshot = gesture?.snapshot ?? navigationSnapshot();
   const count = snapshot?.count ?? 0;
   const value = live ? count : Math.max(0, Math.min(count - 1, position));
@@ -153,22 +154,24 @@ function summary(value: HistoryStatus) {
     disconnected: "Disconnected",
   };
   const connection = requiredElement(".connection");
-  const connectionText = transport
-    ? (connectionLabels[transport.state] ?? "Disconnected")
-    : value.starting
-      ? "Starting…"
-      : "Synthetic data";
+  const connectionText =
+    value.capturing === false
+      ? "Stopped"
+      : transport
+        ? (connectionLabels[transport.state] ?? "Disconnected")
+        : value.starting
+          ? "Starting…"
+          : "Synthetic data";
   if (connection.textContent !== connectionText) connection.textContent = connectionText;
   const connectionReasons: Partial<
     Record<NonNullable<HistoryStatus["transport"]>["reason"] & string, string>
   > = {
-    auth: "Authentication failed. Check the token file and restart the app.",
+    auth: "Authentication failed. Open Settings, check the token, then Start capture.",
     version: "Unsupported collector version. Update the collector or viewer, then restart the app.",
     config:
-      "Connection settings could not be read. Check the endpoint and private token file, then restart the app.",
-    tls: "Secure connection failed. Check the certificate and endpoint, then restart the app.",
-    endpoint:
-      "Collector endpoint rejected the request. Check the connection settings and restart the app.",
+      "Connection settings could not be read. Open Settings and save a valid origin URL and token.",
+    tls: "Secure connection failed. Check the certificate and URL in Settings, then Start capture.",
+    endpoint: "Collector endpoint rejected the request. Check Settings, then Start capture.",
     conflict: "Another viewer is connected or this connection expired. Retrying.",
     busy: "Collector is busy. Retrying.",
     protocol: "Collector sent invalid stream data. Reconnecting.",
@@ -332,6 +335,8 @@ function receive(value: HistoryStatus) {
     relock();
   }
   summary(value);
+  tools.receive(value);
+  if (!value.starting) document.documentElement.dataset.ready = "true";
   if (value.error) {
     busy();
     if (selectedId === null) empty("Temporary history is unavailable.");
@@ -340,7 +345,7 @@ function receive(value: HistoryStatus) {
   }
   if (
     document.hidden ||
-    document.body.classList.contains("analysis-open") ||
+    document.body.classList.contains("tool-open") ||
     clearPending ||
     value.clearing ||
     filterPending
@@ -744,7 +749,7 @@ liveButton.addEventListener("click", () => {
   requestInspection(null);
 });
 new ResizeObserver(() => {
-  if (document.body.classList.contains("analysis-open")) return;
+  if (document.body.classList.contains("tool-open")) return;
   const notice = requiredElement("#notice");
   notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;
   positionMarkers();
@@ -778,3 +783,8 @@ const analyzer = attachAnalysis(
     }
   },
 );
+
+const tools = attachTools(analyzer, () => {
+  summary(latest);
+  requestInspection(live ? null : selectedId);
+});

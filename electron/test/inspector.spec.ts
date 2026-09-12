@@ -250,6 +250,7 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
         "analysisRun",
         "analysisStart",
         "cancel",
+        "capture",
         "choices",
         "clear",
         "copyPayload",
@@ -258,6 +259,8 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
         "onAnalysis",
         "onHidden",
         "onStatus",
+        "saveSettings",
+        "settings",
         "status",
       ],
     ]);

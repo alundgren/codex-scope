@@ -28,7 +28,7 @@ async function launch(
       appPath,
       "--history-test",
       `--scope-test-root=${root}`,
-      ...(continuous ? [] : ["--fixtures-only"]),
+      ...(continuous ? ["--synthetic"] : ["--fixtures-only"]),
     ],
     chromiumSandbox: true,
     recordVideo: { dir: info.outputPath("video"), size: { width: 1180, height: 820 } },

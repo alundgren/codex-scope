@@ -1,6 +1,6 @@
 # Electron development
 
-The viewer accepts the collector's version 1 live stream. It also runs
+The viewer opens idle with capture stopped. Functions provides searchable navigation to the event journal, session analyzer, PR review entry and Settings. PR review is currently an empty entry. Start capture opens the collector's version 1 live stream after connection settings are valid. Stop capture closes input work and keeps retained events and active analysis available. Tool navigation preserves each task's state. It also runs
 independently with synthetic data and no collector or credentials. In synthetic
 mode, it opens five seed events in a fresh temporary SQLite recording,
 starts in Live, and generates one new synthetic event each second. Selecting a
@@ -58,16 +58,21 @@ xvfb-run -a -s '-screen 0 1600x1000x24' vp run test
 xvfb-run -a vp run start
 ```
 
-On a desktop with a display, use `vp run start`. With no connection settings,
-startup uses synthetic mode. `vp run start --synthetic` selects it explicitly. Use `vp run start --fixtures-only`
+On a desktop with a display, use `vp run start`. Normal startup opens no stream, generates no events and starts no analysis. `vp run start --synthetic` selects it explicitly. Use `vp run start --fixtures-only`
 to keep the initial recording finite while exercising inspection. The
 `--history-test` switch exposes fault injection only to the Electron main-process
 debugger and accepts `--scope-test-root` for an isolated owner directory. It
 adds no renderer data injection or filesystem API. These switches are for automated development checks.
 
+`vp run measure:capture` measures idle launch, sustained input, a burst, Stop and quit without video or screenshots under the documented Xvfb desktop. It samples all app process-group members and descendants and verifies that stopped capture opens no new requests.
+
 ## Collector connection
 
-Create a private JSON configuration outside Git with two fields:
+Use Settings to enter an HTTPS collector origin and token. A Linux pairing URL such as `https://host:port/?token=secret` fills both fields. The URL field discards the query after extraction; the token field stays masked and clears after save. Duplicate or unknown query parameters, empty tokens and malformed links are rejected.
+
+Settings writes one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and diagnosis model, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. One settings operation may run at a time. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
+
+For external configuration import, create a private JSON file outside Git with two fields:
 
 ```json
 { "endpoint": "https://collector.example.net", "tokenFile": "/absolute/private/viewer.token" }
@@ -76,7 +81,7 @@ Create a private JSON configuration outside Git with two fields:
 The configuration and token must be regular files owned by the current account,
 readable only by that account. Use mode `0600`; symlinks are rejected. The config
 is limited to 4096 bytes and the token to 256 ASCII bearer characters plus a
-terminal newline. The token value never enters a command line or renderer.
+terminal newline. Imported token values never enter a command line or renderer.
 The default configuration is `connection.json` in Electron's application user
 data directory, separate from temporary recordings. To use another private file:
 
@@ -90,8 +95,9 @@ literal loopback IPs may use HTTP for same-host testing. `localhost` is not a
 plaintext exception because its name resolution is external to the URL.
 The repository ignores `electron/connection.local.json` and `electron/token.local`
 for local development, but app settings should normally remain outside the clone.
-Restart after editing settings or token files. Authentication, version, endpoint
-and certificate failures stop retrying until restart. Transient failures use one
+Scope never writes imported configuration or token files. A command-line file overrides the saved connection at launch. Settings explains this override; saving applies the replacement for the current launch, while the command-line file wins again on the next launch. Diagnosis model selection stays in Settings and never starts a turn on its own.
+
+Authentication, version, endpoint and certificate failures stop retrying. Correct the connection in Settings, save and Start capture to recover. Transient failures use one
 retry timer with backoff from 500 ms to 8 seconds. Existing history remains
 available, and a held selection stays in place through reconnect.
 

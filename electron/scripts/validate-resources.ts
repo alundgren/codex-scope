@@ -95,10 +95,14 @@ async function launch(root: string, baseline = false) {
   try {
     const page = await app.firstWindow();
     await page.waitForSelector('html[data-ready="true"]');
-    if (!baseline)
+    if (!baseline) {
+      await page.evaluate(() => window.scope.capture(true));
+      await page.locator("#functions summary").click();
+      await page.locator('[data-tool="journal"]').click();
       await page.waitForFunction(
         () => document.querySelector<HTMLElement>(".connection")!.textContent === "Connected",
       );
+    }
     await page.evaluate(
       () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
     );

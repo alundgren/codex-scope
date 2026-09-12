@@ -2,8 +2,7 @@
 
 The task is to see what Codex emits, find an event, and inspect its input without losing the current reading position. The selected design is the [Event journal prototype](docs/mockups/event-journal-v2.html). Open the HTML file locally in a browser. The [Electron build handoff](docs/mockups/event-journal-v2-notes.md) supplies implementation boundaries and acceptance checks. The prototype is synthetic, not a running Electron application.
 
-The [Electron implementation](electron/README.md) starts a temporary recording
-in Live. With a configured collector it receives live version 1 events. Synthetic
+The [Electron implementation](electron/README.md) opens a quiet idle view with capture stopped. The compact Functions menu searches Event journal, Analyze session, PR review and Settings. PR review states that it is not available yet. Start capture requires valid connection settings; Stop capture retains history and analysis state. The event journal starts its viewing position in Live. With capture active it receives live version 1 events. Synthetic
 development mode uses five seed fixtures and one new event each second. Selecting a row holds that event, its visible neighbors, and payload
 offset while arrivals continue. The Live label resumes following. Three to five
 nearby rows fit the window, with three above the payload at narrow widths.
@@ -47,7 +46,7 @@ The journal's left pin is a vertical scrubber. The top is the oldest matching re
 
 Arrow Up and Left select the previous event; Arrow Down and Right select the next event. Home selects the oldest retained match; End selects Live. Page Up and Page Down move five matching events. The mouse wheel over the journal moves through events with bounded updates. Support touch dragging. Expose a named vertical slider with its current receive time and hook, or Live, as its accessible value. Event rows remain keyboard-operable buttons.
 
-Selecting an event or scrubbing away from Live freezes following while capture continues. Incoming events do not change the selected event, visible neighborhood, or payload scroll position. Count new matching events separately. Returning to Live clears this count and selects the newest matching event. Normal application startup starts in Live; the prototype deliberately opens a populated historical event to demonstrate inspection.
+Selecting an event or scrubbing away from Live freezes following while capture continues. Incoming events do not change the selected event, visible neighborhood, or payload scroll position. Count new matching events separately. Returning to Live clears this count and selects the newest matching event. Normal application startup keeps capture stopped; the journal viewing position starts in Live; the prototype deliberately opens a populated historical event to demonstrate inspection.
 
 Connection and viewing mode are separate. Show whether the viewer is connected and whether its position is held. Live while disconnected does not reconnect the collector or recover missed events. Reconnecting starts a new live connection and preserves a visible coverage gap with an unknown loss count. It does not move a user who is inspecting history.
 
@@ -101,8 +100,7 @@ deletion followed by fresh setup, without requiring a separate management comman
 
 The analyzer is one session workspace with Results, Search trail, Agent routing
 and Recommendations views. The four [concepts](docs/mockups/session-analyzer.html)
-are visual references; the implemented workspace consolidates their session and
-model controls. Desktop setup uses compact inline labels and places snapshot
+are visual references. Session controls remain in the analyzer; diagnosis model selection lives in Settings. Desktop setup uses compact inline labels and places snapshot
 coverage beside the run selector, keeping all setup controls visible. The title,
 tabs and filters use less vertical padding to leave more room for findings.
 Keep the event journal available with its held reading position.
@@ -131,3 +129,5 @@ when an old run is evicted, and clear all analysis state with recording generati
 changes. CLI absence, invalid model, unavailable authentication, invalid output,
 resource limits and cancellation keep previous evidence readable and offer a
 new analysis attempt.
+
+Settings accepts a collector origin or a Linux pairing URL, extracts the token into a masked input, and clears it after saving. Existing tokens are never displayed. Invalid links and failed saves preserve the previous connection and provide a retry path. Successful saves stop capture, preserve retained history and require Start capture to resume. Imported command-line files remain untouched, and the form explains their next-launch override. Moving between tools keeps active task state and reading positions. Operational capture state always restarts off.

@@ -67,6 +67,9 @@ async function record(name: string, action: () => Promise<unknown>) {
   console.log(`Measured ${name}.`);
 }
 try {
+  await page.evaluate(() => window.scope.capture(true));
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="journal"]').click();
   await page.waitForFunction(
     () => document.querySelector<HTMLElement>(".connection")!.textContent === "Connected",
   );

@@ -173,7 +173,7 @@ class History extends EventEmitter {
       : [data: HistoryOperations[Operation]["data"]]
   ): Promise<Reply<HistoryOperations[Operation]["result"]>> {
     const data = args[0] ?? {};
-    const control = operation === "clear" || operation === "close";
+    const control = operation === "clear" || operation === "close" || operation === "capture";
     if (this.closed)
       return Promise.resolve({
         error:

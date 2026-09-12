@@ -56,14 +56,22 @@ function calls(session = "analysis-session") {
   });
 }
 async function openSession(page: Page, session = "analysis-session") {
+  await page.locator("#functions summary").click();
   await page.locator("#open-analysis").click();
   await expect(
     page.locator(`#analysis-session option[value='${JSON.stringify(session)}']`),
   ).toHaveCount(1);
   await page.locator("#analysis-session").selectOption(JSON.stringify(session));
 }
-async function analyze(page: Page, model = "gpt-5.6-luna") {
+async function selectModel(page: Page, model: string) {
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="settings"]').click();
   await page.locator("#analysis-model").fill(model);
+  await page.locator("#functions summary").click();
+  await page.locator("#open-analysis").click();
+}
+async function analyze(page: Page, model = "gpt-5.6-luna") {
+  await selectModel(page, model);
   await page.locator("#analysis-start").click();
   await expect(page.locator("#analysis-run option").last()).toContainText("completed");
 }
@@ -75,6 +83,8 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
     await append(app, calls());
     await page.locator(".event").first().click();
     const journalSelection = await page.locator("#payload").getAttribute("data-event");
+    await page.locator("#capture").click();
+    await expect(page.locator(".connection")).toHaveText("Stopped");
     await openSession(page);
     await expect(page.locator("#analysis-start")).toBeEnabled();
     await capture(page, info, "01-model-choice");
@@ -169,8 +179,10 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
       return window.scope.analysisList(value.generation);
     });
     expect(runs.runs).toHaveLength(1);
-    await page.locator("#open-analysis").click();
+    await page.locator("#functions summary").click();
+    await page.locator('[data-tool="journal"]').click();
     await expect(page.locator("#payload")).toHaveAttribute("data-event", journalSelection!);
+    await page.locator("#functions summary").click();
     await page.locator("#open-analysis").click();
     await expect(page.locator(`.analysis-call[data-call="${focused}"]`)).toHaveAttribute(
       "aria-pressed",
@@ -186,10 +198,10 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
       .evaluate((node) => node.scrollIntoView({ block: "nearest" }));
     await capture(page, info, "08-narrow-recommendations");
     await page.locator("#analysis-settings-toggle").click();
-    await expect(page.locator("#analysis-model")).toBeVisible();
+    await expect(page.locator("#analysis-session")).toBeVisible();
     await capture(page, info, "08b-narrow-model-controls");
     await page.locator("#analysis-settings-toggle").click();
-    await expect(page.locator("#analysis-model")).not.toBeVisible();
+    await expect(page.locator("#analysis-session")).not.toBeVisible();
   } finally {
     await app.close();
     await rm(root, { recursive: true, force: true });
@@ -207,7 +219,7 @@ test("model comparison preserves the old run and snapshot with failure, cancel a
     const originalFocus = await page
       .locator('.analysis-call[aria-pressed="true"]')
       .getAttribute("data-call");
-    await page.locator("#analysis-model").fill("test-slow");
+    await selectModel(page, "test-slow");
     await page.locator("#analysis-start").click();
     await expect(page.locator("#analysis-status")).toContainText("Your selected run remains open");
     await expect(page.locator("#analysis-run")).toHaveValue(firstRun);
@@ -227,7 +239,7 @@ test("model comparison preserves the old run and snapshot with failure, cancel a
     await page.locator("#analysis-run").selectOption(cancelled!);
     await expect(page.locator("#analysis-status")).toContainText("cancelled");
     await capture(page, info, "10-cancelled");
-    await page.locator("#analysis-model").fill("test-fail");
+    await selectModel(page, "test-fail");
     await page.locator("#analysis-start").click();
     await expect(
       page.locator("#analysis-run option").filter({ hasText: "test-fail" }),
@@ -242,7 +254,7 @@ test("model comparison preserves the old run and snapshot with failure, cancel a
     await append(app, calls("another-session"));
     await append(app, calls().slice(0, 1));
     await page.locator("#analysis-run").selectOption(firstRun);
-    await page.locator("#analysis-model").fill("test-success");
+    await selectModel(page, "test-success");
     await page.locator("#analysis-start").click();
     await expect(
       page.locator("#analysis-run option").filter({ hasText: "test-success" }),
@@ -254,7 +266,7 @@ test("model comparison preserves the old run and snapshot with failure, cancel a
     await page.locator("#analysis-run").selectOption(successful!);
     await expect(page.locator(".analysis-call")).toHaveCount(12);
     await page.locator("#analysis-fresh").check();
-    await page.locator("#analysis-model").fill("test-fresh");
+    await selectModel(page, "test-fresh");
     await page.locator("#analysis-start").click();
     await expect(
       page.locator("#analysis-run option").filter({ hasText: "test-fresh" }),
@@ -386,7 +398,7 @@ test("expanded narrow analysis contains long payloads above the footer during fa
   try {
     await append(app, calls().slice(0, 4));
     await openSession(page);
-    await page.locator("#analysis-model").fill("test-fail");
+    await selectModel(page, "test-fail");
     await page.locator("#analysis-start").click();
     await expect(page.locator("#analysis-run option:checked")).toContainText("failed");
     await page.locator(".analysis-call").first().click();
@@ -394,7 +406,7 @@ test("expanded narrow analysis contains long payloads above the footer during fa
     await expect(page.locator(".analysis-payload")).toContainText('"tool_response"');
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(660, 860));
     await page.locator("#analysis-settings-toggle").click();
-    await expect(page.locator("#analysis-model")).toBeVisible();
+    await expect(page.locator("#analysis-session")).toBeVisible();
     await expect(page.locator("#analysis-status")).not.toBeEmpty();
     await page.locator("#analysis-detail").evaluate((element) => {
       element.scrollTop = 350;
@@ -502,6 +514,7 @@ test("narrow journal keeps connection transitions visible", async ({}, info) => 
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
     );
+    await page.locator("#capture").click();
     await expect(page.locator(".connection")).toHaveText("Connecting…");
     await expect(page.locator(".connection")).toBeVisible();
     await capture(page, info, "22-narrow-connecting");

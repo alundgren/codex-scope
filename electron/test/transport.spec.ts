@@ -41,6 +41,9 @@ async function launch(
   });
   const page = await app.firstWindow();
   await page.waitForSelector('html[data-ready="true"]');
+  await page.locator("#capture").click();
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="journal"]').click();
   return { app, page, root, video: page.video()! };
 }
 async function capture(page: Page, info: TestInfo, name: string) {
@@ -212,7 +215,7 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     await page.locator("#clear").click();
     await page.locator("#clear").click();
     await expect(page.locator("#notice")).toContainText("Temporary recording files remain");
-    await expect(page.locator(".connection")).toHaveText("Disconnected");
+    await expect(page.locator(".connection")).toHaveText("Stopped");
     await expect(page.locator("#entries")).toHaveText("Temporary history is unavailable.");
     await expect(page.getByRole("button", { name: "Reset filters" })).toHaveCount(0);
     expect((await page.locator("#notice").innerText()).match(/Clear failed/g)).toHaveLength(1);

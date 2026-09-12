@@ -19,6 +19,7 @@
     "measure:history": "vp exec node scripts/measure-history.ts",
     "measure:navigation": "vp exec node scripts/measure-navigation.ts",
     "test:collector": "vp exec node scripts/collector-smoke.ts",
+    "measure:capture": "vp exec node scripts/measure-capture.ts",
     "measure:transport": "vp exec node scripts/measure-transport.ts",
     "validate:visual": "vp exec node scripts/validate-visual.ts",
     "validate:resources": "vp run build && vp exec node scripts/desktop.ts vp exec node scripts/validate-resources.ts",

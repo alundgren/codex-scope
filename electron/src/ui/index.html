@@ -11,12 +11,74 @@
   <body>
     <main>
       <header>
-        <h1>Event journal</h1>
+        <h1>Codex Scope</h1>
         <div class="header-actions">
-          <span class="connection" role="status">Starting…</span
-          ><button id="open-analysis">Analyze session</button>
+          <span class="connection" role="status">Stopped</span>
+          <button id="capture">Start capture</button>
+          <details id="functions">
+            <summary>Functions</summary>
+            <div class="function-menu">
+              <input
+                id="function-search"
+                type="search"
+                aria-label="Search functions"
+                placeholder="Find a function…"
+                maxlength="80"
+              />
+              <button data-tool="journal">Event journal</button>
+              <button data-tool="analysis" id="open-analysis">Analyze session</button>
+              <button data-tool="review">PR review</button>
+              <button data-tool="settings">Settings</button>
+              <span id="function-empty" hidden>No matching functions</span>
+            </div>
+          </details>
         </div>
       </header>
+      <section id="idle" class="tool-page">
+        <p>Choose a function to begin. Capture is stopped.</p>
+      </section>
+      <section id="review-entry" class="tool-page" hidden>
+        <p>PR review is not available yet.</p>
+      </section>
+      <section id="settings" class="tool-page" hidden>
+        <form id="connection-settings">
+          <label
+            >Collector URL<input
+              id="collector-url"
+              type="text"
+              maxlength="4096"
+              placeholder="https://host:port"
+              spellcheck="false"
+              autocomplete="off"
+          /></label>
+          <p>Paste an origin URL or a Linux pairing URL. Pairing links fill the token below.</p>
+          <label
+            >Token<input
+              id="collector-token"
+              type="password"
+              maxlength="256"
+              autocomplete="new-password"
+          /></label>
+          <p id="token-state">Enter a token.</p>
+          <label
+            >Diagnosis model<input
+              id="analysis-model"
+              value="gpt-5.6-luna"
+              list="analysis-models"
+              maxlength="120"
+              spellcheck="false"
+          /></label>
+          <datalist id="analysis-models"><option value="gpt-5.6-luna"></option></datalist>
+
+          <p id="settings-override" hidden>
+            Command-line connection settings were imported for this launch. Saving applies here; the
+            command-line file overrides saved connection settings again on the next launch.
+          </p>
+          <p>Saving stops capture and keeps retained events. Start capture when ready.</p>
+          <button type="submit" id="settings-save">Save settings</button>
+          <p id="settings-status" role="status"></p>
+        </form>
+      </section>
       <div class="toolbar">
         <input
           id="search"
@@ -104,7 +166,7 @@
               aria-controls="analysis-setup"
               hidden
             >
-              Session and model controls
+              Session controls
             </button>
             <button id="analysis-cancel-compact" hidden>Cancel analysis</button>
           </div>
@@ -115,15 +177,6 @@
                   <option value="">Choose a session</option>
                 </select></label
               >
-              <label
-                >Analysis model<input
-                  id="analysis-model"
-                  value="gpt-5.6-luna"
-                  list="analysis-models"
-                  maxlength="120"
-                  spellcheck="false"
-              /></label>
-              <datalist id="analysis-models"><option value="gpt-5.6-luna"></option></datalist>
               <button id="analysis-start">Analyze</button
               ><button id="analysis-cancel" hidden>Cancel analysis</button>
             </div>

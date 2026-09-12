@@ -109,6 +109,8 @@ export interface TransportStatus {
 }
 export interface HistoryStatus {
   generation: number;
+  capturing?: boolean;
+  synthetic?: boolean;
   total: number;
   accepted: number;
   first: EventPosition | null;
@@ -161,6 +163,8 @@ export interface HistoryOptions {
   directory: string;
   fixture: string;
   continuous?: boolean;
+  synthetic?: boolean;
+  settingsFile?: string;
   testMode?: boolean;
   connectionFile?: string | null;
   optionalConnection?: boolean;
@@ -175,7 +179,22 @@ export interface Faults {
   searchMs?: number;
   transportDelay?: number;
 }
+export interface ConnectionSettings {
+  endpoint: string;
+  hasToken: boolean;
+  model: string;
+  commandLineOverride: boolean;
+  error?: string;
+}
+export interface SettingsEdit {
+  endpoint: string;
+  token: string;
+  model: string;
+}
 export interface ScopeAPI extends AnalysisAPI {
+  settings(): Promise<ConnectionSettings>;
+  saveSettings(value: SettingsEdit): Promise<ConnectionSettings>;
+  capture(start: boolean): Promise<Reply<{ ok: boolean }>>;
   status(): Promise<HistoryStatus>;
   onStatus(callback: (value: HistoryStatus) => void): void;
   onHidden(callback: () => void): void;
@@ -192,6 +211,9 @@ export interface ScopeAPI extends AnalysisAPI {
   clear(generation: number): Promise<Reply<{ ok: boolean; generation?: number }>>;
 }
 export interface HistoryOperations {
+  settings: { data: Record<string, never>; result: ConnectionSettings };
+  saveSettings: { data: { value: SettingsEdit }; result: ConnectionSettings };
+  capture: { data: { start: boolean }; result: { ok: boolean } };
   analysis: { data: { session: string }; result: AnalysisSnapshot };
   open: { data: Record<string, never>; result: { ok: boolean } };
   inspect: { data: { id: number | null; rows: number }; result: Inspection };
