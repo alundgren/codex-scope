@@ -1,0 +1,416 @@
+{
+  "inspectedAt": "2026-09-12T01:24:13.939736+00:00",
+  "reviewer": "Primary agent, final combined review",
+  "source": "0a1f8102b432aa57d12679d62d5f0b42c93c13b2",
+  "visualManifestSha256": "37cce5fc9de7b3b5dd9f79e3112bff09b3347a1e3e4e109749337dfcd4c0cdaa",
+  "allScreenshotsInspected": true,
+  "allRecordingsSampledAndInspected": true,
+  "screenshots": 109,
+  "recordings": 30,
+  "sampledVideoFrames": 307,
+  "contactSheets": 60,
+  "method": "Inspected every screenshot and every one-second video sample in contact sheets, then seven listed original-resolution screenshots. Frames were extracted from the actual Electron recordings, not a browser recreation. Contact sheets are review aids; original screenshots and recordings are retained in this directory.",
+  "nativeOriginals": [
+    {
+      "path": "reference-desktop.png",
+      "sha256": "d7f11fa0fa1f68456112f5d41df59ee2733427f9eee6b9467af221d50b4ad0c2"
+    },
+    {
+      "path": "transport-desktop.png",
+      "sha256": "f7ec70dc349a7d608976ed9a7db7e9dcd5fa5d99e2f183c119e250079b8428ff"
+    },
+    {
+      "path": "reference-narrow.png",
+      "sha256": "4367120fb7bfb5d4cf2242a5651cd075307bdcd3c64ef9660b074f2087204cae"
+    },
+    {
+      "path": "transport-narrow.png",
+      "sha256": "b6b8f43183f3b9a975ee3c790ac879a7ee18c7142d064f558d927ba7b4151e01"
+    },
+    {
+      "path": "worker-exit.png",
+      "sha256": "1bc33303d38ae8c3ee59ccb14e4842dc57a228c927e1785230616584d76047eb"
+    },
+    {
+      "path": "worker-exit-narrow.png",
+      "sha256": "e4775f5317b5beb0eb9664036d131b5322930d90f711df96ca04db1431a343c5"
+    },
+    {
+      "path": "clear-worker-failed.png",
+      "sha256": "43dd1f9d0eb32fe3367691ac2ea24a3872cd199ce5956c85c4533b7b2dae30f9"
+    }
+  ],
+  "groups": [
+    {
+      "name": "screenshots",
+      "items": 109
+    },
+    {
+      "name": "authentication-walkthrough",
+      "items": 4
+    },
+    {
+      "name": "cleanup-failure",
+      "items": 4
+    },
+    {
+      "name": "cleanup-recovery",
+      "items": 4
+    },
+    {
+      "name": "clear-old-timeout",
+      "items": 8
+    },
+    {
+      "name": "clear-worker-failure",
+      "items": 5
+    },
+    {
+      "name": "clipboard-timeout",
+      "items": 8
+    },
+    {
+      "name": "conflict-walkthrough",
+      "items": 10
+    },
+    {
+      "name": "crash-recovery",
+      "items": 4
+    },
+    {
+      "name": "empty",
+      "items": 4
+    },
+    {
+      "name": "failed-navigation-walkthrough",
+      "items": 8
+    },
+    {
+      "name": "filters-walkthrough",
+      "items": 13
+    },
+    {
+      "name": "history-walkthrough",
+      "items": 30
+    },
+    {
+      "name": "intake-timeout",
+      "items": 12
+    },
+    {
+      "name": "late-target-walkthrough",
+      "items": 15
+    },
+    {
+      "name": "late-work",
+      "items": 10
+    },
+    {
+      "name": "lifecycle",
+      "items": 8
+    },
+    {
+      "name": "long-metadata",
+      "items": 4
+    },
+    {
+      "name": "narrow-walkthrough",
+      "items": 20
+    },
+    {
+      "name": "oversized",
+      "items": 4
+    },
+    {
+      "name": "queries-walkthrough",
+      "items": 14
+    },
+    {
+      "name": "recovered",
+      "items": 4
+    },
+    {
+      "name": "retained-bound",
+      "items": 11
+    },
+    {
+      "name": "scrubber-walkthrough",
+      "items": 28
+    },
+    {
+      "name": "security",
+      "items": 5
+    },
+    {
+      "name": "stalled-walkthrough",
+      "items": 12
+    },
+    {
+      "name": "transport-walkthrough",
+      "items": 25
+    },
+    {
+      "name": "unreadable",
+      "items": 3
+    },
+    {
+      "name": "walkthrough",
+      "items": 18
+    },
+    {
+      "name": "worker-exit-walkthrough",
+      "items": 8
+    },
+    {
+      "name": "worker-restart-walkthrough",
+      "items": 4
+    }
+  ],
+  "sheetHashes": [
+    {
+      "path": "authentication-walkthrough-1.png",
+      "sha256": "a5875e85f8cad990763d5aa13aa2286ade25dc4a22fb5e86e5ffd7984adbddbc"
+    },
+    {
+      "path": "cleanup-failure-1.png",
+      "sha256": "4989048df5d41b6e60e4919211eccbbdb3b0e88fea1b63e406acd0250df2ca09"
+    },
+    {
+      "path": "cleanup-recovery-1.png",
+      "sha256": "1a480cf571b981387016b7102ab9ae958995807f3091bb1bd79426a07ef1c4bf"
+    },
+    {
+      "path": "clear-old-timeout-1.png",
+      "sha256": "d08151e7f398c6a83785a5d510d5ccdeeda1e6eca7550a05db72bce6b4f5aa06"
+    },
+    {
+      "path": "clear-worker-failure-1.png",
+      "sha256": "59a8fefe0f8bd5c1cd4657ef03cd60ebdae5402ad3df35c7e7a117bf2db1f6e0"
+    },
+    {
+      "path": "clipboard-timeout-1.png",
+      "sha256": "4c8bd0196d9494c4345227ee7807d63a65caf8cdd3b6771664b980307989b8d1"
+    },
+    {
+      "path": "conflict-walkthrough-1.png",
+      "sha256": "8874b808bfbb07f7d10cacff041a1324ac68dd97bd1ab4f5eafa9f156fa560cc"
+    },
+    {
+      "path": "crash-recovery-1.png",
+      "sha256": "2326613b321fd4844ed87917fd2d3b3666575706573bbb70dbf363f3d9379630"
+    },
+    {
+      "path": "empty-1.png",
+      "sha256": "abd3e54b9c7625eb1db303a89da235bd3ca335827aeaeddb41066098855d16f4"
+    },
+    {
+      "path": "failed-navigation-walkthrough-1.png",
+      "sha256": "766159a50c89659e40134566f86b96ab7cd219b808d3f58f2b3cd631fa66092b"
+    },
+    {
+      "path": "filters-walkthrough-1.png",
+      "sha256": "1793ce754565a801d1a9f944c47a85ed03174e4546445da6e208364019f7bd41"
+    },
+    {
+      "path": "filters-walkthrough-2.png",
+      "sha256": "2ec0289e6cba14eb09acbd7d1b8ef3d1fcbd7c8dcdd26ddac259fcf667cfa55d"
+    },
+    {
+      "path": "history-walkthrough-1.png",
+      "sha256": "3daf796405ea8bc42c3ca294b840c42ee8f381ac569c0d8c5b3310ba15a9922a"
+    },
+    {
+      "path": "history-walkthrough-2.png",
+      "sha256": "99ea272e14606d30d318629f09eab076e8f1d9e027838ec7a01a45b93d18aeb1"
+    },
+    {
+      "path": "history-walkthrough-3.png",
+      "sha256": "060cfe09ef74a6183c5cf993e207bd6c3a9f01b635cf750dd5fdcfe0b422b058"
+    },
+    {
+      "path": "intake-timeout-1.png",
+      "sha256": "910207f21a899aaff557dc8e2874f61f715ddef91f197fc8081e41a795dfdacf"
+    },
+    {
+      "path": "late-target-walkthrough-1.png",
+      "sha256": "848b97523f0df409e93ae2c98883596e22ae9d625df15cc70285ef5979d78ec4"
+    },
+    {
+      "path": "late-target-walkthrough-2.png",
+      "sha256": "ecdb1140eb4fc56442ebcc6e1f9d2ad1e5b695d829cf452d32be0c59c62762ab"
+    },
+    {
+      "path": "late-work-1.png",
+      "sha256": "88d328222ab250922cb2ecf4aa0e081f1ff8286d061103171e84ca6221b7ccf7"
+    },
+    {
+      "path": "lifecycle-1.png",
+      "sha256": "32ee1d6dc1e08b1a7a3af6d554205c6514224c9a6ad5935e1edba4b2deaecd73"
+    },
+    {
+      "path": "long-metadata-1.png",
+      "sha256": "6c80a865cc830325d67577d328b5dfb6b87e3764785be053d31e178fd6f47fbe"
+    },
+    {
+      "path": "narrow-walkthrough-1.png",
+      "sha256": "fdd1c1c12e08d69ef1bb80a07d6bff90d1467df4466e3147e83fcf347743127b"
+    },
+    {
+      "path": "narrow-walkthrough-2.png",
+      "sha256": "5207181f2bee33e85c1529d293060651deccf41080d4673caa21d709edcfbcd6"
+    },
+    {
+      "path": "oversized-1.png",
+      "sha256": "f2621b909c7ef2ae31d0b7d8bad40c95be60b4ae612cce9efec0ca99710035be"
+    },
+    {
+      "path": "queries-walkthrough-1.png",
+      "sha256": "ee86e8ea82f1be633b962d95d073481e805fd085023e43cf23b5aa46e6109552"
+    },
+    {
+      "path": "queries-walkthrough-2.png",
+      "sha256": "c49887eca1591a06ce3436738028d80f56259173f69a41baff6e4daa23b6e0ab"
+    },
+    {
+      "path": "recovered-1.png",
+      "sha256": "590c775902312f87faf9c7fc163e5885dc17b05e9a486293e39d528351e11642"
+    },
+    {
+      "path": "retained-bound-1.png",
+      "sha256": "f1a1ef7ef425a5e31f9c02692ec7bfa07750dc59a40168b2f01f735a3fa5dcc1"
+    },
+    {
+      "path": "screenshots-1.png",
+      "sha256": "8930bdd2de6955f2bc5b6cabd323ac98b892f9b48c06110b98bdf499a8be9f2e"
+    },
+    {
+      "path": "screenshots-10.png",
+      "sha256": "262376129318e766133d017b89dc0b874d9913726023bf7c799a819746942e54"
+    },
+    {
+      "path": "screenshots-11.png",
+      "sha256": "0a515bac8b8b01e070eba00e82c41a9ba0aa36f7869e0aa5abe3e82e21d37293"
+    },
+    {
+      "path": "screenshots-12.png",
+      "sha256": "1ed8496134480c924c60455027ef4c87e1abcf21c44ae5cdffbf24d702e62033"
+    },
+    {
+      "path": "screenshots-13.png",
+      "sha256": "458d3f060f125e7db0e3847b0ec90eb4d4ab0e543ec172cd7633bb52b3336e27"
+    },
+    {
+      "path": "screenshots-14.png",
+      "sha256": "4e8331aae6b1d5c986e487227fa30c2d37e6d39c06f44a632cdecf1a3acb0d9f"
+    },
+    {
+      "path": "screenshots-15.png",
+      "sha256": "2cc4d63ce68f17525becc2dc68eaaa2d436924cecad5760025ac85d9e56004cf"
+    },
+    {
+      "path": "screenshots-16.png",
+      "sha256": "7cdce349db48555723880cde921c96a6e14bd4eb6a9cb52a20b9f2f679543125"
+    },
+    {
+      "path": "screenshots-17.png",
+      "sha256": "8c91b1e95e002505d78f41e67563743d2f719dfd02f5c5c858024a1cdb023245"
+    },
+    {
+      "path": "screenshots-18.png",
+      "sha256": "500dba74b926071bd9162da97449639c299a19ec4f6510ff3ec7f30de74e26bb"
+    },
+    {
+      "path": "screenshots-19.png",
+      "sha256": "d1ee002edf07dce6bd6c81e99ecdee1f976247c468280e27e1800d4c3ebacbcd"
+    },
+    {
+      "path": "screenshots-2.png",
+      "sha256": "c2edf0ec1af9221d7f6af6fa9755bfcb060832bb7b035ee0b91ac65c80ed2b45"
+    },
+    {
+      "path": "screenshots-3.png",
+      "sha256": "7372a31d42909f58f6eb41682bf10fa8c7c3e083408741671e6ea8c926d015b9"
+    },
+    {
+      "path": "screenshots-4.png",
+      "sha256": "260df4b55adfcf916322964816dcddfc852aa0869bf93ecac321d4ad88cccdde"
+    },
+    {
+      "path": "screenshots-5.png",
+      "sha256": "1595b49d67eeae8215f5ebe1ea0833f3e750af4ed0bc2822a6ca8a38a2833c45"
+    },
+    {
+      "path": "screenshots-6.png",
+      "sha256": "6e61f9e2448cd41698433cb526034dc297d7ddc2b27346c5b1429632bcd8f854"
+    },
+    {
+      "path": "screenshots-7.png",
+      "sha256": "375ee6832befeb45fd64f162eee6252425db9c6ad6c97f1b6e06a2ba65e59753"
+    },
+    {
+      "path": "screenshots-8.png",
+      "sha256": "1f5c9bd1bc625072ca11865085caa01c239f7cc7d70c0b542bf337f4b1b5b02f"
+    },
+    {
+      "path": "screenshots-9.png",
+      "sha256": "2fdafb1edd2e755e28bce78600a8e8923006edce0aaada62e8e1be8667a846de"
+    },
+    {
+      "path": "scrubber-walkthrough-1.png",
+      "sha256": "ee280f4be03162da25d4c78d6c07c05cb5dcf5022144aab57be26e1eb877b7c0"
+    },
+    {
+      "path": "scrubber-walkthrough-2.png",
+      "sha256": "e46ea3abdd604917c9eaef9e51eb3063240489d901dbe8794aa73c5d35ac4391"
+    },
+    {
+      "path": "scrubber-walkthrough-3.png",
+      "sha256": "817f74b881f4ef4ce62604e3d6653cbad5d42d3c507737df9c5d8ce9576d3372"
+    },
+    {
+      "path": "security-1.png",
+      "sha256": "a74377b4eb8091d16417f90c93d82287a0a1fa1778523d718f577320b93ecfb9"
+    },
+    {
+      "path": "stalled-walkthrough-1.png",
+      "sha256": "edf7f3f3842651e2fe54c6df6dfb5532a69a9531b3d80d45f76218ddbd2f38e0"
+    },
+    {
+      "path": "transport-walkthrough-1.png",
+      "sha256": "0f61273584ccccf7e6cda250d9dccd7b920288dc18d6a0e60eefbf45b9b7f203"
+    },
+    {
+      "path": "transport-walkthrough-2.png",
+      "sha256": "71f969293aa87b618a3cd977484326d4e32e5fb1d81649465bdee28995cf673c"
+    },
+    {
+      "path": "transport-walkthrough-3.png",
+      "sha256": "0cd3373ed65cdd45614fe80969c3deb5d5c76a53ca2d69c0491c27374035f40d"
+    },
+    {
+      "path": "unreadable-1.png",
+      "sha256": "f76f3313da001c39b52cd4829591f859dd7abdad0d48d44828aa55bda1cd2981"
+    },
+    {
+      "path": "walkthrough-1.png",
+      "sha256": "29d20ba2130643bfe4884f7f30d1b7e8dd47c80709375cad4c214ca33d4c2ef4"
+    },
+    {
+      "path": "walkthrough-2.png",
+      "sha256": "b317b4d82b0d3ca5ac31ffb8055d3ad2b48bf8235c3f837e8cefa952d7b8c88e"
+    },
+    {
+      "path": "worker-exit-walkthrough-1.png",
+      "sha256": "c96e157804161dacc618cbea9128af4a22c3731e75cf7b5d460fc3f3fce34966"
+    },
+    {
+      "path": "worker-restart-walkthrough-1.png",
+      "sha256": "3f0c87202d024eadfece5a8cd86503c6d0e8c3b6bfbce9a29b9c1982d7a6aadc"
+    }
+  ],
+  "findings": "No further visual discrepancy after the two documented corrections. Disabled history remains readable; selected rows, text and offset survive worker failure and refused Clear.",
+  "limitations": [
+    "One-frame-per-second recording inspection does not inspect every encoded video frame.",
+    "Linux synthetic evidence only; macOS and hardware touch/trackpad input remain unverified."
+  ]
+}

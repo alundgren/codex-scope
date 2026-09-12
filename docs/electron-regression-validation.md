@@ -6,6 +6,11 @@ collector. The standard suite needs no Linux application, account hook, private
 configuration, trust change or proxy. The real collector smoke remains a
 separate optional command.
 
+This document preserves issue #9's original calibration and clean-source
+evidence. The later [combined review](electron-final-review.md) records two
+corrections found while reviewing the full PR stack, plus fresh visual and
+resource validation of those corrections.
+
 ## Reproduce from source
 
 See [Electron prerequisites](../electron/README.md#clean-linux-checkout) for the
