@@ -26,7 +26,7 @@ built-in APIs and requires no WebSocket package.
 
 The exact [Node 24.20.0 SQLite documentation](https://github.com/nodejs/node/blob/v24.20.0/doc/api/sqlite.md)
 confirms synchronous database calls, the zero-wait busy timeout, and defensive
-mode. All SQLite access, payload parsing, file accounting and deletion therefore
+mode. All recording SQLite access, payload parsing, file accounting and deletion therefore
 run in one worker thread. Neither UI thread opens a database.
 
 [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) also provides a
@@ -39,7 +39,10 @@ performance ranking.
 
 [Electron's performance guidance](https://www.electronjs.org/docs/latest/tutorial/performance)
 supports moving CPU-heavy work away from the main process thread. One worker
-thread adds a bounded V8 heap in the main process, with no extra OS process.
+thread adds a bounded V8 heap in the main process, with no extra OS process
+for history. Optional [session analysis](session-analysis.md) uses the local
+Codex CLI in a separate, bounded process group so the viewer can cancel it and
+enforce time, output, memory and temporary-file limits. It starts only on request.
 [SQLite's pragma documentation](https://sqlite.org/pragma.html) says journal size
 limits apply after commit or checkpoint. The recording therefore budgets a full
 rollback journal alongside the capped database, uses TRUNCATE journaling, and

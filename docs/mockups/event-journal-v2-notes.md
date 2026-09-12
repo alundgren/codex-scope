@@ -1,6 +1,6 @@
 # Electron build handoff
 
-Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. This is the sole UI build target.
+Build the selected [Event journal prototype](event-journal-v2.html) using the behavior in [ux.md](../../ux.md). The HTML is self-contained and can be opened directly in a browser. It requires no install, running collector, or external assets. The window title is Codex Scope. Live uses quiet warm colors and retains its existing navigation behavior. This is the journal build target. The [session analyzer](session-analyzer-notes.md) is a companion workspace.
 
 The prototype is a synthetic design reference. Demo controls outside the window
 are not application controls. Real hook compatibility, private proxy behavior
@@ -30,7 +30,7 @@ The UI mockup intentionally simplifies several implementation concerns. Its fixt
 
 | Acceptance check | Required result |
 | --- | --- |
-| Start with fixtures | Codex Scope title, one Event journal view title, no subheadings or event numbers, session and hook filters, neutral Live state. |
+| Start with fixtures | Codex Scope title, one Event journal title while the journal is open, no subheadings or event numbers, session and hook filters, neutral Live state. |
 | Scrub in both directions | Pointer, touch, arrows, Page keys, Home, and End navigate matching events; the left journal has no scrollbar. |
 | Select the newest event | History stays held until the distinct Live endpoint is selected. |
 | Receive while inspecting | Selected event, rows, and payload offset stay fixed; the matching new-event count increases. |

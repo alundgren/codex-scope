@@ -105,9 +105,8 @@ work and starts a new recording and connection only after successful cleanup.
 ## Build and validation
 
 `vp run build` compiles TypeScript with Vite+ Pack and bundles the renderer with Vite+.
-The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter, framework or extra
-OS process. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
-Playwright's FFmpeg binary are excluded from the bundle. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and synthetic fixtures enter `dist/app`.
+The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis starts one bounded transient Codex CLI process group. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
+Playwright's FFmpeg binary are excluded from the bundle. Production bundles are minified. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and synthetic fixtures enter `dist/app`.
 
 `vp run check` runs Vite+ formatting, lint, and strict TypeScript checks. `vp run dev` builds and starts Electron with synthetic data; rerun it after edits. Unit tests run through Vite+ Vitest on Node, and desktop scenarios use Playwright with actual Electron.
 
@@ -279,3 +278,11 @@ Metadata is display-only and never changes Copy JSON. An older collector still
 works using `cwd` or ID labels. Working-directory fallback is not verified Git
 metadata. Git labels can lag behind branch changes as described in the
 [collector documentation](../linux/README.md#git-session-labels).
+
+## Session analyzer
+
+Choose **Analyze session** in the viewer to inspect one retained session through
+Results, Search trail, Agent routing and Recommendations. Select the analysis
+model before running Codex. Switching views reuses the selected run and focused
+call. See [session analysis](../docs/session-analysis.md) for CLI requirements,
+evidence definitions, resource limits, temporary state and capture limitations.
