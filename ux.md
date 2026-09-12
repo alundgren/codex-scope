@@ -100,10 +100,13 @@ and Recommendations views. The four [concepts](docs/mockups/session-analyzer.htm
 are visual references; the implemented workspace consolidates their session and
 model controls. Keep the event journal available with its held reading position.
 Use one visible title, Session analyzer, and necessary controls without additional
-subheadings.
+subheadings. Narrow controls scroll within a bounded area so evidence panes and
+the footer remain usable. Keep the connection indicator visible at all widths;
+the narrow journal divides its available height between events and payload.
 
 The selected session, analysis run and focused call are shared. Each view keeps
-its own search, sort and scroll state. Switching views never runs a model.
+its own search, observed-model filter, sort and scroll state. Switching views
+never runs a model.
 Changing analysis models can reuse the same bounded evidence snapshot; New
 snapshot is explicit. Completed results remain open while another analysis runs. Retrying a failed
 or cancelled run selects the new attempt so its outcome is visible.

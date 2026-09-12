@@ -19,8 +19,9 @@ Results ranks observed textual response sizes. Search trail displays captured
 call order. Agent routing groups by the model identifier supplied in the hook;
 it does not invent main/scout links. Recommendations shows model-generated
 findings with source call references, proposed changes and keep/dismiss/undo.
-The selected call follows view changes. Filters and scroll positions belong to
-their respective views, and a hidden selection offers **Show selected call**.
+The selected call follows view changes. Search, observed-model filters, sort and
+scroll positions belong to their respective views. A hidden selection offers
+**Show selected call**.
 The original event journal remains available with its reading position.
 
 Changing views does not invoke Codex. Analysis runs keep separate model choices,

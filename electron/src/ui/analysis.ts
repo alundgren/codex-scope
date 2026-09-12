@@ -9,16 +9,15 @@ import type { HistoryStatus, ChoicePage, Direction } from "../types.ts";
 import { requiredElement } from "./elements.ts";
 
 type View = "results" | "trail" | "routing" | "recommendations";
-type ViewState = { search: string; sort: string; scroll: number };
-type Workspace = { focus: number | null; group: string; views: Record<View, ViewState> };
+type ViewState = { search: string; group: string; sort: string; scroll: number };
+type Workspace = { focus: number | null; views: Record<View, ViewState> };
 const views: View[] = ["results", "trail", "routing", "recommendations"];
 const createWorkspace = (): Workspace => ({
   focus: null,
-  group: "",
   views: Object.fromEntries(
     views.map((view) => [
       view,
-      { search: "", sort: view === "results" ? "bytes" : "order", scroll: 0 },
+      { search: "", group: "", sort: view === "results" ? "bytes" : "order", scroll: 0 },
     ]),
   ) as Record<View, ViewState>,
 });
@@ -261,7 +260,8 @@ export function attachAnalysis(
     return (run?.snapshot.calls ?? [])
       .filter(
         (call) =>
-          (!current.group || (call.model ?? "@unknown") === current.group) &&
+          (!current.views[view].group ||
+            (call.model ?? "@unknown") === current.views[view].group) &&
           (!query ||
             `${call.command} ${call.tool} ${call.model ?? ""} ${call.actor ?? ""}`
               .toLowerCase()
@@ -324,7 +324,7 @@ export function attachAnalysis(
             ? "Response sizes unknown"
             : `${total.toLocaleString()} measured response bytes${unknown ? ` · ${unknown} sizes unknown` : ""}`;
         const control = button(`${name} · ${values.length} calls · ${measured}`, () => {
-          workspace().group = values[0].model ?? "@unknown";
+          workspace().views[view].group = values[0].model ?? "@unknown";
           draw();
         });
         control.className = "analysis-group-control";
@@ -373,10 +373,12 @@ export function attachAnalysis(
           `${finding.title} ${finding.detail} ${finding.suggestion}`
             .toLowerCase()
             .includes(query)) &&
-        (!workspace().group ||
+        (!workspace().views[view].group ||
           finding.callOrders.some((order) =>
             run?.snapshot.calls.some(
-              (call) => call.order === order && (call.model ?? "@unknown") === workspace().group,
+              (call) =>
+                call.order === order &&
+                (call.model ?? "@unknown") === workspace().views[view].group,
             ),
           )),
     );
@@ -450,7 +452,7 @@ export function attachAnalysis(
     if (absent && !noRecommendation)
       banner.append(
         button("Show selected call", () => {
-          workspace().group = "";
+          workspace().views[view].group = "";
           workspace().views[view].search = "";
           draw();
           content
@@ -628,7 +630,7 @@ export function attachAnalysis(
         (value) => option(value === "@unknown" ? "Model unknown" : value, value),
       ),
     );
-    group.value = current.group;
+    group.value = current.views[view].group;
     document
       .querySelectorAll<HTMLButtonElement>("[data-analysis-view]")
       .forEach((item) =>
@@ -757,11 +759,11 @@ export function attachAnalysis(
     drawBody();
   });
   group.addEventListener("change", () => {
-    workspace().group = group.value;
+    workspace().views[view].group = group.value;
     drawBody();
   });
   requiredElement("#analysis-reset").addEventListener("click", () => {
-    workspace().group = "";
+    workspace().views[view].group = "";
     workspace().views[view].search = "";
     workspace().views[view].scroll = 0;
     draw();

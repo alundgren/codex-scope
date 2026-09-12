@@ -59,7 +59,10 @@ export function sessionEvidence(
     omittedCalls: 0,
     coverageUnknown: true,
     evictedBeforeSnapshot: state.evicted ?? 0,
-    localDrops: 0,
+    localDrops: Math.min(
+      Number.MAX_SAFE_INTEGER,
+      Object.values(state.drops).reduce((total, count) => total + count, 0),
+    ),
     collectorDrops: state.transport?.collectorTotals ?? null,
   };
   const posts = new Set<string>();

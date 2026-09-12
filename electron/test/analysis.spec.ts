@@ -1,7 +1,8 @@
 import { test, expect, _electron, type TestInfo, type Page } from "@playwright/test";
 import { mkdtemp, readFile, mkdir, writeFile, rm } from "node:fs/promises";
 import path from "node:path";
-import { append, capture, state, source, frame } from "./navigation-helpers.ts";
+import { fakeCollector, fixtureHello, until } from "./fake-collector.ts";
+import { append, capture, state, source, frame, fault } from "./navigation-helpers.ts";
 
 async function launch(info: TestInfo, missing = false) {
   const root = await mkdtemp("/tmp/scope-analysis-ui-");
@@ -139,6 +140,22 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
     await expect(page.locator("#analysis-search")).toHaveValue("no such command");
     await page.getByRole("button", { name: "Show selected call" }).click();
     await expect(page.locator("#analysis-search")).toHaveValue("");
+    await page.locator("#analysis-group").selectOption("main-model-reported");
+    await expect(page.locator(".analysis-call")).toHaveCount(2);
+    await tab(page, "trail").click();
+    await expect(page.locator("#analysis-group")).toHaveValue("");
+    await page.locator("#analysis-group").selectOption("gpt-5.6-luna");
+    await expect(page.locator(".analysis-call")).toHaveCount(9);
+    for (let iteration = 0; iteration < 2; iteration++) {
+      await tab(page, "results").click();
+      await expect(page.locator("#analysis-group")).toHaveValue("main-model-reported");
+      await expect(page.locator(".analysis-call")).toHaveCount(2);
+      await tab(page, "trail").click();
+      await expect(page.locator("#analysis-group")).toHaveValue("gpt-5.6-luna");
+      await expect(page.locator(".analysis-call")).toHaveCount(9);
+    }
+    await capture(page, info, "06b-independent-model-filters");
+    await tab(page, "results").click();
     const runs = await page.evaluate(async () => {
       const value = await window.scope.status();
       return window.scope.analysisList(value.generation);
@@ -352,6 +369,157 @@ test("unsafe analysis storage preserves evidence and recovers after cleanup", as
     await capture(page, info, "18-analysis-storage-recovered");
   } finally {
     await app.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("expanded narrow analysis contains long payloads above the footer during failure", async ({}, info) => {
+  const { app, page, root } = await launch(info);
+  try {
+    await append(app, calls().slice(0, 4));
+    await openSession(page);
+    await page.locator("#analysis-model").fill("test-fail");
+    await page.locator("#analysis-start").click();
+    await expect(page.locator("#analysis-run option:checked")).toContainText("failed");
+    await page.locator(".analysis-call").first().click();
+    await page.getByRole("button", { name: "Load original payload", exact: true }).click();
+    await expect(page.locator(".analysis-payload")).toContainText('"tool_response"');
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(660, 860));
+    await page.locator("#analysis-settings-toggle").click();
+    await expect(page.locator("#analysis-model")).toBeVisible();
+    await expect(page.locator("#analysis-status")).not.toBeEmpty();
+    await page.locator("#analysis-detail").evaluate((element) => {
+      element.scrollTop = 350;
+    });
+    const layout = await page.evaluate(() => {
+      const footer = document.querySelector("footer")!.getBoundingClientRect();
+      const detail = document.querySelector("#analysis-detail")!.getBoundingClientRect();
+      const content = document.querySelector("#analysis-content")!.getBoundingClientRect();
+      return {
+        footerTop: footer.top,
+        footerBottom: footer.bottom,
+        detailBottom: detail.bottom,
+        contentBottom: content.bottom,
+        viewport: innerHeight,
+        footerOwnsPoint: !!document.elementFromPoint(200, footer.top + 10)?.closest("footer"),
+      };
+    });
+    expect(layout.detailBottom).toBeLessThanOrEqual(layout.footerTop);
+    expect(layout.contentBottom).toBeLessThanOrEqual(layout.footerTop);
+    expect(layout.footerBottom).toBeLessThanOrEqual(layout.viewport);
+    expect(layout.footerOwnsPoint).toBe(true);
+    await capture(page, info, "19-narrow-expanded-failure-long-payload");
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].setContentSize(360, 640),
+    );
+    await page.locator("#analysis-controls-region").evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    const smallLayout = await page.evaluate(() => ({
+      panel: document.querySelector("#analysis-detail")!.getBoundingClientRect().height,
+      bottom: document.querySelector("#analysis-detail")!.getBoundingClientRect().bottom,
+      footer: document.querySelector("footer")!.getBoundingClientRect().top,
+    }));
+    expect(smallLayout.panel).toBeGreaterThan(60);
+    expect(smallLayout.bottom).toBeLessThanOrEqual(smallLayout.footer);
+    await capture(page, info, "19b-minimum-expanded-failure-long-payload");
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(660, 860));
+    await page.locator("#analysis-controls-region").evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    await page.locator("#analysis-settings-toggle").click();
+    await capture(page, info, "20-narrow-collapsed-failure-long-payload");
+  } finally {
+    await app.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("analysis coverage retains worker drops after storage recovery", async ({}, info) => {
+  const { app, page, root } = await launch(info);
+  try {
+    await append(app, calls().slice(0, 4));
+    await fault(app, { write: true });
+    await append(app, [frame({ session: "storage-pressure" })]);
+    await expect.poll(async () => (await state(app)).drops.storage).toBeGreaterThan(0);
+    await fault(app, { write: false });
+    await append(app, [frame({ session: "storage-recovered" })]);
+    await expect(page.locator("#notice")).not.toContainText("Storage pressure");
+    const recorded = await state(app);
+    const expectedDrops =
+      Object.values(recorded.drops).reduce((sum, count) => sum + count, 0) +
+      (recorded.localDrops ?? 0) +
+      (recorded.rateDrops ?? 0);
+    await openSession(page);
+    await analyze(page);
+    const snapshot = await page.evaluate(async () => {
+      const history = await window.scope.status();
+      const list = await window.scope.analysisList(history.generation);
+      return (await window.scope.analysisRun(history.generation, list.runs[0].id))!.snapshot;
+    });
+    expect(snapshot.localDrops).toBe(expectedDrops);
+    await page.locator("#analysis-coverage summary").click();
+    await expect(page.locator("#analysis-limits")).toContainText(
+      `Recording-wide drops: ${expectedDrops} local`,
+    );
+    await capture(page, info, "21-worker-drop-after-recovery");
+  } finally {
+    await app.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("narrow journal keeps connection transitions visible", async ({}, info) => {
+  const server = await fakeCollector({ hello: false, health: false });
+  const root = await mkdtemp("/tmp/scope-analysis-connection-");
+  await writeFile(path.join(root, "token"), "synthetic-test-token", { mode: 0o600 });
+  await writeFile(
+    path.join(root, "connection.json"),
+    JSON.stringify({ endpoint: server.endpoint, tokenFile: path.join(root, "token") }),
+    { mode: 0o600 },
+  );
+  const app = await _electron.launch({
+    args: [
+      path.resolve("dist/app"),
+      "--history-test",
+      `--scope-test-root=${root}`,
+      `--connection-config=${root}/connection.json`,
+    ],
+    chromiumSandbox: true,
+    recordVideo: { dir: info.outputPath("video"), size: { width: 1180, height: 820 } },
+  });
+  try {
+    const page = await app.firstWindow();
+    await page.waitForSelector('html[data-ready="true"]');
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
+    );
+    await expect(page.locator(".connection")).toHaveText("Connecting…");
+    await expect(page.locator(".connection")).toBeVisible();
+    await capture(page, info, "22-narrow-connecting");
+    await until(() => server.state.stream);
+    server.raw(
+      JSON.stringify({ ...fixtureHello, connection_id: server.state.connectionId }) + "\n",
+    );
+    await expect(page.locator(".connection")).toHaveText("Connected");
+    await expect(page.locator(".connection")).toBeVisible();
+    await capture(page, info, "23-narrow-connected");
+    server.state.status = 503;
+    server.disconnect();
+    await expect(page.locator(".connection")).toHaveText("Disconnected");
+    await expect(page.locator(".connection")).toBeVisible();
+    await capture(page, info, "24-narrow-disconnected");
+    server.state.status = 200;
+    await until(() => server.state.stream && !server.state.stream.destroyed);
+    server.raw(
+      JSON.stringify({ ...fixtureHello, connection_id: server.state.connectionId }) + "\n",
+    );
+    await expect(page.locator(".connection")).toHaveText("Connected");
+    await expect(page.locator(".connection")).toBeVisible();
+    await capture(page, info, "25-narrow-reconnected");
+  } finally {
+    await app.close();
+    await server.close();
     await rm(root, { recursive: true, force: true });
   }
 });

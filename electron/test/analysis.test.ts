@@ -86,7 +86,12 @@ test("analysis evidence pairs explicit IDs, isolates full sessions and preserves
     event(6, "PostToolUse", { tool_input: {}, tool_response: { content: "unsupported" } }),
   ])
     insert.run(e.id, e.hook, e.session, e.receivedAt, e.tool, e.text);
-  const evidence = sessionEvidence(db, state, "session-a");
+  const evidence = sessionEvidence(
+    db,
+    { ...state, drops: { storage: 2, invalid: 1, oversized: 3 } },
+    "session-a",
+  );
+  assert.equal(evidence.localDrops, 6);
   assert.deepEqual(
     evidence.calls.map((c) => c.order),
     [2, 4, 6],

@@ -135,7 +135,10 @@ app
         const value = await history.call("analysis", { session: selectedSession });
         if (generation !== history.generation || !("calls" in value))
           throw new Error(value.error ?? "Session evidence is no longer available.");
-        value.localDrops = history.localDrops + history.rateDrops;
+        value.localDrops = Math.min(
+          Number.MAX_SAFE_INTEGER,
+          value.localDrops + history.localDrops + history.rateDrops,
+        );
         return value;
       },
       undefined,
