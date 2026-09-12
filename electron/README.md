@@ -29,7 +29,7 @@ root. Playwright is used only for development validation. Linux needs Electron's
 NSS, ATK, X11, GBM, ALSA and CUPS, plus Xvfb and xauth. The combined
 validation and Electron test commands also need Openbox and `xprop` from
 `x11-utils` to test actual minimization. On Ubuntu, install those development
-prerequisites with `sudo apt-get install --no-install-recommends openbox x11-utils`. Check
+prerequisites with `sudo apt-get install --no-install-recommends xvfb xauth openbox x11-utils`. Check
 `ldd "$(node -p 'require("electron")')"` for missing libraries after installing.
 No Electron commands or dependencies are installed in `linux/`.
 
