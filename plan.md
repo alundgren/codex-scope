@@ -2,6 +2,23 @@
 
 Temporary implementation checklist. Linux code and synthetic tests are implemented under issue #1; real-session acceptance remains pending. Electron work proceeds independently. Move lasting decisions into the architecture, deployment, and UX documents as they are implemented. Delete this file once the build is complete and its useful information lives in those documents.
 
+## Rust and TypeScript port
+
+The owner selected native Rust for the complete Linux application and TypeScript
+for Electron. Bun manages JavaScript dependencies; Vite+ provides shared
+commands while Cargo builds and tests Linux. Electron retains its embedded
+Node/Chromium runtime and `node:sqlite`. No existing deployment migration is
+required. Historical validation below describes the former implementation.
+
+- [x] Agree runtime responsibilities and verify minimal Rust/datagram feasibility.
+- [x] Audit this VM for active Scope services/hooks; only inert test artifacts found.
+- [x] Port observer, collector, diagnostics and their failure tests to Rust.
+- [x] Port guided setup, recovery and safe removal to Rust with isolated tests.
+- [x] Convert Electron source and validation tooling to checked TypeScript.
+- [x] Run actual Electron visual/resource checks and native collector integration.
+- [x] Record fresh measurements and remaining platform/real-session limitations in `docs/port-validation.md`.
+- [x] Complete independent review of the full change and prepare the pull request.
+
 ## Current work
 
 - [x] Separate `linux/`, reserved `electron/`, and shared `protocol/` tooling and fixtures; add principles-only root `AGENTS.md`.

@@ -1,5 +1,9 @@
 # Combined Electron review
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 The final review covered the combined issues #6–9 implementation, from main
 `cb7ab9e871b3317cd0e7d20ed6140a24234ae8db` through the stacked PRs #13–16.
 Two defects were reproduced in actual sandboxed Electron and corrected in

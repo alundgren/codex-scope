@@ -1,5 +1,9 @@
 # Integrated Electron regression validation
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 The independent viewer checks run the production `dist/app` in actual Electron
 under Linux Xvfb. They use deterministic synthetic fixtures and a bounded fake
 collector. The standard suite needs no Linux application, account hook, private

@@ -1,0 +1,30 @@
+[package]
+name = "codex-scope"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+toml = "0.8"
+url = "2"
+ureq = { version = "2.12", default-features = false, features = ["tls"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[[bin]]
+name = "codex-scope"
+path = "src/main.rs"
+
+[[bin]]
+name = "codex-scope-observer"
+path = "src/bin/observer.rs"

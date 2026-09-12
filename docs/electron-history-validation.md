@@ -1,5 +1,9 @@
 # Temporary history validation on Linux
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 Validated on 2026-09-11 for issue #6. Every payload, screenshot and recording
 here is synthetic. The actual Electron app uses temporary SQLite history,
 continuous synthetic intake, bounded nearby inspection and timed Clear.

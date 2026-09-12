@@ -1,6 +1,6 @@
 # Deployment
 
-Start with [guided Linux installation](../linux/install.md) for a permanent collector and optional private HTTPS listener. A basic live Linux smoke test has passed; guided live deployment and private proxy validation remain outstanding. The Electron draft currently reads bundled fixtures and does not yet connect to this collector. The workflow below describes the intended full connection, not a completed end-to-end check.
+Start with [guided Linux installation](../linux/install.md) for a permanent collector and optional private HTTPS listener. A basic live Linux smoke test has passed; guided live deployment and private proxy validation remain outstanding. The Electron viewer supports synthetic fixtures and the version 1 live connection. The Rust/TypeScript port needs its own validation evidence; earlier Python/C results do not establish the new runtime behavior.
 
 ## Machines and connection
 
@@ -29,12 +29,12 @@ Configure tailnet access rules so only the intended client can reach the service
 
 ## Local configuration
 
-Linux commands accept explicit runtime-directory and private token-file paths. The collector uses loopback port 4319 by default; `--port` selects another port. `python3 -m scope.token PATH` creates a private token without printing it. Run commands from `linux/`; complete local examples are in its README. Machine names, account names, paths, endpoint URLs, and credentials belong in ignored local files or the OS configuration directory. Never put them into committed defaults or diagrams.
+Linux commands accept explicit runtime-directory and private token-file paths. The collector uses loopback port 4319 by default; `--port` selects another port. `codex-scope token --token-file PATH` creates a private token without printing it. Run commands from `linux/`; complete local examples are in its README. Machine names, account names, paths, endpoint URLs, and credentials belong in ignored local files or the OS configuration directory. Never put them into committed defaults or diagrams.
 
 The repository ignore rules are a backstop, not an anonymizer. Do not add real payloads to tests, diagnostic logs, issues, screenshots, or examples. The UI intentionally displays original accepted payloads, which may themselves include sensitive text.
 
 ## Development delivery
 
-The first Mac workflow will be a development command from a clone that opens an Electron window. It does not require signing or notarization. The Linux collector can run in the foreground for development or as the user service installed by guided setup. Its diagnostic viewer can test the stream without Electron and does not persist events.
+The Mac development workflow uses Bun-managed dependencies and `vp` commands from a clone to open an Electron window. It does not require signing or notarization. The Linux collector can run in the foreground for development or as the user service installed by guided setup. Its native diagnostic viewer can test the stream without Electron and does not persist events. Source installation needs Rust/Cargo, a C compiler and a linker. Installed native Linux executables need neither Rust nor Bun to run; the installed files and their system library requirements must match the host platform.
 
 The setup is complete only after the smoke checks in [plan.md](../plan.md) have run on both target operating systems. Do not claim macOS validation from a Linux-only run.

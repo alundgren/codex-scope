@@ -1,5 +1,9 @@
 # Linux Electron validation
 
+This is historical evidence from before the Rust/TypeScript port. Commands and
+tool versions below describe that earlier checkout. Current commands and evidence
+are in [port validation](port-validation.md).
+
 Validated on 2026-09-11 for the finite fixture inspector in issue #5. All data,
 screenshots and recordings here are synthetic. This delivery does not implement
 live transport, SQLite history, search, filters, scrub navigation or Clear.

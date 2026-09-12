@@ -40,9 +40,16 @@ coverage/
 .cache/
 .vite/
 *.tsbuildinfo
+target/
+test-results/
+playwright-report/
 
 # Editor and operating system files
 .DS_Store
 .idea/
 .vscode/
 *.swp
+
+# Synthetic development measurements and private desktop tools
+/electron/measurements/
+/.artifacts/tools/
