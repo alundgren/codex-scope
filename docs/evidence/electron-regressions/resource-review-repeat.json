@@ -1,0 +1,3505 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-12T00:38:37.030Z",
+  "mode": "regression",
+  "completed": true,
+  "environment": {
+    "platform": "linux",
+    "arch": "x64",
+    "release": "7.0.0-31-generic",
+    "osRelease": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo\n",
+    "cpus": [
+      "DO-Regular",
+      "DO-Regular"
+    ],
+    "totalMemoryBytes": 4100694016,
+    "availableMemory": "MemAvailable:    2233960 kB",
+    "hostNode": "v24.21.0",
+    "npm": "11.19.0",
+    "display": "Xvfb 1600x1000x24 with isolated Openbox; 1180x760 content; software GPU enabled; warm filesystem caches",
+    "windowManager": "Openbox 3.6.1"
+  },
+  "method": {
+    "intervalMs": 250,
+    "sampling": "250 ms waits plus reader overhead; elapsed sample times drive CPU calculations.",
+    "memory": "All Electron process-group members and descendants. Worker threads are included in their owner. RSS sums shared pages repeatedly; steady RSS is the median of the final third of samples. PSS apportions shared pages and is an endpoint snapshot, never a peak.",
+    "cpu": "User + system /proc ticks divided by elapsed monotonic time. 100% equals one core. Short-lived children between samples can be missed.",
+    "excluded": "Xvfb, Openbox, Node driver, fake collector and metric reader. No video, screenshots, tests or concurrent app workloads.",
+    "latency": "Monotonic driver input start through completed journal aria-busy=false, matching selected row/payload/slider, successful result, and following animation frame. Search includes 180 ms debounce. Startup includes launch, connection readiness and two animation frames.",
+    "disk": "Worker maximum of all recording files inside transactions includes rollback journal, sidecars and owner marker. SQLite temp_store=MEMORY; 8 MiB SQLite heap includes its temporary work. Independent endpoint scan verifies disk totals.",
+    "completion": "Phase completion queries current worker transport processing and response-buffer diagnostics; coalesced UI notifications are not a worker completion signal.",
+    "faults": "Debugger-only bounded delays and SQLite read-only/page-limit errors; simulated free-space/cleanup failure. No private configuration or collector process."
+  },
+  "trials": [
+    {
+      "index": 1,
+      "baseline": {
+        "startupMs": 836.6356430000001,
+        "idle": {
+          "durationMs": 4034.303504,
+          "samples": 14,
+          "meanCpuPercentOneCore": 0.49574852214688503,
+          "cpuByRole": {
+            "Browser": 0.24787426107344251,
+            "zygote": 0,
+            "GPU": 0.24787426107344251,
+            "Utility": 0,
+            "Tab": 0
+          },
+          "steadyRssBytes": 662409216,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 3.4685336654958445,
+          "peakRssBytes": 662409216,
+          "finalRssBytes": 662409216,
+          "finalPssBytes": 294047744,
+          "finalProcesses": [
+            {
+              "rssBytes": 168673280,
+              "pssBytes": 94531584,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63590400,
+              "pssBytes": 16390144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1712128,
+              "pssBytes": 153600,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 64421888,
+              "pssBytes": 14208000,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15421440,
+              "pssBytes": 4542464,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 150564864,
+              "pssBytes": 79002624,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 89907200,
+              "pssBytes": 31606784,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 108118016,
+              "pssBytes": 53612544,
+              "role": "Tab"
+            }
+          ]
+        }
+      },
+      "workloads": {
+        "connectedIdle": {
+          "durationMs": 4011.447011,
+          "samples": 14,
+          "meanCpuPercentOneCore": 1.9942928270179758,
+          "cpuByRole": {
+            "Browser": 0.24928660337724698,
+            "zygote": 0,
+            "GPU": 0.9971464135089879,
+            "Utility": 0,
+            "Tab": 0.7478598101317409
+          },
+          "steadyRssBytes": 712478720,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 5.911463106685847,
+          "peakRssBytes": 712654848,
+          "finalRssBytes": 712654848,
+          "finalPssBytes": 329063424,
+          "finalProcesses": [
+            {
+              "rssBytes": 185675776,
+              "pssBytes": 109992960,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15973376,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14477312,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4605952,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 160968704,
+              "pssBytes": 84025344,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90488832,
+              "pssBytes": 31623168,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 129224704,
+              "pssBytes": 68207616,
+              "role": "Tab"
+            }
+          ],
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 0,
+            "accepted": 0,
+            "retainedBytes": 0,
+            "first": null,
+            "last": null,
+            "drops": {},
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 2,
+                "peakFrameBytes": 234,
+                "peakChunkBytes": 235,
+                "peakProcessing": 0,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "view": {
+              "queryId": 1,
+              "first": null,
+              "count": 0,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 0.23832000000004427,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 0,
+            "maximumDiskBytes": 0,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "diskBytesAtEnd": 16418
+        },
+        "heldCapture": {
+          "durationMs": 1262.2502980000008,
+          "samples": 5,
+          "meanCpuPercentOneCore": 30.10496417407063,
+          "cpuByRole": {
+            "Browser": 23.767076979529445,
+            "zygote": 0,
+            "GPU": 2.3767076979529445,
+            "Utility": 0,
+            "Tab": 3.9611794965882408
+          },
+          "steadyRssBytes": 733335552,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 39.5466746232818,
+          "peakRssBytes": 733335552,
+          "finalRssBytes": 733335552,
+          "finalPssBytes": 347217920,
+          "finalProcesses": [
+            {
+              "rssBytes": 194633728,
+              "pssBytes": 117566464,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15968256,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14472192,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4606976,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 160718848,
+              "pssBytes": 83758080,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90488832,
+              "pssBytes": 31566848,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 141197312,
+              "pssBytes": 79121408,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 5.641217000000324,
+          "maximumRendererDelayMs": 7,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 125,
+            "accepted": 125,
+            "retainedBytes": 141568,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 125,
+              "receivedAt": "2026-09-11T15:58:01.000Z"
+            },
+            "drops": {},
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 3,
+                "peakFrameBytes": 61703,
+                "peakChunkBytes": 32768,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 1,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 125,
+              "arrivals": 125,
+              "removed": 0,
+              "maximumMs": 2.8681690000003073,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 2.7914019999998345,
+            "maximumDiskBytes": 152130,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 120,
+            "intervalMs": 8,
+            "durationMs": 1135.560818,
+            "bytesWritten": 58910,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 139298
+        },
+        "capture1000": {
+          "durationMs": 7070.925524000002,
+          "samples": 22,
+          "meanCpuPercentOneCore": 36.063171523230416,
+          "cpuByRole": {
+            "Browser": 28.850537218584332,
+            "zygote": 0,
+            "GPU": 2.969908243089564,
+            "Utility": 0,
+            "Tab": 4.24272606155652
+          },
+          "steadyRssBytes": 733392896,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 51.176196830998244,
+          "peakRssBytes": 736047104,
+          "finalRssBytes": 735178752,
+          "finalPssBytes": 350841856,
+          "finalProcesses": [
+            {
+              "rssBytes": 197353472,
+              "pssBytes": 120245248,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15969280,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14472192,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4606976,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 158883840,
+              "pssBytes": 82847744,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90488832,
+              "pssBytes": 31566848,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 142155776,
+              "pssBytes": 80975872,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 6.479855999999927,
+          "maximumRendererDelayMs": 9.100000023841858,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 1125,
+            "accepted": 1125,
+            "retainedBytes": 717458,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 1125,
+              "receivedAt": "2026-09-11T15:43:21.000Z"
+            },
+            "drops": {},
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 7,
+                "peakFrameBytes": 61703,
+                "peakChunkBytes": 32768,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 1,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 1125,
+              "arrivals": 1125,
+              "removed": 0,
+              "maximumMs": 2.8681690000003073,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 8.06678599999941,
+            "maximumDiskBytes": 623186,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 1000,
+            "intervalMs": 6,
+            "durationMs": 6967.403597999999,
+            "bytesWritten": 492402,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 598050
+        },
+        "navigate1000": {
+          "durationMs": 9624.001095,
+          "samples": 27,
+          "meanCpuPercentOneCore": 73.87779708061225,
+          "cpuByRole": {
+            "Browser": 20.365749968776374,
+            "zygote": 0,
+            "GPU": 18.287612216860417,
+            "Utility": 0,
+            "Tab": 35.22443489497546
+          },
+          "steadyRssBytes": 790835200,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 142.4443535346114,
+          "peakRssBytes": 802131968,
+          "finalRssBytes": 802131968,
+          "finalPssBytes": 409160704,
+          "finalProcesses": [
+            {
+              "rssBytes": 202395648,
+              "pssBytes": 124139520,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14471168,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4606976,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 165519360,
+              "pssBytes": 86040576,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90488832,
+              "pssBytes": 31507456,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 197431296,
+              "pssBytes": 132273152,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 11.304205999997066,
+          "maximumRendererDelayMs": 57.60000002384186,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 1125,
+            "accepted": 1125,
+            "retainedBytes": 717458,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 1125,
+              "receivedAt": "2026-09-11T15:43:21.000Z"
+            },
+            "drops": {},
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 12,
+                "peakFrameBytes": 61703,
+                "peakChunkBytes": 32768,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 11,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 1125,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 23.468119000001025,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 8.06678599999941,
+            "maximumDiskBytes": 623186,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "searchMs": {
+              "operations": 10,
+              "minimum": 229.66522199999963,
+              "maximum": 344.909592,
+              "p95": 344.909592,
+              "mean": 270.3311384999997
+            },
+            "keyboardMs": {
+              "operations": 10,
+              "minimum": 59.22103799999968,
+              "maximum": 133.25285799999983,
+              "p95": 133.25285799999983,
+              "mean": 89.00684490000022
+            },
+            "pointerMoves": 120,
+            "summaryRows": 3,
+            "tickNodes": 64
+          },
+          "diskBytesAtEnd": 598050
+        },
+        "captureToRowLimit": {
+          "durationMs": 63127.558233,
+          "samples": 193,
+          "meanCpuPercentOneCore": 38.049943118888955,
+          "cpuByRole": {
+            "Browser": 30.145312970543582,
+            "zygote": 0,
+            "GPU": 3.247393147115835,
+            "Utility": 0.01584094218105285,
+            "Tab": 4.6413960590484855
+          },
+          "steadyRssBytes": 757710848,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 97.08771037486056,
+          "peakRssBytes": 803995648,
+          "finalRssBytes": 766775296,
+          "finalPssBytes": 375323648,
+          "finalProcesses": [
+            {
+              "rssBytes": 209788928,
+              "pssBytes": 131450880,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 163078144,
+              "pssBytes": 84784128,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31441920,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 156917760,
+              "pssBytes": 92445696,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 28.26060999999754,
+          "maximumRendererDelayMs": 27.600000023841858,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 10000,
+            "accepted": 10525,
+            "retainedBytes": 5768290,
+            "first": {
+              "id": 526,
+              "receivedAt": "2026-09-11T15:53:20.000Z"
+            },
+            "last": {
+              "id": 10525,
+              "receivedAt": "2026-09-11T13:23:21.000Z"
+            },
+            "drops": {},
+            "evicted": 525,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 43,
+                "peakFrameBytes": 61703,
+                "peakChunkBytes": 32768,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 11,
+              "first": {
+                "id": 526,
+                "receivedAt": "2026-09-11T15:53:20.000Z"
+              },
+              "count": 10000,
+              "arrivals": 9400,
+              "removed": 525,
+              "maximumMs": 23.468119000001025,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 23.29518800000369,
+            "maximumDiskBytes": 4641394,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 9400,
+            "intervalMs": 6,
+            "durationMs": 62934.08529,
+            "bytesWritten": 4646090,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 4599842
+        },
+        "navigateRowLimit": {
+          "durationMs": 8314.294894999999,
+          "samples": 25,
+          "meanCpuPercentOneCore": 84.19234689654341,
+          "cpuByRole": {
+            "Browser": 44.140844730044904,
+            "zygote": 0,
+            "GPU": 14.553248534973934,
+            "Utility": 0,
+            "Tab": 25.49825363152458
+          },
+          "steadyRssBytes": 771854336,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 150.9297870903383,
+          "peakRssBytes": 775901184,
+          "finalRssBytes": 775901184,
+          "finalPssBytes": 382853120,
+          "finalProcesses": [
+            {
+              "rssBytes": 212709376,
+              "pssBytes": 134496256,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 164896768,
+              "pssBytes": 85924864,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31442944,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 161304576,
+              "pssBytes": 95787008,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 6.266369999997551,
+          "maximumRendererDelayMs": 18.699999928474426,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 10000,
+            "accepted": 10525,
+            "retainedBytes": 5768290,
+            "first": {
+              "id": 526,
+              "receivedAt": "2026-09-11T15:53:20.000Z"
+            },
+            "last": {
+              "id": 10525,
+              "receivedAt": "2026-09-11T13:23:21.000Z"
+            },
+            "drops": {},
+            "evicted": 525,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 47,
+                "peakFrameBytes": 61703,
+                "peakChunkBytes": 32768,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 21,
+              "first": {
+                "id": 526,
+                "receivedAt": "2026-09-11T15:53:20.000Z"
+              },
+              "count": 10000,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 106.60118299999158,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 23.29518800000369,
+            "maximumDiskBytes": 4641394,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "searchMs": {
+              "operations": 10,
+              "minimum": 269.4544450000103,
+              "maximum": 354.9408190000104,
+              "p95": 354.9408190000104,
+              "mean": 311.89145520000454
+            },
+            "keyboardMs": {
+              "operations": 10,
+              "minimum": 40.81460200001311,
+              "maximum": 165.2597059999971,
+              "p95": 165.2597059999971,
+              "mean": 88.49102430000202
+            },
+            "pointerMoves": 120,
+            "summaryRows": 3,
+            "tickNodes": 64
+          },
+          "diskBytesAtEnd": 4599842
+        },
+        "captureAndRapidInput": {
+          "durationMs": 3513.9131869999983,
+          "samples": 11,
+          "meanCpuPercentOneCore": 57.77035151324018,
+          "cpuByRole": {
+            "Browser": 33.01162943613725,
+            "zygote": 0,
+            "GPU": 6.260826272370858,
+            "Utility": 0,
+            "Tab": 18.49789580473208
+          },
+          "steadyRssBytes": 777277440,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 82.40750012464952,
+          "peakRssBytes": 777576448,
+          "finalRssBytes": 774098944,
+          "finalPssBytes": 380405760,
+          "finalProcesses": [
+            {
+              "rssBytes": 210300928,
+              "pssBytes": 132009984,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15965184,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 165273600,
+              "pssBytes": 85868544,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31441920,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 161533952,
+              "pssBytes": 95882240,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 8.65782200000831,
+          "maximumRendererDelayMs": 21.199999928474426,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 10000,
+            "accepted": 10825,
+            "retainedBytes": 5768180,
+            "first": {
+              "id": 826,
+              "receivedAt": "2026-09-11T15:48:20.000Z"
+            },
+            "last": {
+              "id": 10825,
+              "receivedAt": "2026-09-11T15:55:01.000Z"
+            },
+            "drops": {},
+            "evicted": 825,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 49,
+                "peakFrameBytes": 61703,
+                "peakChunkBytes": 32768,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 26,
+              "first": {
+                "id": 826,
+                "receivedAt": "2026-09-11T15:48:20.000Z"
+              },
+              "count": 10000,
+              "arrivals": 264,
+              "removed": 264,
+              "maximumMs": 106.60118299999158,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 23.29518800000369,
+            "maximumDiskBytes": 4641394,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 300,
+            "intervalMs": 10,
+            "durationMs": 3335.2835690000065,
+            "bytesWritten": 148374,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 4599842
+        },
+        "maximumCycle1": {
+          "durationMs": 20312.325517000005,
+          "samples": 63,
+          "meanCpuPercentOneCore": 27.815623549707997,
+          "cpuByRole": {
+            "Browser": 10.43701273015592,
+            "zygote": 0,
+            "GPU": 5.661587094188353,
+            "Utility": 0,
+            "Tab": 11.717023725363722
+          },
+          "steadyRssBytes": 774279168,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 56.06281038861412,
+          "peakRssBytes": 779243520,
+          "finalRssBytes": 772046848,
+          "finalPssBytes": 381257728,
+          "finalProcesses": [
+            {
+              "rssBytes": 210604032,
+              "pssBytes": 132115456,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 162213888,
+              "pssBytes": 84385792,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31420416,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 162238464,
+              "pssBytes": 98135040,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 16.94341200000781,
+          "maximumRendererDelayMs": 52.10000002384186,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 135,
+            "accepted": 11032,
+            "retainedBytes": 8345565,
+            "first": {
+              "id": 10898,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 11032,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 10897,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 60,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 26,
+              "first": {
+                "id": 10898,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 135,
+              "arrivals": 471,
+              "removed": 10336,
+              "maximumMs": 106.60118299999158,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 23.29518800000369,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 300,
+            "intervalMs": 65,
+            "durationMs": 20069.949716000003,
+            "bytesWritten": 18515460,
+            "serverRefused": 0,
+            "maximumPayloadBytes": 61440
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "maximumCycle2": {
+          "durationMs": 20272.56905199999,
+          "samples": 64,
+          "meanCpuPercentOneCore": 34.13479555674424,
+          "cpuByRole": {
+            "Browser": 10.60546393742776,
+            "zygote": 0,
+            "GPU": 5.771345491530456,
+            "Utility": 0,
+            "Tab": 17.75798612778602
+          },
+          "steadyRssBytes": 773439488,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 57.341837140525776,
+          "peakRssBytes": 777367552,
+          "finalRssBytes": 772829184,
+          "finalPssBytes": 381668352,
+          "finalProcesses": [
+            {
+              "rssBytes": 210931712,
+              "pssBytes": 132029440,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 161931264,
+              "pssBytes": 84189184,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31408128,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 162975744,
+              "pssBytes": 98840576,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 8.913004999994882,
+          "maximumRendererDelayMs": 57,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 135,
+            "accepted": 11332,
+            "retainedBytes": 8345565,
+            "first": {
+              "id": 11198,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 11332,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11197,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 70,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 26,
+              "first": {
+                "id": 11198,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 135,
+              "arrivals": 771,
+              "removed": 10636,
+              "maximumMs": 106.60118299999158,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 23.29518800000369,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 300,
+            "intervalMs": 65,
+            "durationMs": 20116.80810699999,
+            "bytesWritten": 18515658,
+            "serverRefused": 0,
+            "maximumPayloadBytes": 61440
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "maximumCycle3": {
+          "durationMs": 20362.53055700002,
+          "samples": 64,
+          "meanCpuPercentOneCore": 32.952682286796154,
+          "cpuByRole": {
+            "Browser": 10.313060030144847,
+            "zygote": 0,
+            "GPU": 5.500298682743919,
+            "Utility": 0,
+            "Tab": 17.13932357390739
+          },
+          "steadyRssBytes": 774098944,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 62.63398662418428,
+          "peakRssBytes": 777875456,
+          "finalRssBytes": 773492736,
+          "finalPssBytes": 382727168,
+          "finalProcesses": [
+            {
+              "rssBytes": 210993152,
+              "pssBytes": 132459520,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 161931264,
+              "pssBytes": 84190208,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31408128,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 163577856,
+              "pssBytes": 99467264,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 48.348485000024084,
+          "maximumRendererDelayMs": 50,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 135,
+            "accepted": 11632,
+            "retainedBytes": 8345565,
+            "first": {
+              "id": 11498,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 11632,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11497,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 80,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 26,
+              "first": {
+                "id": 11498,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 135,
+              "arrivals": 1071,
+              "removed": 10936,
+              "maximumMs": 106.60118299999158,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 300,
+            "intervalMs": 65,
+            "durationMs": 20108.957786999992,
+            "bytesWritten": 18515460,
+            "serverRefused": 0,
+            "maximumPayloadBytes": 61440
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "navigateMaximum": {
+          "durationMs": 11157.049134,
+          "samples": 33,
+          "meanCpuPercentOneCore": 80.21834351097156,
+          "cpuByRole": {
+            "Browser": 20.973287577170222,
+            "zygote": 0,
+            "GPU": 15.416262663561017,
+            "Utility": 0,
+            "Tab": 43.82879327024033
+          },
+          "steadyRssBytes": 814592000,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 120.04518565677307,
+          "peakRssBytes": 835018752,
+          "finalRssBytes": 825118720,
+          "finalPssBytes": 404470784,
+          "finalProcesses": [
+            {
+              "rssBytes": 218787840,
+              "pssBytes": 128588800,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 163311616,
+              "pssBytes": 85766144,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31408128,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 206028800,
+              "pssBytes": 123505664,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 10.479046000022208,
+          "maximumRendererDelayMs": 72,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 135,
+            "accepted": 11632,
+            "retainedBytes": 8345565,
+            "first": {
+              "id": 11498,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 11632,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11497,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 86,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 36,
+              "first": {
+                "id": 11498,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 135,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 106.88293300001533,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "searchMs": {
+              "operations": 10,
+              "minimum": 248.62936200000695,
+              "maximum": 394.6483560000197,
+              "p95": 394.6483560000197,
+              "mean": 335.69506089999925
+            },
+            "keyboardMs": {
+              "operations": 10,
+              "minimum": 49.70649900002172,
+              "maximum": 142.02595300000394,
+              "p95": 142.02595300000394,
+              "mean": 88.40111900000193
+            },
+            "pointerMoves": 120,
+            "summaryRows": 3,
+            "tickNodes": 64
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "hiddenCapture": {
+          "durationMs": 3403.2636850000126,
+          "samples": 12,
+          "meanCpuPercentOneCore": 14.691779605669847,
+          "cpuByRole": {
+            "Browser": 14.691779605669847,
+            "zygote": 0,
+            "GPU": 0,
+            "Utility": 0,
+            "Tab": 0
+          },
+          "steadyRssBytes": 798580736,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 29.653796082270677,
+          "peakRssBytes": 799461376,
+          "finalRssBytes": 798572544,
+          "finalPssBytes": 404662272,
+          "finalProcesses": [
+            {
+              "rssBytes": 206565376,
+              "pssBytes": 128244736,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 164954112,
+              "pssBytes": 85688320,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31408128,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 190062592,
+              "pssBytes": 124120064,
+              "role": "Tab"
+            }
+          ],
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 383,
+            "accepted": 11882,
+            "retainedBytes": 8365802,
+            "first": {
+              "id": 11500,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 11882,
+              "receivedAt": "2026-09-11T15:55:51.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11499,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 88,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 36,
+              "first": null,
+              "count": 383,
+              "arrivals": 250,
+              "removed": 2,
+              "maximumMs": 106.88293300001533,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 250,
+            "intervalMs": 12,
+            "durationMs": 3246.3297709999897,
+            "bytesWritten": 123719,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 8417314,
+          "presentationMutations": 0,
+          "windowState": {
+            "minimized": false,
+            "visible": false
+          },
+          "documentVisibility": "visible"
+        },
+        "minimizedCapture": {
+          "durationMs": 3481.117720999988,
+          "samples": 12,
+          "meanCpuPercentOneCore": 13.50141068670862,
+          "cpuByRole": {
+            "Browser": 13.21414662954461,
+            "zygote": 0,
+            "GPU": 0,
+            "Utility": 0,
+            "Tab": 0.28726405716401326
+          },
+          "steadyRssBytes": 795099136,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 17.41757817381929,
+          "peakRssBytes": 796856320,
+          "finalRssBytes": 791506944,
+          "finalPssBytes": 399263744,
+          "finalProcesses": [
+            {
+              "rssBytes": 207241216,
+              "pssBytes": 128575488,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15965184,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 163172352,
+              "pssBytes": 84767744,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31403008,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 184102912,
+              "pssBytes": 119314432,
+              "role": "Tab"
+            }
+          ],
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 631,
+            "accepted": 12132,
+            "retainedBytes": 8386039,
+            "first": {
+              "id": 11502,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 12132,
+              "receivedAt": "2026-09-11T15:55:51.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11501,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 90,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 36,
+              "first": null,
+              "count": 631,
+              "arrivals": 500,
+              "removed": 4,
+              "maximumMs": 106.88293300001533,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 250,
+            "intervalMs": 12,
+            "durationMs": 3331.878304999991,
+            "bytesWritten": 123719,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 8417314,
+          "presentationMutations": 0,
+          "windowState": {
+            "minimized": true,
+            "visible": true
+          },
+          "documentVisibility": "visible"
+        },
+        "delayedStorage": {
+          "durationMs": 6356.690786000021,
+          "samples": 20,
+          "meanCpuPercentOneCore": 24.38375645727052,
+          "cpuByRole": {
+            "Browser": 10.69738992964126,
+            "zygote": 0,
+            "GPU": 5.191380407031787,
+            "Utility": 0,
+            "Tab": 8.49498612059747
+          },
+          "steadyRssBytes": 790441984,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 32.8495360425967,
+          "peakRssBytes": 791896064,
+          "finalRssBytes": 790249472,
+          "finalPssBytes": 398203904,
+          "finalProcesses": [
+            {
+              "rssBytes": 207003648,
+              "pssBytes": 128381952,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 163254272,
+              "pssBytes": 84836352,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31403008,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 183001088,
+              "pssBytes": 118380544,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 20.846867999993265,
+          "maximumRendererDelayMs": 10.600000023841858,
+          "history": {
+            "generation": 1,
+            "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+            "total": 690,
+            "accepted": 12192,
+            "retainedBytes": 8358700,
+            "first": {
+              "id": 11503,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 12192,
+              "receivedAt": "2026-09-11T15:59:01.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11502,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "c6c22952-abb2-4674-ac8f-88c151a4fa5f",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 94,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 61708,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 36,
+              "first": {
+                "id": 11503,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 690,
+              "arrivals": 560,
+              "removed": 5,
+              "maximumMs": 106.88293300001533,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 60,
+            "intervalMs": 8,
+            "durationMs": 6115.6992949999985,
+            "bytesWritten": 30688,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "burst": {
+          "durationMs": 4026.144373999996,
+          "samples": 14,
+          "meanCpuPercentOneCore": 12.667205957478178,
+          "cpuByRole": {
+            "Browser": 8.693180559053651,
+            "zygote": 0,
+            "GPU": 1.2418829370076647,
+            "Utility": 0,
+            "Tab": 2.732142461416862
+          },
+          "steadyRssBytes": 795365376,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 63.73281358307295,
+          "peakRssBytes": 796254208,
+          "finalRssBytes": 795234304,
+          "finalPssBytes": 400388096,
+          "finalProcesses": [
+            {
+              "rssBytes": 207450112,
+              "pssBytes": 128747520,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 165761024,
+              "pssBytes": 86056960,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31404032,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 185032704,
+              "pssBytes": 118978560,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 7.027051000011852,
+          "maximumRendererDelayMs": 7.5,
+          "history": {
+            "generation": 1,
+            "connectionId": "b0e942a7-f119-4091-a220-7aa6594a8a54",
+            "total": 1343,
+            "accepted": 12851,
+            "retainedBytes": 8367250,
+            "first": {
+              "id": 11509,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 12851,
+              "receivedAt": "2026-09-11T15:49:02.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11508,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "b0e942a7-f119-4091-a220-7aa6594a8a54",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 2,
+                "heartbeatRequests": 95,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 65536,
+                "peakProcessing": 1,
+                "rateDisconnects": 1
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 36,
+              "first": {
+                "id": 11509,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 1343,
+              "arrivals": 1219,
+              "removed": 11,
+              "maximumMs": 106.88293300001533,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 2000,
+            "intervalMs": 0,
+            "durationMs": 368.07262200000696,
+            "bytesWritten": 524202,
+            "serverRefused": 937,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "stalledStorage": {
+          "durationMs": 8652.828053000005,
+          "samples": 28,
+          "meanCpuPercentOneCore": 5.316180989410905,
+          "cpuByRole": {
+            "Browser": 2.8892287985928835,
+            "zygote": 0,
+            "GPU": 0.5778457597185767,
+            "Utility": 0,
+            "Tab": 1.8491064310994454
+          },
+          "steadyRssBytes": 779878400,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 20.34398505058902,
+          "peakRssBytes": 795234304,
+          "finalRssBytes": 767279104,
+          "finalPssBytes": 376356864,
+          "finalProcesses": [
+            {
+              "rssBytes": 194834432,
+              "pssBytes": 116164608,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 162033664,
+              "pssBytes": 84262912,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31404032,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 173420544,
+              "pssBytes": 109324288,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 22.33036400002311,
+          "maximumRendererDelayMs": 4.200000047683716,
+          "history": {
+            "generation": 1,
+            "connectionId": "9d0caf11-9b9c-41e4-90c2-7a33b99b1bd4",
+            "total": 1343,
+            "accepted": 12851,
+            "retainedBytes": 8367250,
+            "first": {
+              "id": 11509,
+              "receivedAt": "2026-09-11T14:32:32.000Z"
+            },
+            "last": {
+              "id": 12851,
+              "receivedAt": "2026-09-11T15:49:02.000Z"
+            },
+            "drops": {
+              "storage": 93
+            },
+            "evicted": 11508,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "9d0caf11-9b9c-41e4-90c2-7a33b99b1bd4",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 3,
+                "heartbeatRequests": 96,
+                "peakFrameBytes": 61707,
+                "peakChunkBytes": 65536,
+                "peakProcessing": 1,
+                "rateDisconnects": 1
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 36,
+              "first": {
+                "id": 11509,
+                "receivedAt": "2026-09-11T14:32:32.000Z"
+              },
+              "count": 1343,
+              "arrivals": 1219,
+              "removed": 11,
+              "maximumMs": 106.88293300001533,
+              "canceled": 70,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "diskBytesAtEnd": 8417314
+        },
+        "readOnly": {
+          "durationMs": 1248.4564379999938,
+          "samples": 5,
+          "meanCpuPercentOneCore": 16.01978202142132,
+          "cpuByRole": {
+            "Browser": 9.61186921285279,
+            "zygote": 0,
+            "GPU": 2.4029673032131975,
+            "Utility": 0,
+            "Tab": 4.00494550535533
+          },
+          "steadyRssBytes": 767115264,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 25.173363447388347,
+          "peakRssBytes": 767320064,
+          "finalRssBytes": 767115264,
+          "finalPssBytes": 375986176,
+          "finalProcesses": [
+            {
+              "rssBytes": 194539520,
+              "pssBytes": 115667968,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 162164736,
+              "pssBytes": 84283392,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31403008,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 173420544,
+              "pssBytes": 109429760,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 7.274230000009993,
+          "maximumRendererDelayMs": 2.200000047683716,
+          "history": {
+            "generation": 2,
+            "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+            "total": 1,
+            "accepted": 1,
+            "retainedBytes": 436,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "drops": {
+              "storage": 12
+            },
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 0,
+                "peakFrameBytes": 61704,
+                "peakChunkBytes": 61705,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": true,
+            "view": {
+              "queryId": 37,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 1,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 0.7841760000155773,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 12,
+            "intervalMs": 65,
+            "durationMs": 894.6917699999758,
+            "bytesWritten": 740614,
+            "serverRefused": 0,
+            "maximumPayloadBytes": 61440
+          },
+          "diskBytesAtEnd": 16418
+        },
+        "diskHeadroom": {
+          "durationMs": 1188.1863390000071,
+          "samples": 5,
+          "meanCpuPercentOneCore": 10.941044828827916,
+          "cpuByRole": {
+            "Browser": 4.208094164933813,
+            "zygote": 0,
+            "GPU": 3.366475331947051,
+            "Utility": 0,
+            "Tab": 3.366475331947051
+          },
+          "steadyRssBytes": 767873024,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 13.731275020700215,
+          "peakRssBytes": 767873024,
+          "finalRssBytes": 767873024,
+          "finalPssBytes": 376920064,
+          "finalProcesses": [
+            {
+              "rssBytes": 195297280,
+              "pssBytes": 116643840,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15964160,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14469120,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 162164736,
+              "pssBytes": 84279296,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31403008,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 173420544,
+              "pssBytes": 109392896,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 3.7740320000157226,
+          "maximumRendererDelayMs": 1.8000000715255737,
+          "history": {
+            "generation": 2,
+            "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+            "total": 1,
+            "accepted": 1,
+            "retainedBytes": 436,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "drops": {
+              "storage": 24
+            },
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 1,
+                "peakFrameBytes": 61704,
+                "peakChunkBytes": 61705,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": true,
+            "view": {
+              "queryId": 37,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 1,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 0.7841760000155773,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 12,
+            "intervalMs": 65,
+            "durationMs": 895.8144790000224,
+            "bytesWritten": 740622,
+            "serverRefused": 0,
+            "maximumPayloadBytes": 61440
+          },
+          "diskBytesAtEnd": 16418
+        },
+        "sqliteFull": {
+          "durationMs": 1230.3923359999899,
+          "samples": 5,
+          "meanCpuPercentOneCore": 11.37848439914219,
+          "cpuByRole": {
+            "Browser": 6.501991085224108,
+            "zygote": 0,
+            "GPU": 2.4382466569590404,
+            "Utility": 0,
+            "Tab": 2.4382466569590404
+          },
+          "steadyRssBytes": 768237568,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 13.065368248661697,
+          "peakRssBytes": 768598016,
+          "finalRssBytes": 768237568,
+          "finalPssBytes": 377501696,
+          "finalProcesses": [
+            {
+              "rssBytes": 196071424,
+              "pssBytes": 117434368,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15965184,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14470144,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 161902592,
+              "pssBytes": 84157440,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31403008,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 173273088,
+              "pssBytes": 109303808,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 3.6301559999992605,
+          "maximumRendererDelayMs": 3.5,
+          "history": {
+            "generation": 2,
+            "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+            "total": 1,
+            "accepted": 1,
+            "retainedBytes": 436,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "drops": {
+              "storage": 36
+            },
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 2,
+                "peakFrameBytes": 61704,
+                "peakChunkBytes": 61705,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": true,
+            "view": {
+              "queryId": 37,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 1,
+              "arrivals": 0,
+              "removed": 0,
+              "maximumMs": 0.7841760000155773,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 12,
+            "intervalMs": 65,
+            "durationMs": 909.4885739999881,
+            "bytesWritten": 740622,
+            "serverRefused": 0,
+            "maximumPayloadBytes": 61440
+          },
+          "diskBytesAtEnd": 16418
+        },
+        "recoveredCapture": {
+          "durationMs": 2022.174908999994,
+          "samples": 7,
+          "meanCpuPercentOneCore": 38.07781397014664,
+          "cpuByRole": {
+            "Browser": 23.242302033725874,
+            "zygote": 0,
+            "GPU": 5.43968771002095,
+            "Utility": 0,
+            "Tab": 9.395824226399823
+          },
+          "steadyRssBytes": 771223552,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 47.320189358128694,
+          "peakRssBytes": 772231168,
+          "finalRssBytes": 772231168,
+          "finalPssBytes": 379747328,
+          "finalProcesses": [
+            {
+              "rssBytes": 195850240,
+              "pssBytes": 117088256,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15962112,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14466048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 163098624,
+              "pssBytes": 84785152,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31395840,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 176291840,
+              "pssBytes": 111282176,
+              "role": "Tab"
+            }
+          ],
+          "maximumMainDelayMs": 5.804216999997152,
+          "maximumRendererDelayMs": 22.5,
+          "history": {
+            "generation": 2,
+            "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+            "total": 201,
+            "accepted": 201,
+            "retainedBytes": 115526,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 201,
+              "receivedAt": "2026-09-11T15:56:41.000Z"
+            },
+            "drops": {
+              "storage": 36
+            },
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 3,
+                "peakFrameBytes": 61704,
+                "peakChunkBytes": 61705,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 37,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 201,
+              "arrivals": 200,
+              "removed": 0,
+              "maximumMs": 3.08173999999417,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "workload": {
+            "offered": 200,
+            "intervalMs": 8,
+            "durationMs": 1919.9387290000159,
+            "bytesWritten": 98424,
+            "serverRefused": 0,
+            "maximumPayloadBytes": null
+          },
+          "diskBytesAtEnd": 102434
+        },
+        "settledIdle": {
+          "durationMs": 5189.305553999991,
+          "samples": 18,
+          "meanCpuPercentOneCore": 1.5416320963858996,
+          "cpuByRole": {
+            "Browser": 0.19270401204823745,
+            "zygote": 0,
+            "GPU": 0.5781120361447124,
+            "Utility": 0,
+            "Tab": 0.7708160481929498
+          },
+          "steadyRssBytes": 770310144,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 10.07825472524766,
+          "peakRssBytes": 772624384,
+          "finalRssBytes": 763891712,
+          "finalPssBytes": 374874112,
+          "finalProcesses": [
+            {
+              "rssBytes": 195788800,
+              "pssBytes": 116854784,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15961088,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14466048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 159166464,
+              "pssBytes": 82808832,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31395840,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 171945984,
+              "pssBytes": 108619776,
+              "role": "Tab"
+            }
+          ],
+          "history": {
+            "generation": 2,
+            "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+            "total": 201,
+            "accepted": 201,
+            "retainedBytes": 115526,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T14:32:20.000Z"
+            },
+            "last": {
+              "id": 201,
+              "receivedAt": "2026-09-11T15:56:41.000Z"
+            },
+            "drops": {
+              "storage": 36
+            },
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "3523bed8-d8f4-4b2d-baf8-d2d0de6adff1",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 6,
+                "peakFrameBytes": 61704,
+                "peakChunkBytes": 61705,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 37,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T14:32:20.000Z"
+              },
+              "count": 201,
+              "arrivals": 200,
+              "removed": 0,
+              "maximumMs": 3.08173999999417,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "diskBytesAtEnd": 102434
+        },
+        "cleanupFailure": {
+          "durationMs": 599.7944279999938,
+          "samples": 3,
+          "meanCpuPercentOneCore": 16.67237895714514,
+          "cpuByRole": {
+            "Browser": 1.6672378957145135,
+            "zygote": 0,
+            "GPU": 6.668951582858054,
+            "Utility": 0,
+            "Tab": 8.33618947857257
+          },
+          "steadyRssBytes": 774156288,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 29.31399773357155,
+          "peakRssBytes": 774156288,
+          "finalRssBytes": 774156288,
+          "finalPssBytes": 380534784,
+          "finalProcesses": [
+            {
+              "rssBytes": 195788800,
+              "pssBytes": 116939776,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 63270912,
+              "pssBytes": 15962112,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1708032,
+              "pssBytes": 157696,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 65556480,
+              "pssBytes": 14465024,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15761408,
+              "pssBytes": 4610048,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 164057088,
+              "pssBytes": 85268480,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 90693632,
+              "pssBytes": 31396864,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 177319936,
+              "pssBytes": 111734784,
+              "role": "Tab"
+            }
+          ],
+          "history": {
+            "generation": 3,
+            "total": 0,
+            "accepted": 0,
+            "first": null,
+            "last": null,
+            "drops": {},
+            "clearing": false,
+            "transport": {
+              "state": "disconnected",
+              "reason": null,
+              "coverageUnknown": true
+            },
+            "error": "Clear failed. Temporary recording files remain. Restart the app to retry cleanup.",
+            "maximumTransactionMs": 24.320229000004474,
+            "maximumDiskBytes": 8483506,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "diskBytesAtEnd": 102434
+        },
+        "restartRecovery": {
+          "durationMs": 957.2969309999899,
+          "samples": 4,
+          "meanCpuPercentOneCore": 16.71372745683666,
+          "cpuByRole": {
+            "Browser": 7.312255762366039,
+            "zygote": 0,
+            "GPU": 4.178431864209165,
+            "Utility": 0,
+            "Tab": 5.223039830261457
+          },
+          "steadyRssBytes": 707551232,
+          "peakProcesses": 8,
+          "peakSampleCpuPercentOneCore": 33.726856837415994,
+          "peakRssBytes": 707551232,
+          "finalRssBytes": 707551232,
+          "finalPssBytes": 325523456,
+          "finalProcesses": [
+            {
+              "rssBytes": 184377344,
+              "pssBytes": 108337152,
+              "role": "Browser"
+            },
+            {
+              "rssBytes": 65679360,
+              "pssBytes": 16357376,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 1712128,
+              "pssBytes": 161792,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 64602112,
+              "pssBytes": 14089216,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 15732736,
+              "pssBytes": 4562944,
+              "role": "zygote"
+            },
+            {
+              "rssBytes": 159756288,
+              "pssBytes": 83402752,
+              "role": "GPU"
+            },
+            {
+              "rssBytes": 84971520,
+              "pssBytes": 28246016,
+              "role": "Utility"
+            },
+            {
+              "rssBytes": 130719744,
+              "pssBytes": 70366208,
+              "role": "Tab"
+            }
+          ],
+          "history": {
+            "generation": 1,
+            "connectionId": "e7229b03-cb46-4a23-9c71-f84f5ff81865",
+            "total": 20,
+            "accepted": 20,
+            "retainedBytes": 11480,
+            "first": {
+              "id": 1,
+              "receivedAt": "2026-09-11T16:00:00.000Z"
+            },
+            "last": {
+              "id": 20,
+              "receivedAt": "2026-09-11T15:59:41.000Z"
+            },
+            "drops": {},
+            "evicted": 0,
+            "transport": {
+              "state": "connected",
+              "reason": null,
+              "connectionId": "e7229b03-cb46-4a23-9c71-f84f5ff81865",
+              "coverageUnknown": true,
+              "collectorTotals": {
+                "no_viewer": 0,
+                "invalid": 0,
+                "oversized": 0,
+                "rate": 0,
+                "queue": 0,
+                "disconnect": 0
+              },
+              "requiresRestart": false,
+              "metrics": {
+                "attempts": 1,
+                "heartbeatRequests": 0,
+                "peakFrameBytes": 489,
+                "peakChunkBytes": 490,
+                "peakProcessing": 1,
+                "rateDisconnects": 0
+              },
+              "retryPending": false,
+              "requests": 1,
+              "processing": 0
+            },
+            "pressure": false,
+            "view": {
+              "queryId": 1,
+              "first": {
+                "id": 1,
+                "receivedAt": "2026-09-11T16:00:00.000Z"
+              },
+              "count": 20,
+              "arrivals": 20,
+              "removed": 0,
+              "maximumMs": 2.6697039999999106,
+              "canceled": 0,
+              "timeouts": 0
+            },
+            "maximumTransactionMs": 2.350406000000021,
+            "maximumDiskBytes": 37434,
+            "localDrops": 0,
+            "rateDrops": 0,
+            "unknownGap": false,
+            "peakQueueCount": 0,
+            "peakQueueBytes": 0,
+            "queuedCount": 0,
+            "queuedBytes": 0,
+            "pendingRequests": 0,
+            "peakPending": 2,
+            "transportBufferedBytes": 0
+          },
+          "diskBytesAtEnd": 24610
+        }
+      },
+      "assertions": [
+        "Held payload starts at a nonzero offset.",
+        "Arrivals preserve held selected payload, neighboring rows and nonzero offset.",
+        "Small input reaches the retained row cap and evicts old rows.",
+        "Three maximum-payload cycles remain bounded while eviction continues.",
+        "hidden state is real, with a window-manager acknowledgement.",
+        "hidden capture continues with zero presentation mutations.",
+        "minimized state is real, with a window-manager acknowledgement.",
+        "minimized capture continues with zero presentation mutations.",
+        "All sixty delayed events finish their storage work before measurement ends.",
+        "Over-limit burst drops input instead of accumulating a replay queue.",
+        "Stalled processing stops heartbeat renewal.",
+        "readOnly failure counts storage drops.",
+        "diskHeadroom failure counts storage drops.",
+        "sqliteFull failure counts storage drops.",
+        "Storage recovery resumes accepted capture.",
+        "Cleanup failure reports remaining files and isolates old history.",
+        "Failed cleanup leaves an abandoned owned recording for restart.",
+        "Restart removes abandoned history and accepts only fresh events.",
+        "Final intake, transport buffer and request queues are empty.",
+        "No replay request is sent.",
+        "Normal close removes all owned recording files."
+      ],
+      "startupMs": 1178.3484689999996,
+      "limits": {
+        "queueCount": 32,
+        "queueBytes": 1048576,
+        "batchCount": 4,
+        "batchBytes": 524288,
+        "eventsPerSecond": 256,
+        "bytesPerSecond": 2097152,
+        "requests": 4,
+        "requestMs": 2500,
+        "cleanupMs": 1500,
+        "rows": 5,
+        "retainedBytes": 8388608,
+        "retainedCount": 10000,
+        "databaseBytes": 16777216,
+        "diskBytes": 34603008,
+        "headroomBytes": 35651584,
+        "cacheKiB": 2048,
+        "sqliteHeapBytes": 8388608,
+        "evictionCount": 64
+      },
+      "server": {
+        "writtenBytes": 64108874,
+        "refused": 937,
+        "requests": 107,
+        "heartbeats": 102,
+        "peakSockets": 2
+      },
+      "complete": true
+    }
+  ],
+  "versions": {
+    "electron": "44.3.0",
+    "node": "24.20.0",
+    "sqlite": "3.53.4",
+    "chromium": "152.0.7977.78",
+    "v8": "15.2.124.19-electron.0"
+  },
+  "gpuFeatures": {
+    "2d_canvas": "disabled_software",
+    "direct_rendering_display_compositor": "disabled_off_ok",
+    "gpu_compositing": "disabled_software",
+    "multiple_raster_threads": "disabled_off",
+    "opengl": "disabled_off",
+    "rasterization": "disabled_software",
+    "raw_draw": "disabled_off_ok",
+    "skia_graphite": "disabled_off",
+    "trees_in_viz": "disabled_off",
+    "video_decode": "disabled_software",
+    "video_encode": "disabled_software",
+    "vulkan": "disabled_off",
+    "webgl": "disabled_off",
+    "webgpu": "disabled_off",
+    "webgpu_on_vk_via_gl_interop": "disabled_off",
+    "webnn": "disabled_off"
+  },
+  "appBytes": 182009,
+  "runtimeBytes": 295827900,
+  "dependencies": {
+    "version": "0.1.0",
+    "name": "codex-scope-viewer",
+    "dependencies": {
+      "@playwright/test": {
+        "version": "1.63.0",
+        "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.63.0.tgz",
+        "overridden": false,
+        "dependencies": {
+          "playwright": {
+            "version": "1.63.0",
+            "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.63.0.tgz",
+            "overridden": false,
+            "dependencies": {
+              "playwright-core": {
+                "version": "1.63.0",
+                "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.63.0.tgz",
+                "overridden": false
+              }
+            }
+          }
+        }
+      },
+      "electron": {
+        "version": "44.3.0",
+        "resolved": "https://registry.npmjs.org/electron/-/electron-44.3.0.tgz",
+        "overridden": false,
+        "dependencies": {
+          "@electron-internal/extract-zip": {
+            "version": "1.0.5",
+            "resolved": "https://registry.npmjs.org/@electron-internal/extract-zip/-/extract-zip-1.0.5.tgz",
+            "overridden": false
+          },
+          "@electron/get": {
+            "version": "5.1.0",
+            "resolved": "https://registry.npmjs.org/@electron/get/-/get-5.1.0.tgz",
+            "overridden": false,
+            "dependencies": {
+              "debug": {
+                "version": "4.4.3",
+                "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
+                "overridden": false,
+                "dependencies": {
+                  "ms": {
+                    "version": "2.1.3",
+                    "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
+                    "overridden": false
+                  }
+                }
+              },
+              "env-paths": {
+                "version": "3.0.0",
+                "resolved": "https://registry.npmjs.org/env-paths/-/env-paths-3.0.0.tgz",
+                "overridden": false
+              },
+              "graceful-fs": {
+                "version": "4.2.11",
+                "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz",
+                "overridden": false
+              },
+              "progress": {
+                "version": "2.0.3",
+                "resolved": "https://registry.npmjs.org/progress/-/progress-2.0.3.tgz",
+                "overridden": false
+              },
+              "semver": {
+                "version": "7.8.5",
+                "resolved": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
+                "overridden": false
+              },
+              "sumchecker": {
+                "version": "3.0.1",
+                "resolved": "https://registry.npmjs.org/sumchecker/-/sumchecker-3.0.1.tgz",
+                "overridden": false,
+                "dependencies": {
+                  "debug": {
+                    "version": "4.4.3"
+                  }
+                }
+              },
+              "undici": {
+                "version": "7.29.1",
+                "resolved": "https://registry.npmjs.org/undici/-/undici-7.29.1.tgz",
+                "overridden": false
+              }
+            }
+          },
+          "@types/node": {
+            "version": "24.13.4",
+            "resolved": "https://registry.npmjs.org/@types/node/-/node-24.13.4.tgz",
+            "overridden": false,
+            "dependencies": {
+              "undici-types": {
+                "version": "7.18.2",
+                "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-7.18.2.tgz",
+                "overridden": false
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "evaluation": {
+    "pass": true,
+    "checkedValues": 281,
+    "limits": {
+      "startupMs": 2000,
+      "peakRssBytes": 943718400,
+      "steadyRssBytes": 865075200,
+      "finalPssBytes": 471859200,
+      "idleCpuPercent": 5,
+      "activeCpuPercent": 110,
+      "searchMs": 600,
+      "keyboardMs": 500,
+      "mainDelayMs": 250,
+      "rendererDelayMs": 250,
+      "plateauRssGrowthBytes": 16777216,
+      "plateauPssGrowthBytes": 8388608,
+      "diskBytes": 34603008,
+      "retainedBytes": 8388608,
+      "queueCount": 32,
+      "queueBytes": 1048576,
+      "requests": 4,
+      "processCount": 10,
+      "appBytes": 204800,
+      "runtimeBytes": 325058560
+    },
+    "startupRangeMs": [
+      1178.3484689999996,
+      1178.3484689999996
+    ],
+    "failures": []
+  },
+  "provenance": {
+    "measurementSourceRevision": "0589875d33618b324539c0493f9279e0f241c8fe",
+    "thresholdSourceRevision": "f34711515052115e596e02d87c61faef0d32902f",
+    "originalReportSha256": "8e9a131938568c0f80af5e70bcaafc139e222b62d3774156edb67bf2abaace23",
+    "result": "Unchanged complete reproduction after the retained renderer timer exceedance. Exit 0; all 281 evaluated values passed."
+  }
+}

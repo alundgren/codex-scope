@@ -257,7 +257,9 @@ parentPort.on('message', async message => {
         const pages = faults.diskFull ? database.prepare('PRAGMA page_count').get().page_count : limits.databaseBytes / 4096;
         database.exec(`PRAGMA max_page_count=${pages}`);
       }
-      result = { ok: true, directory, limits, ...snapshot() };
+      result = { ok: true, directory, limits, ...snapshot(),
+        transport: transport?.snapshot() ?? state.transport,
+        transportBufferedBytes: transport?.attempt?.response?.readableLength ?? 0 };
     } else {
       if (faults.delay && ['inspect', 'navigate', 'append'].includes(operation)) await new Promise(resolve => setTimeout(resolve, faults.delay));
       if (!current(generation)) result = { stale: true };

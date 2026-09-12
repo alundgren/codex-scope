@@ -96,11 +96,15 @@ Done when retained events can be explored in both directions without unbounded l
 
 ## 5. Validate and document the usable first version
 
+- [x] Run the independent integrated Electron visual command from a fresh Linux source export with no collector or private configuration. Inspect all 107 screenshots and sampled frames from all 28 recordings; include desktop/narrow reference comparisons and the full handoff matrix in `docs/electron-regression-validation.md`.
+- [x] Complete three isolated integrated resource trials with empty-window comparisons, measured regression ceilings, successful and deliberately failing checker paths, and memory/queue plateaus across repeated eviction. Keep recording separate from measurement. Results are in `docs/electron-regression-validation.md`.
+- [x] Verify actual Linux minimization with an isolated Openbox window manager. Earlier feature runs only called `minimize()` under bare Xvfb; their docs now qualify that evidence. macOS lifecycle remains unverified.
+
 - [ ] Run a clean Linux capture setup and a clean Mac development setup connected through Tailscale Serve. Document actual commands, prerequisite versions, token creation, Codex trust, route isolation, and uninstall.
 - [ ] Record a synthetic load profile and measured observer latency, collector and Mac memory, CPU behavior, UI responsiveness, and total recording disk use. Choose conservative defaults from those results and test exceeding them.
 - [ ] Verify real Codex sessions with existing hooks, collector absence, Mac close, Mac sleep, connection loss, slow viewer, history limit, and storage failure. Confirm lost events never trigger replay or remote waits in the observer.
-- [ ] Update README status and compatibility claims only after the relevant checks pass. Keep the mockup marked as design until replaced with a synthetic-data screenshot. Keep SVGs consistent with final architecture.
-- [ ] Review the complete code and experience against the agreed priorities. Inspect tracked files for credentials, real captures, endpoints, account-specific paths, and unrelated machine configuration.
+- [x] Update README, architecture, UX and handoff status for performed Electron checks, identify actual-app synthetic evidence and preserve Linux progress. Keep Mac, real-session and private-proxy acceptance explicitly unverified.
+- [x] Review the complete code and experience against the agreed priorities. Correct the late synthetic timeout after Clear and the unavailable-worker controls in the final PR. The refreshed run passes 22 unit checks, 24 Electron scenarios and 281 resource checks; all 109 screenshots and 30 recordings were inspected. [Combined review](docs/electron-final-review.md) records the fixes, evidence and remaining limits. Inspect changed files for credentials, real captures, endpoints and unrelated machine configuration; none were found.
 - [ ] Move lasting instructions and measured budgets into permanent docs, then remove this temporary plan.
 
 Done when a fresh Linux clone can launch the collector and Electron viewer using their independent documented development workflows, and the required Linux failure, visual, and resource checks have evidence. Keep Mac setup and macOS-only checks explicitly unverified for later validation. Signed builds and auto-update infrastructure are not required.

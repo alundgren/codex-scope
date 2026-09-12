@@ -1,0 +1,202 @@
+{
+  "head": "0a1f8102b432aa57d12679d62d5f0b42c93c13b2",
+  "files": [
+    {
+      "path": "docs/mockups/event-journal-v2.html",
+      "sha256": "842d1b3218a69ccceff6b5901c5400dff45965b06488d95eb1042676e3076d7c"
+    },
+    {
+      "path": "electron/fixtures/journal.jsonl",
+      "sha256": "c6790dd7183985cec965cc8022de8d59f67f3561d696cd4416018096ac8c2f09"
+    },
+    {
+      "path": "electron/package-lock.json",
+      "sha256": "b4db31ede7ea2ec3d413420fc0aee603051ba805ac38bfcf3d4bbedf278631b6"
+    },
+    {
+      "path": "electron/package.json",
+      "sha256": "3209258474dba53c2c1e87b7d3f5ff7e18becd241d3dc81c2fba96b354415350"
+    },
+    {
+      "path": "electron/scripts/build.mjs",
+      "sha256": "810ba713ca4f5ed283728faafce36c10faca1893bf9595340c25a505d95411e0"
+    },
+    {
+      "path": "electron/scripts/check-resources.mjs",
+      "sha256": "863318581f803ae65f1821698ad678302f95ffc0a90bde82dd24e8898823b679"
+    },
+    {
+      "path": "electron/scripts/collector-smoke.mjs",
+      "sha256": "97e5f0c07c3a420d2dafe86bae0a1a5a77fd0fe103c7975324fd17a914bac05e"
+    },
+    {
+      "path": "electron/scripts/desktop.mjs",
+      "sha256": "96fe4efb98b981e4d3a9132035ee26a2b0ec499ea39e15b602de8f8e20f9529b"
+    },
+    {
+      "path": "electron/scripts/interaction-metrics.mjs",
+      "sha256": "d5000f491d6a952ef5f789c5b41120cc6e5e9f09bd7ba9e8326f9c10294d206d"
+    },
+    {
+      "path": "electron/scripts/measure-history.mjs",
+      "sha256": "4193a32a02756be25787962af2f2ae83a3d1b77cc3d19edba8f914a2f6adf3c3"
+    },
+    {
+      "path": "electron/scripts/measure-navigation.mjs",
+      "sha256": "066f351728e1afbda16168e38883e644aaf618198cce52044f3d8970043a1edc"
+    },
+    {
+      "path": "electron/scripts/measure-transport.mjs",
+      "sha256": "d924c41dda20966f9ee202cf8afa5eb0ee575775b20fed24d04c012981d0565e"
+    },
+    {
+      "path": "electron/scripts/measure.mjs",
+      "sha256": "24acd8e8d2839fcb376eb555d04b3db6f60587cfad2d9646b1824a3ce7ed3a78"
+    },
+    {
+      "path": "electron/scripts/process-metrics.mjs",
+      "sha256": "d4e86fb57c727f07774e098b9ac5ad4aabed290e92318ed9cf85e4ba50737b63"
+    },
+    {
+      "path": "electron/scripts/reference.mjs",
+      "sha256": "479812a1f3599c9c2d21dba4da4c13b510d8ce364faea2a2f6c47a9f3345a906"
+    },
+    {
+      "path": "electron/scripts/resource-thresholds.mjs",
+      "sha256": "918bc67f44dbc0a74605b366f63856e8986a6f1c133d23d740410b97fc738c1f"
+    },
+    {
+      "path": "electron/scripts/validate-resources.mjs",
+      "sha256": "12d4361baf3abdad35205309e061ef3770298efccb2488292a38b1fd19838bd0"
+    },
+    {
+      "path": "electron/scripts/validate-visual.mjs",
+      "sha256": "9c2699d0b21e168a5ef2659215b0490c1a7c18758404cb6097ab9e7264cdf753"
+    },
+    {
+      "path": "electron/src/connection.cjs",
+      "sha256": "4aef285a34706bc5d579535702243d61c24d78676d840fa5583587ef9cecf34c"
+    },
+    {
+      "path": "electron/src/history-worker.cjs",
+      "sha256": "ab2500f19e1dbb8f8e1bf05574db133e58a6bfc41c2bef269c49a755c39aa7ef"
+    },
+    {
+      "path": "electron/src/history.cjs",
+      "sha256": "0fec73dce267de7411cb9521e369afee6a10c9f357a85a4a1d347353148be74f"
+    },
+    {
+      "path": "electron/src/main.cjs",
+      "sha256": "6057c85dd56c60ad31cd40cc87b16c8c722727dd9dc71ddbeedf8ea8fe568600"
+    },
+    {
+      "path": "electron/src/preload.cjs",
+      "sha256": "e7bc6f5a139076cc080153aa7099e2a80a4f58019a4cd0c47e391b625bb9ad22"
+    },
+    {
+      "path": "electron/src/recording.cjs",
+      "sha256": "a230b88abfc1b92384e1e9952176834f69cf646511bff8191219afd10fd3c155"
+    },
+    {
+      "path": "electron/src/search.cjs",
+      "sha256": "0487e94bf38d886dace9cd006afea5ed9631b334ded91943743b07b50aacb83b"
+    },
+    {
+      "path": "electron/src/stream.cjs",
+      "sha256": "c429e90f5a677edf5f838d1253c3f6be10e824a6f76a9916a9fe828448aa0c2e"
+    },
+    {
+      "path": "electron/src/transport.cjs",
+      "sha256": "31adbfdf8158b03b5d559e71b711bcd0156dab1c95f7aeb3e4c963cf23f24ee4"
+    },
+    {
+      "path": "electron/src/ui/filters.js",
+      "sha256": "0ad6eb0831c272f8a9cd52ad4b59a9f9dd54ef176407d6820b2698d4d40059a2"
+    },
+    {
+      "path": "electron/src/ui/index.html",
+      "sha256": "0de422a5792e0481dc891a92a1b64fcb8ea7ee3ca87984996eaa42d64172cd70"
+    },
+    {
+      "path": "electron/src/ui/renderer.js",
+      "sha256": "8994d767bf0a1c285149578e1e3b07d35978b204c5ff087182a9aa286b3ee64c"
+    },
+    {
+      "path": "electron/src/ui/scrollbar.js",
+      "sha256": "0d1cfccae439549abb2633c17682dd45c5f55ed2522a289eef4e9f876784bca9"
+    },
+    {
+      "path": "electron/src/ui/style.css",
+      "sha256": "0426b4e3ca60f7b6defcc28520388010af1af4b8843496e4157fb6b49a6ea8be"
+    },
+    {
+      "path": "electron/test/baseline/main.cjs",
+      "sha256": "312a0e5b88663faa9f216370bec747d7ec69a33616502cb7b624cc0a25c637f8"
+    },
+    {
+      "path": "electron/test/fake-collector.mjs",
+      "sha256": "b87c71c38899483fb7acdc1281548ab6f3e3625d9720e636b6484f37dec36d09"
+    },
+    {
+      "path": "electron/test/history.spec.mjs",
+      "sha256": "e6dcd9f77ddc790d49db12b150298c46c2a270d6235e910c7463d6e0932e850d"
+    },
+    {
+      "path": "electron/test/inspector.spec.mjs",
+      "sha256": "da9efcce4ed2f1f0d1f3b746ddee486432999475877ea976f2587aae8f08b0d3"
+    },
+    {
+      "path": "electron/test/navigation-helpers.mjs",
+      "sha256": "73f60912c0a59774873fda794554598fc16d0ae61f7d653defa7cf2d26b01c8d"
+    },
+    {
+      "path": "electron/test/navigation.spec.mjs",
+      "sha256": "f8f6beb6e0ef08e9c74727e4070e30a6df01795fc00d2f309178d041929cf93e"
+    },
+    {
+      "path": "electron/test/recording.test.mjs",
+      "sha256": "900327617c2b173bb31a5833e338dc79bea69f3c7bb528526431c2d9c826ec46"
+    },
+    {
+      "path": "electron/test/resource-thresholds.test.mjs",
+      "sha256": "8079871c8553928eff64d775fe5c63278f143cbfcfb3a4e5a9130f773a349c61"
+    },
+    {
+      "path": "electron/test/search.test.mjs",
+      "sha256": "7a3e66f0ce2434a6eb3d897f500363010634d1c6f440d89b45623a9f05738a71"
+    },
+    {
+      "path": "electron/test/transport.spec.mjs",
+      "sha256": "f963977a72eef2384bdd44a3e6298890f937599ee274f2255fae75c666f5e37c"
+    },
+    {
+      "path": "electron/test/transport.test.mjs",
+      "sha256": "cee6582861a1311d90e83d350b3ff7a28167f8598f0b8b9fdcade10b53643b06"
+    },
+    {
+      "path": "protocol/README.md",
+      "sha256": "7fccb791626f3eb0be22bfe854cec1c6d116c5251d3be015765b4edad6be0101"
+    },
+    {
+      "path": "protocol/fixtures/hooks.jsonl",
+      "sha256": "b34d0b15c89e7a8c8a60621fd6206689bf011d56963302a7aaebb32c9969dc11"
+    },
+    {
+      "path": "protocol/fixtures/post-tool-use.json",
+      "sha256": "0131835d5232802a1888acce607d9725aaee84128fad500bebbb8707c1842bfe"
+    },
+    {
+      "path": "protocol/fixtures/pre-tool-use.json",
+      "sha256": "301470373c42d6057866342b385e835f97d3e54a43e6ce250181ac1d571f2f5e"
+    },
+    {
+      "path": "protocol/fixtures/stream.jsonl",
+      "sha256": "2b15b8c1fada25d62a169ab0dfe0d84b802ea3d80a0ae4560fb30f5a84fd2acd"
+    },
+    {
+      "path": "electron/playwright.config.mjs",
+      "sha256": "0eb9b37a9d6e574b63c07164fef9fa2d04e52ee264c5071630604f28b62cf60c"
+    }
+  ],
+  "applicationSource": "275e89fd30e77b23064605f32ab6c44358ec7c53"
+}
