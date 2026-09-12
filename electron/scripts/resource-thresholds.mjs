@@ -1,11 +1,11 @@
 // Linux VM regression limits are calibrated in docs/electron-regression-validation.md.
 export const thresholds = Object.freeze({
-  startupMs: 4000, peakRssBytes: 900 * 1024 * 1024, steadyRssBytes: 830 * 1024 * 1024,
-  finalPssBytes: 480 * 1024 * 1024, idleCpuPercent: 8, activeCpuPercent: 120,
-  searchMs: 800, keyboardMs: 400, mainDelayMs: 350, rendererDelayMs: 350,
-  plateauRssGrowthBytes: 80 * 1024 * 1024, plateauPssGrowthBytes: 64 * 1024 * 1024,
+  startupMs: 2000, peakRssBytes: 900 * 1024 * 1024, steadyRssBytes: 825 * 1024 * 1024,
+  finalPssBytes: 450 * 1024 * 1024, idleCpuPercent: 5, activeCpuPercent: 110,
+  searchMs: 600, keyboardMs: 500, mainDelayMs: 250, rendererDelayMs: 250,
+  plateauRssGrowthBytes: 16 * 1024 * 1024, plateauPssGrowthBytes: 8 * 1024 * 1024,
   diskBytes: 33 * 1024 * 1024, retainedBytes: 8 * 1024 * 1024,
-  queueCount: 32, queueBytes: 1024 * 1024, requests: 4, processCount: 12,
+  queueCount: 32, queueBytes: 1024 * 1024, requests: 4, processCount: 10,
   appBytes: 200 * 1024, runtimeBytes: 310 * 1024 * 1024,
 });
 
