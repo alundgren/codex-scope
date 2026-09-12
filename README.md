@@ -26,6 +26,10 @@ No offline recording is planned, in this or later releases. Events generated whi
 
 [Run the Electron viewer](electron/README.md) with synthetic data or a configured collector. [Integrated regression validation](docs/electron-regression-validation.md) documents independent visual/resource commands, the complete scenario matrix and measured Linux limits. [Transport validation](docs/electron-transport-validation.md) records connection, failure and resource checks. [Search and navigation evidence](docs/electron-navigation-validation.md) records the current checks and limits. The [selected Event journal prototype](docs/mockups/event-journal-v2.html), [viewer behavior](ux.md) and [Electron build handoff](docs/mockups/event-journal-v2-notes.md) describe the experience.
 
+The [combined Electron review](docs/electron-final-review.md) records the final
+corrections to Clear and worker failure handling, fresh recordings and resource validation
+of the complete implementation.
+
 - Follow incoming events, or freeze the view while capture continues.
 - Filter by session, hook type, and free text across retained payloads.
 - Drag the journal pin through older and newer events, or move to its Live endpoint to follow arrivals.

@@ -27,6 +27,11 @@ gesture, with one logical stop per event and a distinct Live endpoint. Timed
 worker queries and bounded option pages avoid whole-recording result arrays.
 Clear requires two separate activations within its three-second deadline,
 invalidates old work and removes old history before starting a fresh connection.
+The renderer adopts the generation accepted by the main process. A refused
+Clear leaves the visible selection intact. Synthetic intake checks its captured
+generation again after each worker reply or timeout, before changing queues or
+drop counters. Worker failure disables history operations while preserving the
+visible original text and scroll position for reading and manual copying.
 One application instance owns private recording files, separately from settings.
 Normal close deletes its recording; startup deletes abandoned owned files
 without reopening or recovering their data. Hide/minimize preserve capture
@@ -52,6 +57,9 @@ the shared generation before closing old transport and deleting its recording.
 measured working sets, sources and actual-app failure/recovery evidence.
 
 [Integrated regression validation](electron-regression-validation.md) runs the production app through capture, full-history search, repeated eviction, hidden presentation and storage failures. It compares all Electron processes with an empty window, enforces measured resource thresholds and keeps the recorded visual suite separate. Validation tooling and its synthetic fake server are development-only.
+
+The [combined review](electron-final-review.md) records the subsequent corrections
+to Clear and worker failure handling, inspected scenarios and final resource check.
 
 The diagrams below describe the complete target system.
 There is no recording of missed events, replay or offline recovery. macOS

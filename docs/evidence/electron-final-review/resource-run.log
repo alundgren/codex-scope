@@ -1,0 +1,65 @@
+
+> codex-scope-viewer@0.1.0 validate:resources
+> npm run build && node scripts/desktop.mjs node scripts/validate-resources.mjs --runs=1
+
+
+> codex-scope-viewer@0.1.0 build
+> node scripts/build.mjs
+
+Built dist/app with local application files and synthetic fixtures.
+Trial 1: connectedIdle complete.
+Trial 1: heldCapture complete.
+Trial 1: capture1000 complete.
+Trial 1: navigate1000 complete.
+Trial 1: captureToRowLimit complete.
+Trial 1: navigateRowLimit complete.
+Trial 1: captureAndRapidInput complete.
+Trial 1: maximumCycle1 complete.
+Trial 1: maximumCycle2 complete.
+Trial 1: maximumCycle3 complete.
+Trial 1: navigateMaximum complete.
+Trial 1: hiddenCapture complete.
+Trial 1: minimizedCapture complete.
+Trial 1: delayedStorage complete.
+Trial 1: burst complete.
+Trial 1: stalledStorage complete.
+Trial 1: readOnly complete.
+Trial 1: diskHeadroom complete.
+Trial 1: sqliteFull complete.
+Trial 1: recoveredCapture complete.
+Trial 1: settledIdle complete.
+Trial 1: cleanupFailure complete.
+Trial 1: restartRecovery complete.
+Trial 1: closing owned app and fake collector.
+Trial 1: owned temporary root removed.
+{
+  "pass": true,
+  "checkedValues": 281,
+  "limits": {
+    "startupMs": 2000,
+    "peakRssBytes": 943718400,
+    "steadyRssBytes": 865075200,
+    "finalPssBytes": 471859200,
+    "idleCpuPercent": 5,
+    "activeCpuPercent": 110,
+    "searchMs": 600,
+    "keyboardMs": 500,
+    "mainDelayMs": 250,
+    "rendererDelayMs": 250,
+    "plateauRssGrowthBytes": 16777216,
+    "plateauPssGrowthBytes": 8388608,
+    "diskBytes": 34603008,
+    "retainedBytes": 8388608,
+    "queueCount": 32,
+    "queueBytes": 1048576,
+    "requests": 4,
+    "processCount": 10,
+    "appBytes": 204800,
+    "runtimeBytes": 325058560
+  },
+  "startupRangeMs": [
+    1018.9247940000005,
+    1018.9247940000005
+  ],
+  "failures": []
+}
