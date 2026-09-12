@@ -4,8 +4,10 @@ export async function completed(page, expected = null) {
   await page.waitForFunction(expected => {
     if (document.querySelector('#entries').getAttribute('aria-busy') !== 'false') return false;
     const payload = document.querySelector('#payload').dataset.event;
-    const selected = document.querySelector('.event[aria-pressed="true"]')?.dataset.event;
-    if (payload && payload !== 'null' && payload !== selected) return false;
+    const selected = document.querySelector('.event[aria-pressed="true"]');
+    if (payload && payload !== 'null') {
+      if (payload !== selected?.dataset.event) return false;
+    } else if (selected) return false;
     return !expected || payload === String(expected.id) &&
       document.querySelector('#scrubber').getAttribute('aria-valuenow') === String(expected.position);
   }, expected);
