@@ -1,6 +1,6 @@
 # Electron development
 
-The viewer opens idle with capture stopped. Functions provides searchable navigation to the event journal, session analyzer, PR review entry and Settings. PR review is currently an empty entry. Start capture opens the collector's version 1 live stream after connection settings are valid. Stop capture closes input work and keeps retained events and active analysis available. Tool navigation preserves each task's state. It also runs
+The viewer opens idle with capture stopped. Functions provides searchable navigation to the event journal, session analyzer, PR review entry and Settings. PR review opens one pinned GitHub PR in the full-window notebook. Source and supplied PNG evidence remain temporary. See [PR review](../docs/pr-review.md) for retrieval, omissions and bounds. Start capture opens the collector's version 1 live stream after connection settings are valid. Stop capture closes input work and keeps retained events and active analysis available. Tool navigation preserves each task's state. It also runs
 independently with synthetic data and no collector or credentials. In synthetic
 mode, it opens five seed events in a fresh temporary SQLite recording,
 starts in Live, and generates one new synthetic event each second. Selecting a
@@ -312,3 +312,7 @@ One discovery can run at a time, without a queue. Navigation away from Settings,
 Limits accommodate measured installed-CLI catalog reads and the bounded maximum-catalog fixture. The catalog process retains the inherited CPU limit and disables core dumps. Its private temporary directory is sampled, but the analysis executor's per-file size limit is not imposed on the CLI's existing SQLite files. Exceeding any limit marks the result incomplete and permits explicit retry. Raw child output never appears in logs or IPC errors.
 
 After building, run `xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec node scripts/measure-catalog.ts` from `electron` without concurrent tests or recording. Add `--real` for installed-CLI discovery with existing authentication and no model turn. The fixture run measures maximum catalogs, output/page pressure, cancellation and recovery. Reports include all app processes and descendants, temporary bytes, frame delay and quit time under ignored `measurements/`. Linux measurements do not establish macOS behavior.
+
+## PR notebook validation
+
+`vp exec node scripts/measure-review.ts` measures the large-PR working set, on-demand source reads, maximum accepted PNG evidence, cancellation, output pressure and recovery without recording. Run inside the documented fresh Xvfb/Openbox desktop after building. `test/review.spec.ts` records the notebook interaction and failure/recovery walkthrough. The [PR review guide](../docs/pr-review.md) maintains the evidence limits.

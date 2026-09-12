@@ -6,6 +6,7 @@
     <title>Codex Scope</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="analysis.css" />
+    <link rel="stylesheet" href="review.css" />
     <script type="module" src="renderer.ts"></script>
   </head>
   <body>
@@ -38,7 +39,63 @@
         <p>Choose a function to begin. Capture is stopped.</p>
       </section>
       <section id="review-entry" class="tool-page" hidden>
-        <p>PR review is not available yet.</p>
+        <div id="review-bar">
+          <div id="review-functions"></div>
+          <div id="review-title" role="heading" aria-level="1">PR review</div>
+          <div id="review-controls" hidden>
+            <button id="review-lens">Overview ⌄</button><button id="review-view">Changes ⌄</button
+            ><button id="review-chat-toggle">Chat</button
+            ><button id="review-more" aria-label="More review controls">•••</button>
+          </div>
+        </div>
+        <div id="review-status" role="status"></div>
+        <div id="review-open">
+          <form id="review-open-form">
+            <label
+              >PR URL or repository and number<input
+                id="review-address"
+                maxlength="512"
+                placeholder="https://github.com/owner/repository/pull/123" /></label
+            ><button type="submit">Open PR</button>
+          </form>
+          <p>Read a pinned PR through local gh. Target code is never run.</p>
+        </div>
+        <button id="review-cancel" hidden>Cancel read</button>
+        <div id="review-grid" hidden>
+          <section id="review-pane" aria-label="PR review">
+            <div id="review-evidence-bar">
+              <button id="review-files">Choose file ⌄</button
+              ><button id="review-side">Diff ⌄</button><span id="review-revision"></span>
+            </div>
+            <div id="review-content" tabindex="0" aria-label="PR evidence"></div>
+            <div id="review-footer">
+              <span id="review-selection">Select a source line</span
+              ><button id="review-previous">Previous lines</button
+              ><button id="review-next">Next lines</button
+              ><button id="review-expand">Expand review</button>
+            </div>
+          </section>
+          <div
+            id="review-divider"
+            tabindex="0"
+            role="separator"
+            aria-label="Resize review and conversation"
+            aria-orientation="vertical"
+            aria-valuemin="20"
+            aria-valuemax="80"
+            aria-valuenow="60"
+          ></div>
+          <section id="review-chat" aria-label="Conversation">
+            <div class="review-chat-bar">
+              <span>Conversation</span><button id="review-chat-expand">Expand chat</button>
+            </div>
+            <p>No conversation yet. Live PR conversations are not available.</p>
+          </section>
+        </div>
+        <dialog id="review-dialog">
+          <div id="review-dialog-content"></div>
+          <button id="review-dialog-close">Close</button>
+        </dialog>
       </section>
       <section id="settings" class="tool-page" hidden>
         <form id="connection-settings">

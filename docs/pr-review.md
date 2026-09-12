@@ -1,0 +1,28 @@
+# PR inspection
+
+Functions → PR review opens one PR from a github.com URL or `owner/repository #123`. Local `gh` must be installed and authenticated for that repository. Missing CLI, access, network and output failures give a retry path without changing existing evidence. Scope does not check out, build, launch or run the reviewed repository. There is no model call in manual PR browsing.
+
+Each review has a new temporary ID plus repository, PR number, target base OID and head OID. Source references also carry path, side and line. The comparison merge-base OID identifies diff-left source, which can differ from the target branch tip. Fork source uses the head repository, and renamed base source uses the previous filename. Missing fork repositories stay unavailable. Deleted and added files explicitly lack a head or base side respectively.
+
+`gh api` receives argument arrays and a fixed GitHub hostname. PR and changed-file responses have byte caps before JSON parsing. File pages contain at most ten paths. GitHub's files endpoint also returns patches with the page, so those patches enter the bounded main-process page; all-source prefetch does not occur. The renderer receives only path metadata and the currently requested 200 content rows. Main retains one file page plus one selected file and source/diff, with no cache that grows as the review continues. Opening each source side performs one commit-pinned read. Subsequent content pages slice that bounded source. A file-page response is accepted only after the PR's base/head still match the pinned review.
+
+The [GitHub comparison contract](https://docs.github.com/en/rest/commits/commits#compare-two-commits) includes the merge base on paginated responses and files only on the first page. Scope requests page two with one commit per page to resolve the comparison base without loading a comparison-wide file list. The [PR files endpoint](https://docs.github.com/en/rest/pulls/pulls#list-pull-requests-files) exposes at most 3,000 paths. Any additional paths are counted as omitted in Evidence limits. Absent, oversized or structurally incomplete patches remain unavailable; source-side reads may still work. Accepted source is UTF-8 text only. Binary or oversized content is omitted as a whole.
+
+Refresh checks current PR identity without replacing anything. If it changed, Replace review is explicit and removes old screenshots and selections. Existing evidence never silently acquires new revision identifiers. Opening another PR and ending the review also require an explicit leave action. A failed replacement keeps the previous review. Feedback copy and live conversation are not yet available.
+
+PNG screenshots come only from an explicit local picker. Scope checks regular-file status, size, PNG structure and decoded dimensions before Chromium expands pixels. Animated PNG and other formats are unsupported. The private temporary directory stores four randomly named files at most, with owner-only permissions. A read-only local protocol URL delivers only the selected image, avoiding base64 image copies through IPC. The route accepts only the active PR and known image IDs, permits one read, validates stored bytes again, and disables caching. The renderer labels its supplied filename and pinned revision. Removing an image, ending/replacing the review or normal quit removes its file. Startup removes bounded abandoned screenshot files; unexpected directory entries stop startup instead of deleting unrelated data. Ordinary deletion is not forensic erasure.
+
+| Resource | Limit and behavior |
+| --- | --- |
+| Active work | One PR operation, one gh process group; overlapping requests rejected, no retry queue |
+| gh response | 2 MiB stdout, 32 KiB discarded stderr, 10-second command deadline |
+| gh process group | Existing CLI sampler: 512 MiB summed RSS, eight processes, 30 CPU seconds; check every 500 ms, kill on failure |
+| Changed-file page | Ten entries; browse up to 3,000 paths; excess path count visible on demand |
+| Selected patch | 128 KiB, structurally complete hunks only |
+| Selected source | 256 KiB UTF-8, 20,000 lines; larger inputs omitted |
+| Renderer | 200 source/diff rows, one selected image, twenty recent scroll/page positions |
+| Screenshots | Four PNGs, 4 MiB encoded and 4,194,304 decoded pixels each; at most 16 MiB of app-owned screenshot files |
+| PR metadata | 1,024-character title, 65,536-character description within the response cap |
+| IPC request | 4,096 serialized characters, one pending request; trusted main-frame sender required |
+
+The limits keep source and screenshot work independent of total PR size and browsing duration. Reproduce their workload with `electron/scripts/measure-review.ts` inside the documented fresh Xvfb/Openbox desktop. It measures a 3,010-path PR manifest, repeated file-page browsing, a 19,000-line accepted source, maximum screenshot bytes/pixels, cancellation, output pressure and recovery, including gh descendants and temporary screenshot files. Run resource measurement without video; record the UI separately with `test/review.spec.ts`. Linux results do not establish macOS performance, energy use or native lifecycle behavior.

@@ -1,8 +1,10 @@
+import { attachReview } from "./review.ts";
 import { attachModelSettings } from "./model-settings.ts";
 import type { HistoryStatus, ConnectionSettings, Reply } from "../types.ts";
 import { connectionInput } from "../connection-input.ts";
 import { requiredElement } from "./elements.ts";
 export function attachTools(analyzer: { show(open: boolean): void }, journal: () => void) {
+  const review = attachReview();
   const menu = requiredElement<HTMLDetailsElement>("#functions");
   const search = requiredElement<HTMLInputElement>("#function-search");
   const endpoint = requiredElement<HTMLInputElement>("#collector-url");
@@ -41,6 +43,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   function show(next: string) {
     if (view === "settings" && next !== "settings") models.stop();
     view = next;
+    review.show(next === "review");
     document.body.classList.toggle("tool-open", next !== "journal");
     analyzer.show(next === "analysis");
     for (const [id, name] of [
