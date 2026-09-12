@@ -67,6 +67,7 @@ export interface AnalysisState {
   generation: number;
   version: number;
   activeRunId: string | null;
+  handoffRunId: string | null;
   runs: AnalysisRunSummary[];
 }
 export interface AnalysisAPI {

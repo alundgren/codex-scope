@@ -32,9 +32,18 @@ At most four runs are retained across sessions; older runs are removed. Closing
 the application or clearing history removes runs and cancels active analysis.
 No runs, recommendation decisions or missed events are recovered on restart.
 
-**Export kept suggestions** writes a bounded Markdown file through an explicit
-save action. It can contain private captured information. It does not apply
-instructions, run commands, rerun the task or measure savings.
+**Copy session handoff** sends only the kept findings, call references and snapshot
+identity back through the analysis run's model. A fresh ephemeral request receives
+that context because analyzer conversations are not retained. It prepares a
+handoff for the agent still working in the source session, describing findings,
+uncertainty and suggested corrections for current and future work. The completed
+handoff goes to the clipboard for the user to paste into that session. It does
+not send a message to the source session or apply changes automatically.
+Cancellation or generation failure preserves the clipboard and retained results.
+Clipboard writes have a two-second response deadline and at most one pending
+handoff write. An unconfirmed native write may finish after that deadline; no
+further handoff starts until it settles. Handoff
+generation shares the single active CLI slot and all analysis execution limits.
 
 ## Evidence and findings
 
@@ -115,7 +124,7 @@ thread](https://www.electronjs.org/docs/latest/tutorial/performance) and its
 | CLI temporary directory | 16 MiB total, 64 entries |
 | Hard per-file size / core dumps | 16 MiB / disabled |
 | Resource sampling | Every 500 ms while analysis is running |
-| Markdown export | 128 KiB |
+| Kept-finding packet / handoff text | 128 KiB / 12,000 characters plus session metadata |
 
 The CPU/file limits are inherited OS limits. Aggregate memory, CPU, process count
 and temporary storage are checked by bounded sampling, so short overshoots are

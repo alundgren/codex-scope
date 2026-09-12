@@ -120,7 +120,7 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
     await tab(page, "recommendations").click();
     await expect(page.locator(".analysis-finding.focused")).toHaveCount(1);
     await page.getByRole("button", { name: "Keep suggestion", exact: true }).first().click();
-    await expect(page.locator(".analysis-decision").first()).toContainText("Kept for export");
+    await expect(page.locator(".analysis-decision").first()).toContainText("Kept for handoff");
     await page.getByRole("button", { name: "Dismiss", exact: true }).click();
     await expect(page.locator(".analysis-decision").last()).toContainText("Dismissed");
     await page.locator(".analysis-decision").last().getByRole("button", { name: "Undo" }).click();
@@ -131,10 +131,18 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
       .locator(".analysis-finding.focused")
       .evaluate((node) => node.scrollIntoView({ block: "nearest" }));
     await capture(page, info, "06-recommendations");
+    const controls = await page.locator(".analysis-workspace").boundingBox();
+    expect(controls!.y).toBeLessThan(300);
     await page.locator("#analysis-export").click();
-    await expect(page.locator("#analysis-status")).toHaveText("Kept suggestions exported.");
-    const exported = await readFile(path.join(root, "analysis-export.md"), "utf8");
+    await expect(page.locator("#analysis-status")).toContainText("Preparing a handoff");
+    await capture(page, info, "06c-preparing-handoff");
+    await expect(page.locator("#analysis-status")).toHaveText(
+      "Handoff copied. Paste it into the source session.",
+    );
+    const exported = await app.evaluate(({ clipboard }) => clipboard.readText());
+    expect(exported).toContain("Session analysis handoff for analysis-session");
     expect(exported).toContain("Try a narrower discovery query");
+    await capture(page, info, "06d-copied-handoff");
     expect(exported).not.toContain("Consider a scout before reading many files");
     await tab(page, "results").click();
     await expect(page.locator("#analysis-search")).toHaveValue("no such command");
@@ -520,6 +528,97 @@ test("narrow journal keeps connection transitions visible", async ({}, info) => 
   } finally {
     await app.close();
     await server.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("handoff failure and cancellation preserve results and clipboard, then allow retry", async ({}, info) => {
+  const { app, page, root } = await launch(info);
+  try {
+    await append(app, calls());
+    await openSession(page);
+    await analyze(page, "test-handoff-invalid");
+    await tab(page, "recommendations").click();
+    await page.getByRole("button", { name: "Keep suggestion", exact: true }).first().click();
+    await app.evaluate(({ clipboard }) => clipboard.writeText("Existing clipboard"));
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-status")).toHaveText(
+      "Codex returned an invalid handoff. Try again.",
+    );
+    expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe("Existing clipboard");
+    await capture(page, info, "handoff-invalid");
+    await analyze(page, "test-handoff-slow");
+    await page.locator("#analysis-run").selectOption({ index: 1 });
+    await page.getByRole("button", { name: "Keep suggestion", exact: true }).first().click();
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-start")).toBeDisabled();
+    await expect(page.locator("#analysis-export")).toBeDisabled();
+    await capture(page, info, "handoff-cancellable");
+    await page.locator("#analysis-cancel").click();
+    await expect(page.locator("#analysis-export")).toBeEnabled();
+    expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe("Existing clipboard");
+    await expect(page.locator(".analysis-finding")).toHaveCount(2);
+    await capture(page, info, "handoff-cancelled");
+    await analyze(page);
+    await page.locator("#analysis-run").selectOption({ index: 2 });
+    await page.getByRole("button", { name: "Keep suggestion", exact: true }).first().click();
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-status")).toContainText("Handoff copied");
+    await capture(page, info, "handoff-recovered");
+  } finally {
+    await app.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("clipboard failure and delayed completion remain bounded and recoverable", async ({}, info) => {
+  const { app, page, root } = await launch(info);
+  try {
+    await append(app, calls());
+    await openSession(page);
+    await analyze(page);
+    await tab(page, "recommendations").click();
+    await page.getByRole("button", { name: "Keep suggestion", exact: true }).first().click();
+    await app.evaluate(({ clipboard }) => clipboard.writeText("Existing clipboard"));
+    await app.evaluate(({ clipboard }) => {
+      const write = clipboard.writeText;
+      clipboard.writeText = async () => {
+        clipboard.writeText = write;
+        throw new Error("Synthetic clipboard failure");
+      };
+    });
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-status")).toHaveText(
+      "The handoff could not be copied. Try again.",
+    );
+    await capture(page, info, "clipboard-failed");
+    await app.evaluate(({ clipboard }) => {
+      const write = clipboard.writeText;
+      clipboard.writeText = (text) =>
+        new Promise<void>((resolve, reject) => {
+          setTimeout(() => {
+            clipboard.writeText = write;
+            write(text).then(resolve, reject);
+          }, 4000);
+        });
+    });
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-status")).toHaveText(
+      "The clipboard has not confirmed the copy. It may still finish.",
+    );
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-status")).toHaveText(
+      "A handoff is still being prepared or copied.",
+    );
+    await capture(page, info, "clipboard-pending");
+    await expect
+      .poll(() => app.evaluate(({ clipboard }) => clipboard.readText()))
+      .toContain("Session analysis handoff");
+    await page.locator("#analysis-export").click();
+    await expect(page.locator("#analysis-status")).toContainText("Handoff copied");
+    await capture(page, info, "clipboard-recovered");
+  } finally {
+    await app.close();
     await rm(root, { recursive: true, force: true });
   }
 });

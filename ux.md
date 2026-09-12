@@ -102,7 +102,10 @@ deletion followed by fresh setup, without requiring a separate management comman
 The analyzer is one session workspace with Results, Search trail, Agent routing
 and Recommendations views. The four [concepts](docs/mockups/session-analyzer.html)
 are visual references; the implemented workspace consolidates their session and
-model controls. Keep the event journal available with its held reading position.
+model controls. Desktop setup uses compact inline labels and places snapshot
+coverage beside the run selector, keeping all setup controls visible. The title,
+tabs and filters use less vertical padding to leave more room for findings.
+Keep the event journal available with its held reading position.
 Use one visible title, Session analyzer, and necessary controls without additional
 subheadings. Narrow controls scroll within a bounded area so evidence panes and
 the footer remain usable. Keep the connection indicator visible at all widths;
@@ -119,8 +122,11 @@ agent relationships, and all totals describe retained evidence. Show snapshot
 omissions, recording-wide drop counts and original-event eviction plainly.
 
 Recommendations are model judgments with linked captured evidence. Keep, dismiss
-and undo belong to their analysis run. Export is explicit and does not apply
-workflow changes. Runs and decisions are bounded and temporary. Explain removal
+and undo belong to their analysis run. Copy session handoff explicitly asks the
+run's analysis model to turn kept findings into advice for the still-active source
+session, then copies the result for the user to paste. Show preparation, allow
+cancellation, and preserve the clipboard on failure. This does not apply workflow
+changes or send messages automatically. Runs and decisions are bounded and temporary. Explain removal
 when an old run is evicted, and clear all analysis state with recording generation
 changes. CLI absence, invalid model, unavailable authentication, invalid output,
 resource limits and cancellation keep previous evidence readable and offer a

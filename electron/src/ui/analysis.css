@@ -464,3 +464,110 @@ main > footer {
     min-height: 160px;
   }
 }
+
+/* Keep setup available while giving the captured evidence most of the window. */
+.analysis-open header {
+  padding-block: 8px;
+}
+.analysis-open h1 {
+  font-size: 22px;
+}
+.analysis-controls {
+  padding-block: 6px;
+  align-items: center;
+}
+.analysis-controls label {
+  flex-direction: row;
+  align-items: center;
+  white-space: nowrap;
+  gap: 8px;
+}
+.analysis-controls > label:not(.analysis-session-label) {
+  width: 290px;
+}
+.analysis-controls input,
+.analysis-controls select,
+.analysis-run-controls select,
+.analysis-controls button,
+.analysis-tabs button,
+.analysis-filters input,
+.analysis-filters select,
+.analysis-filters button {
+  padding-block: 6px;
+}
+.analysis-run-controls {
+  gap: 12px;
+  padding-bottom: 4px;
+}
+.analysis-run-controls select {
+  max-width: 310px;
+}
+#analysis-coverage {
+  padding: 0;
+  flex: 1;
+  min-width: 180px;
+}
+#analysis-coverage summary {
+  font-size: 12px;
+}
+#analysis-coverage p {
+  font-size: 13.5px;
+}
+.analysis-tabs {
+  padding-block: 4px;
+}
+.analysis-filters {
+  padding-block: 6px;
+}
+#analysis-focus {
+  padding-bottom: 6px;
+}
+@media (max-width: 720px) {
+  .analysis-controls label {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .analysis-controls > label:not(.analysis-session-label) {
+    width: auto;
+  }
+  #analysis-coverage {
+    flex-basis: 100%;
+  }
+}
+
+@media (min-width: 721px) {
+  #analysis-controls-region {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    flex-shrink: 0;
+  }
+  #analysis-setup {
+    display: contents;
+  }
+  #analysis-controls-region > *,
+  .analysis-controls {
+    grid-column: 1 / -1;
+  }
+  .analysis-settings-actions {
+    display: none;
+  }
+  .analysis-run-controls {
+    grid-column: 1;
+    padding-right: 12px;
+  }
+  #analysis-coverage {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+    padding-right: 24px;
+    align-self: center;
+  }
+  .analysis-run-controls label:first-child {
+    max-width: none;
+  }
+}
+@media (max-width: 720px) {
+  #analysis-coverage {
+    padding-inline: 16px;
+  }
+}
