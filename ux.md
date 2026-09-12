@@ -90,8 +90,12 @@ Codex client. The first checks delivery with a unique marker; the second checks
 normal behavior while the collector is stopped. Success leaves the service
 running and prints connection and removal instructions without exposing tokens.
 Failures trigger rollback; edited resources are preserved with an explicit
-cleanup result. Existing installations offer inspection, verification, removal,
-and optional deletion of retained files, without an implicit upgrade.
+cleanup result. Rerunning the install script detects current state. Existing
+installations default to an upgrade choice with explicit confirmation and a
+notice about the collector restart and lost events. Upgrades retain connection
+settings and hook commands. Inspection, verification, and removal remain available.
+Interrupted upgrades offer recovery; removed installations offer retained-file
+deletion followed by fresh setup, without requiring a separate management command.
 
 ## Session analyzer
 

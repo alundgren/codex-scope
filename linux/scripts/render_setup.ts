@@ -42,10 +42,19 @@ for (const cast of casts) {
       ["live", "Did the task finish normally?"],
       ["stopped", "Did that task also finish normally?"],
       ["installed", "Installation state: installed"],
+      ["upgrade-review", "Upgrade the installed executables now?"],
+      ["upgrade-recovery", "Recover the recorded upgrade now?"],
+      ["upgraded", "Upgrade finished."],
+      ["unchanged", "already match this build"],
+      ["restored", "Previous executables restored."],
     ] as const) {
-      if (name === "success" && full.includes(trigger) && !captured.has(state)) {
+      if (
+        (name === "success" || name.startsWith("upgrade")) &&
+        full.includes(trigger) &&
+        !captured.has(state)
+      ) {
         captured.add(state);
-        await snapshot(`success-${state}`);
+        await snapshot(`${name}-${state}`);
         await page.waitForTimeout(450);
       }
     }

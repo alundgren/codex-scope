@@ -100,9 +100,22 @@ The permanent management command is:
 ```
 
 It offers `inspect`, `verify`, `uninstall`, and `purge`. These actions can also
-be supplied as arguments. A second run of `linux/install.sh` finds the same
-installation record; it never overwrites a working install or performs an
-in-place upgrade.
+be supplied as arguments. To install or upgrade, run `./linux/install.sh` from
+the updated checkout. It builds the current source and detects the installation
+state. An installed copy defaults to an explicit upgrade prompt. Upgrades keep
+the token, endpoint, paths, service settings, and hook commands, and replace the
+collector, observer, and recovery executable. Identical executables need no restart.
+
+The installer checks observer registration compatibility before replacement and
+checks the endpoint after restarting the collector. These checks do not prove
+real-session capture; use `manage.sh verify` for the interactive checks. Events
+during the restart are lost. Failed upgrades restore the previous executables;
+an interrupted upgrade is recovered by rerunning `./linux/install.sh`. Edited
+executables or service definitions stop the upgrade and are preserved.
+
+After an uninstall, the same script offers to delete retained credentials,
+backups, and recovery tools before beginning a fresh installation. That fresh
+installation creates a new token. Interrupted initial setup is rolled back first.
 
 ```sh
 ~/.local/state/codex-scope-installer/manage.sh inspect
@@ -133,7 +146,7 @@ purged after successful uninstall:
 
 Purge refuses edited or unexpected recovery files before deleting retained
 credentials or backups. After purge, a fresh installation is possible.
-In-place upgrades are intentionally not implemented.
+Normal upgrades do not require uninstall or purge.
 
 ## Failure and recovery
 
@@ -202,7 +215,9 @@ observer for the live marker and stopped-collector checks. Scenarios cover
 read consent denial, missing prerequisites, probe failure, Tailscale
 prerequisites, symlinked service enablement refusal, cancellation rollback,
 install/inspect/uninstall/purge, edited
-service preservation, and interrupted-install recovery. The renderer needs the
+service preservation, interrupted-install recovery, upgrade confirmation and
+decline, unchanged builds, failed-upgrade rollback, interrupted-upgrade recovery,
+and fresh setup after removal. The renderer needs the
 workspace's development Playwright dependency and browser; it does not change
 the Linux build or installed prerequisites. Generated casts, PNGs and video stay
 under ignored `.artifacts/visual/`.

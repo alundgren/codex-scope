@@ -210,6 +210,14 @@ Linux runtime choices, limits, and commands are recorded in [Linux development](
 configuration, probes Codex registration in isolation, and rehearses hook
 removal before committing live changes. It copies the runtime outside the
 checkout and owns one user service and an optional dedicated Tailscale listener.
+Running setup again offers upgrades using the existing connection and hook
+configuration. A pending upgrade records old and new executable hashes before
+replacement, with three private rollback copies bounded by the existing 64 MiB
+per-executable limit. Atomic executable replacement avoids partially written
+programs. The collector is stopped during replacement and started for an endpoint
+check. Failure restores the previous binaries; rerunning setup recovers an
+interrupted upgrade. Recovery tools from before upgrade support may reject a
+pending upgrade record; the updated checkout's install command can recover it.
 
 A private installation record precedes each external mutation. Recovery compares
 owned file hashes and modes, directory identities, hook ownership, service

@@ -713,6 +713,7 @@ fn new_install(home: &Path, registry: &Path, host: &dyn Host) -> Result<()> {
         service_intent: false,
         route_intent: false,
         route: Value::Null,
+        upgrade: None,
     };
     let plan = Plan {
         record,
@@ -850,6 +851,12 @@ pub fn run(args: &[String]) -> Result<()> {
         }
         confirm("Read the installation record and selected Codex/service configuration?")?;
         let mut job = Installation::load(&registry, &home)?;
+        if job.record.upgrade.is_some() {
+            println!("An interrupted upgrade needs recovery before continuing.");
+            confirm("Recover the recorded upgrade now?")?;
+            super::upgrade::recover(&mut job, &host)?;
+            println!("Upgrade recovery finished.");
+        }
         if ["installing", "removing", "needs_cleanup"].contains(&job.record.phase.as_str()) {
             println!(
                 "An interrupted installation needs rollback before another install can start."
@@ -857,13 +864,55 @@ pub fn run(args: &[String]) -> Result<()> {
             confirm("Undo its recorded changes now?")?;
             cleanup(&mut job, &host)?;
             println!("Rollback finished. Backups and credentials are retained.");
-            return Ok(());
+            if args[0] == "manage" {
+                return Ok(());
+            }
+        }
+        if args[0] == "setup" && job.record.phase == "removed" {
+            confirm(
+                "Delete retained token, backups, and recovery tools and begin a fresh installation?",
+            )?;
+            job.purge()?;
+            return new_install(&home, &registry, &host);
         }
         let action = match action {
             Some(a) => a.to_owned(),
+            None if args[0] == "setup" => ask(
+                "Choose upgrade, inspect, verify, uninstall, or purge",
+                "upgrade",
+            )?,
             None => ask("Choose inspect, verify, uninstall, or purge", "inspect")?,
         };
         match action.as_str() {
+            "upgrade" if args[0] == "setup" => {
+                let executable = std::env::current_exe().map_err(host::io_error)?;
+                let observer = executable
+                    .parent()
+                    .ok_or("Executable directory is missing")?
+                    .join("codex-scope-observer");
+                let binary = host::read_bounded(&executable, false, host::BINARY_LIMIT)?
+                    .ok_or("Native executable is missing")?;
+                let observer_bytes = host::read_bounded(&observer, false, host::BINARY_LIMIT)?
+                    .ok_or("Native observer is missing; run linux/install.sh from the checkout")?;
+                println!("Checking the supplied observer against installed Codex registrations...");
+                probe::compatible(&host::need("codex", "Codex CLI")?, &observer)?;
+                println!(
+                    "Upgrade keeps the token, endpoint, paths, and hook commands. The collector will restart; events during the interruption are lost."
+                );
+                confirm("Upgrade the installed executables now?")?;
+                let endpoint = job.record.endpoint.clone();
+                if super::upgrade::apply(&mut job, &host, &binary, &observer_bytes, || {
+                    wait_http(&endpoint)
+                })? {
+                    println!(
+                        "Upgrade finished. Collector endpoint responded. Real-session capture has not been checked; use manage.sh verify to test it."
+                    );
+                } else {
+                    println!(
+                        "The installed executables already match this build. No restart was needed."
+                    );
+                }
+            }
             "inspect" => {
                 show(&job)?;
                 if job.record.phase == "installed" {

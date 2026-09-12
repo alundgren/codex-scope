@@ -56,6 +56,8 @@ pub struct Record {
     pub route_intent: bool,
     #[serde(default)]
     pub route: Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upgrade: Option<super::upgrade::Pending>,
 }
 pub struct Installation {
     pub registry: PathBuf,
@@ -76,6 +78,7 @@ impl Installation {
                 "removing",
                 "removed",
                 "needs_cleanup",
+                "upgrading",
             ]
             .contains(&record.phase.as_str())
             || record.files.len() > 128
@@ -83,6 +86,19 @@ impl Installation {
             || record.permissions.len() > 64
             || record.identity.len() != 32
             || !record.identity.bytes().all(|b| b.is_ascii_hexdigit())
+        {
+            return Err(invalid());
+        }
+        if record.phase == "upgrading" && record.upgrade.is_none() {
+            return Err(invalid());
+        }
+        if let Some(pending) = &record.upgrade
+            && (!["upgrading", "installed"].contains(&record.phase.as_str())
+                || pending
+                    .old
+                    .iter()
+                    .chain(&pending.new)
+                    .any(|hash| hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_hexdigit())))
         {
             return Err(invalid());
         }
