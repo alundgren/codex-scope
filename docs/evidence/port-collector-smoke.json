@@ -1,0 +1,11 @@
+{
+  "date": "2026-09-12T06:23:05.006Z",
+  "environment": "Actual Electron/Xvfb and landed Linux collector, loopback HTTP, synthetic datagram only",
+  "collectorImplementation": "Rust port",
+  "checks": [
+    "Landed collector hello and synthetic datagram accepted with exact original bytes",
+    "Stream survives beyond six-second lease through separate heartbeat requests",
+    "Collector close preserves retained history and reports unknown coverage"
+  ],
+  "result": "pass"
+}

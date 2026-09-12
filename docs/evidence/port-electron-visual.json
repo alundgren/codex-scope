@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-12T06:11:16.716Z",
+  "platform": "linux",
+  "release": "7.0.0-31-generic",
+  "hostNode": "v24.21.0",
+  "electron": "44.3.0",
+  "playwright": "1.63.0",
+  "completed": true,
+  "stats": {
+    "startTime": "2026-09-12T06:11:56.143Z",
+    "duration": 479262.88300000003,
+    "expected": 24,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "sourceCommit": "ab132147d16cc85b66c90c0904d34605b71801ba",
+  "artifactCount": 139
+}

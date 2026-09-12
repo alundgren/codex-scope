@@ -59,7 +59,7 @@ xvfb-run -a vp run start
 ```
 
 On a desktop with a display, use `vp run start`. With no connection settings,
-startup uses synthetic mode. `vp run start -- --synthetic` selects it explicitly. Use `vp run start -- --fixtures-only`
+startup uses synthetic mode. `vp run start --synthetic` selects it explicitly. Use `vp run start --fixtures-only`
 to keep the initial recording finite while exercising inspection. The
 `--history-test` switch exposes fault injection only to the Electron main-process
 debugger and accepts `--scope-test-root` for an isolated owner directory. It
@@ -81,7 +81,7 @@ The default configuration is `connection.json` in Electron's application user
 data directory, separate from temporary recordings. To use another private file:
 
 ```bash
-vp run start -- --connection-config=/absolute/private/connection.json
+vp run start --connection-config=/absolute/private/connection.json
 ```
 
 The endpoint is an origin only, optionally followed by `/`. Credentials, paths,
@@ -145,12 +145,12 @@ Run the integrated resource workflow separately from recordings or other Electro
 ```bash
 setsid --wait xvfb-run -a -s '-screen 0 1600x1000x24' vp run validate:resources
 vp run check:resources
-vp run check:resources -- --prove-failure
+vp run check:resources --prove-failure
 ```
 
 The resource command builds the app and runs three empty-window/app trials,
 including bounded capture, search, repeated eviction, hidden/minimized capture,
-bursts, stalled storage and failure/recovery. Append `-- --runs=1` for a single
+bursts, stalled storage and failure/recovery. Append `--runs=1` for a single
 trial. Reports go under ignored `measurements/regression/`. Missing required
 metrics or exceeded checked-in thresholds return failure. Visual artifacts go
 under ignored `../.artifacts/visual/electron-report/`; inspect the screenshots and recordings.

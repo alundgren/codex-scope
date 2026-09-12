@@ -15,8 +15,8 @@ required. Historical validation below describes the former implementation.
 - [x] Port observer, collector, diagnostics and their failure tests to Rust.
 - [x] Port guided setup, recovery and safe removal to Rust with isolated tests.
 - [x] Convert Electron source and validation tooling to checked TypeScript.
-- [ ] Run actual Electron visual/resource checks and native collector integration.
-- [ ] Record fresh measurements and remaining platform/real-session limitations.
+- [x] Run actual Electron visual/resource checks and native collector integration.
+- [x] Record fresh measurements and remaining platform/real-session limitations in `docs/port-validation.md`.
 - [ ] Complete independent review of the full change and open the pull request.
 
 ## Current work
