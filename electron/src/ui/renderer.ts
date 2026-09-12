@@ -1,3 +1,4 @@
+import { attachAnalysis } from "./analysis.ts";
 import type {
   HistoryStatus,
   NavigationRequest,
@@ -113,7 +114,7 @@ function navigationSnapshot() {
     : null;
 }
 function positionMarkers() {
-  if (document.hidden) return;
+  if (document.hidden || document.body.classList.contains("analysis-open")) return;
   const snapshot = gesture?.snapshot ?? navigationSnapshot();
   const count = snapshot?.count ?? 0;
   const value = live ? count : Math.max(0, Math.min(count - 1, position));
@@ -303,6 +304,7 @@ function stopGesture() {
 }
 function receive(value: HistoryStatus) {
   if (value.generation < generation) return;
+  analyzer.receive(value);
   if (value.generation !== generation) {
     generation = value.generation;
     queryId++;
@@ -336,7 +338,14 @@ function receive(value: HistoryStatus) {
     document.documentElement.dataset.ready = "true";
     return;
   }
-  if (document.hidden || clearPending || value.clearing || filterPending) return;
+  if (
+    document.hidden ||
+    document.body.classList.contains("analysis-open") ||
+    clearPending ||
+    value.clearing ||
+    filterPending
+  )
+    return;
   if (
     gesture &&
     value.view?.queryId === queryId &&
@@ -735,6 +744,7 @@ liveButton.addEventListener("click", () => {
   requestInspection(null);
 });
 new ResizeObserver(() => {
+  if (document.body.classList.contains("analysis-open")) return;
   const notice = requiredElement("#notice");
   notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;
   positionMarkers();
@@ -754,3 +764,17 @@ void window.scope.status().then((value) => {
   requestInspection(null);
   filters.refresh();
 });
+
+const analyzer = attachAnalysis(
+  () => filters.value().session,
+  (visible) => {
+    if (!visible) {
+      stopGesture();
+      cancelWork();
+      relock();
+    } else {
+      summary(latest);
+      requestInspection(live ? null : selectedId);
+    }
+  },
+);
