@@ -1,9 +1,13 @@
-import { test, expect } from "vite-plus/test";
-import { mkdtemp, writeFile, readFile, rm, readdir } from "node:fs/promises";
+import { test, expect, vi } from "vite-plus/test";
+import { mkdtemp, writeFile, readFile, rm, readdir, open } from "node:fs/promises";
 import path from "node:path";
 import { PRReview } from "../src/review.ts";
 import { feedbackCopy, feedbackText } from "../src/review-feedback.ts";
 const fixture = path.resolve("test/fixtures/review-gh.cjs");
+vi.mock("node:fs/promises", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:fs/promises")>();
+  return { ...actual, open: vi.fn(actual.open) };
+});
 async function setup() {
   const root = await mkdtemp("/tmp/scope-post-unit-");
   const review = new PRReview(path.join(root, "review"), async () => undefined, fixture);
@@ -78,6 +82,58 @@ test("unchanged closed PR permits the explicit comment", async () => {
     });
     expect(result.status).toBe("sent");
     expect(result.body).toBe(s.body);
+    expect((await s.requests()).filter((args) => args[0] === "pr")).toHaveLength(1);
+  } finally {
+    await s.close();
+  }
+});
+test("partial private body writes are removed before retry and quit", async () => {
+  const s = await setup();
+  const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+  try {
+    vi.mocked(open).mockImplementationOnce(async (...args) => {
+      const handle = await actual.open(...args);
+      const write = handle.writeFile.bind(handle);
+      handle.writeFile = async () => {
+        await write("partial private feedback");
+        throw Error("Synthetic disk full after partial write.");
+      };
+      return handle;
+    });
+    const r = { action: "post" as const, review: s.pr.id, body: s.body };
+    expect((await s.review.posting.request(r)).status).toBe("failed");
+    expect(await readdir(path.join(s.root, "comment"))).toEqual([]);
+    expect((await s.requests()).filter((args) => args[0] === "pr")).toHaveLength(0);
+    expect((await s.review.posting.request(r)).status).toBe("sent");
+    await s.review.close();
+    expect(await readdir(path.join(s.root, "comment"))).toEqual([]);
+  } finally {
+    vi.mocked(open).mockReset();
+    vi.mocked(open).mockImplementation(actual.open);
+    await s.close();
+  }
+});
+test("older identical comments require explicit resolution and delayed verification keeps the attempt interval", async () => {
+  const s = await setup();
+  try {
+    await s.control({ postMode: "uncertain" });
+    await s.review.posting.request({ action: "post", review: s.pr.id, body: s.body });
+    const file = path.join(s.root, "posted-comments.json");
+    const [created] = JSON.parse(await readFile(file, "utf8"));
+    const older = { ...created, created_at: new Date(Date.now() - 120000).toISOString() };
+    await writeFile(file, JSON.stringify([older]));
+    const delayed = vi.spyOn(Date, "now").mockReturnValue(Date.now() + 600000);
+    try {
+      const result = await s.review.posting.request({ action: "verify", review: s.pr.id });
+      expect(result.status).toBe("uncertain");
+      expect(result.candidates.map((c) => c.id)).toEqual([older.id]);
+      await writeFile(file, JSON.stringify([created]));
+      expect((await s.review.posting.request({ action: "verify", review: s.pr.id })).status).toBe(
+        "sent",
+      );
+    } finally {
+      delayed.mockRestore();
+    }
     expect((await s.requests()).filter((args) => args[0] === "pr")).toHaveLength(1);
   } finally {
     await s.close();

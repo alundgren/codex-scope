@@ -1,4 +1,4 @@
-import { mkdir, lstat, writeFile, rm, opendir } from "node:fs/promises";
+import { mkdir, lstat, open, rm, opendir } from "node:fs/promises";
 import path from "node:path";
 import { revisionText } from "./review-feedback.ts";
 import { runGh, GhWriteError } from "./github-process.ts";
@@ -22,6 +22,8 @@ export class ReviewPosting {
   private review = "";
   private user = 0;
   private since = "";
+  private attemptStarted = 0;
+  private attemptEnded = 0;
   private controller: AbortController | null = null;
   private pending: Promise<PostingState> | null = null;
   private closed = false;
@@ -77,6 +79,8 @@ export class ReviewPosting {
     };
     this.user = 0;
     this.since = "";
+    this.attemptStarted = 0;
+    this.attemptEnded = 0;
   }
   link(id: string, comment: number | null): string {
     const pr = this.current(id);
@@ -118,7 +122,8 @@ export class ReviewPosting {
       value.user?.id !== this.user ||
       typeof value.created_at !== "string" ||
       !Number.isFinite(Date.parse(value.created_at)) ||
-      value.created_at < this.since ||
+      Date.parse(value.created_at) < Date.parse(this.since) ||
+      Date.parse(value.created_at) > this.attemptEnded + 5 * 60 * 1000 ||
       value.html_url !==
         `https://github.com/${pr.repository}/pull/${pr.number}#issuecomment-${value.id}`
     )
@@ -214,7 +219,14 @@ export class ReviewPosting {
             break;
           }
         }
-        if (this.state.checked && this.state.candidates.length === 1) {
+        const candidate = this.state.candidates[0];
+        if (
+          this.state.checked &&
+          this.state.candidates.length === 1 &&
+          candidate &&
+          Date.parse(candidate.created) >= Math.floor(this.attemptStarted / 1000) * 1000 &&
+          Date.parse(candidate.created) <= this.attemptEnded
+        ) {
           this.state.status = "sent";
           this.state.comment = this.state.candidates[0]!;
           this.state.message = "Exact body, posting account and attempt time verified on GitHub.";
@@ -272,12 +284,19 @@ export class ReviewPosting {
         return structuredClone(this.state);
       }
       this.current(r.review);
-      await writeFile(path.join(this.directory, "body.md"), r.body, { mode: 0o600, flag: "wx" });
+      const handle = await open(path.join(this.directory, "body.md"), "wx", 0o600);
       file = true;
       this.ownedBody = true;
+      try {
+        await handle.writeFile(r.body);
+      } finally {
+        await handle.close();
+      }
       this.current(r.review);
       if (signal.aborted) throw Error("Posting cancelled before delivery.");
-      this.since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      this.attemptStarted = Date.now();
+      this.attemptEnded = 0;
+      this.since = new Date(this.attemptStarted - 5 * 60 * 1000).toISOString();
       writeStarted = true;
       const output = await runGh(
         [
@@ -294,7 +313,9 @@ export class ReviewPosting {
         this.executable,
         2048,
         true,
-      );
+      ).finally(() => {
+        this.attemptEnded = Date.now();
+      });
       const url = output.toString("utf8").trim();
       const prefix = `https://github.com/${pr.repository}/pull/${pr.number}#issuecomment-`;
       if (!url.startsWith(prefix) || !/^[1-9][0-9]{0,15}$/.test(url.slice(prefix.length)))

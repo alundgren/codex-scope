@@ -264,8 +264,11 @@ failure, timeout, invalid response or failed readback leaves delivery uncertain.
 Check GitHub for this comment only reads. It searches at most three pages of twenty
 recent comments, retaining at most twenty exact-body/account/time candidates.
 GitHub's `since` parameter filters by update time; Scope additionally compares
-creation time against the attempt window. One unique match from complete bounded
-results confirms delivery. Multiple matches, incomplete pages, read failures or no
+creation time against the fixed attempt window. One unique match from complete bounded
+results confirms delivery only when created during that attempt, allowing for GitHub's
+one-second timestamp precision. Matches admitted only by the five-minute clock tolerance
+remain candidates for explicit resolution; delayed checking does not move the window.
+Multiple matches, incomplete pages, read failures or no
 match require the person to inspect GitHub and select a candidate or explicitly
 confirm absence before another write. No automatic retry occurs. Ending or replacing
 the review stays blocked while a comment operation or unresolved delivery remains;
