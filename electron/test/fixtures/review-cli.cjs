@@ -118,6 +118,10 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     }
     emit({ id: m.id, result: { turn: { id: turn } } });
     notify("turn/started", { turn: { id: turn } });
+    if (mode === "finish-after-choice" || mode === "exit-after-choice") {
+      timer = setTimeout(() => (mode === "finish-after-choice" ? done() : process.exit(1)), 2000);
+      return;
+    }
     if (mode.includes("compaction")) {
       notify("thread/compacted", {});
       return;

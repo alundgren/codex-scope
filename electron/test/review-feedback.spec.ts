@@ -210,3 +210,74 @@ test("feedback mid-review editing copy cancellation failed manual and export bef
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("Wait checks completion or failure that arrived while its choice was open", async ({}, info) => {
+  const root = await mkdtemp("/tmp/scope-feedback-wait-");
+  await mkdir(root + "/auth");
+  await writeFile(root + "/auth/auth.json", "{}", { mode: 0o600 });
+  const app = await _electron.launch({
+    args: [
+      path.resolve("dist/app"),
+      "--history-test",
+      `--scope-test-root=${root}`,
+      `--review-test-gh=${path.resolve("test/fixtures/review-gh.cjs")}`,
+      `--review-test-cli=${path.resolve("test/fixtures/review-cli.cjs")}`,
+      `--catalog-test-cli=${path.resolve("test/fixtures/catalog-cli.cjs")}`,
+    ],
+    env: { ...process.env, CODEX_HOME: root + "/auth" } as Record<string, string>,
+    chromiumSandbox: true,
+    recordVideo: { dir: info.outputPath("video"), size: { width: 1280, height: 800 } },
+  });
+  try {
+    const page = await app.firstWindow();
+    await page.waitForSelector('html[data-ready="true"]');
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+    );
+    await page.evaluate(() =>
+      window.scope.saveSettings({
+        endpoint: "",
+        token: "",
+        diagnosis: { model: "test-success", effort: "low" },
+        review: { model: "test-success", effort: "low" },
+      }),
+    );
+    await page.locator("#functions summary").click();
+    await page.locator('[data-tool="review"]').click();
+    await page.locator("#review-address").fill("example/shop #148");
+    await page.getByRole("button", { name: "Open PR", exact: true }).click();
+    await page.waitForSelector(".review-code-row");
+    await page.locator("#review-chat-toggle").click();
+    const popup = page.locator("#feedback-dialog");
+    for (const mode of ["finish-after-choice", "exit-after-choice"]) {
+      await page.locator("#conversation-input").fill(mode);
+      await page.locator("#conversation-send").click();
+      await expect(page.locator("#conversation-state")).toContainText("running");
+      await page.locator("#review-feedback").click();
+      await page.locator("#feedback-author").fill("Preserve this author draft.");
+      await popup.getByRole("button", { name: "Generate feedback", exact: true }).click();
+      await popup.getByRole("button", { name: "Replace edited text" }).click();
+      await expect(popup.getByRole("button", { name: "Wait for current turn" })).toBeVisible();
+      await expect(page.locator("#conversation-state")).toContainText(
+        mode === "finish-after-choice" ? "ready" : "failed",
+      );
+      await popup.getByRole("button", { name: "Wait for current turn" }).click();
+      if (mode === "finish-after-choice") {
+        await expect(page.locator("#feedback-author")).toHaveValue(
+          "- security-high: Verify access before returning the invoice.",
+        );
+      } else {
+        await expect(popup).toContainText("No live agent");
+        await expect(page.locator("#feedback-author")).toHaveValue("Preserve this author draft.");
+        await expect(popup.getByRole("button", { name: "Cancel generation" })).toHaveCount(0);
+        await popup.getByRole("button", { name: "Copy author", exact: true }).click();
+        await expect(popup).toContainText("Author feedback copied");
+      }
+      await page.screenshot({ path: info.outputPath(mode + ".png") });
+      await popup.getByRole("button", { name: "Close feedback" }).click();
+    }
+  } finally {
+    await app.close();
+    await rm(root, { recursive: true, force: true });
+  }
+});

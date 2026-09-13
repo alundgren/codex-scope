@@ -118,23 +118,36 @@ export function attachFeedback(review: () => ReviewPR | null, lens: () => Review
       }
     }
   }
+  function waitForCurrentTurn() {
+    decision = false;
+    if (state?.status === "ready") {
+      void generate();
+      return false;
+    }
+    if (!state || !["starting", "running"].includes(state.status)) {
+      say(
+        "The review agent is unavailable. Existing edits remain available for manual editing and copy.",
+      );
+      renderActions();
+      return false;
+    }
+    pending = "wait";
+    say("Waiting for the current turn. You can cancel this request.");
+    clearTimeout(timer);
+    timer = setTimeout(cancel, 120000);
+    renderActions();
+    return true;
+  }
   function requestGeneration() {
     replace(() => {
       if (state && ["starting", "running"].includes(state.status)) {
         decision = true;
         actions.replaceChildren(
           button("Wait for current turn", () => {
-            decision = false;
-            pending = "wait";
-            say("Waiting for the current turn. You can cancel this request.");
-            timer = setTimeout(cancel, 120000);
-            renderActions();
+            waitForCurrentTurn();
           }),
           button("Stop turn first", () => {
-            decision = false;
-            pending = "wait";
-            timer = setTimeout(cancel, 120000);
-            renderActions();
+            if (!waitForCurrentTurn()) return;
             void window.scope
               .conversation({ action: "stop", review: id })
               .then((next) => {
