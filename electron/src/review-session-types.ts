@@ -10,6 +10,7 @@ export const SESSION_LIMITS = {
   pageEntries: 20,
   messageBytes: 16384,
   toolBytes: 32768,
+  imageToolBytes: 512 * 1024,
   toolCalls: 64,
   turnMs: 120000,
   requestMs: 10000,

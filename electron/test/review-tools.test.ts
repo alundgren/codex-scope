@@ -48,3 +48,29 @@ test("pinned base and head use separate IDs and bounded literal search declares 
   expect(result.lines).toHaveLength(200);
   expect(result.omission).toContain("omitted");
 });
+
+test("large supplied images are omitted before reading or base64 expansion and source remains usable", async () => {
+  const review = fixture();
+  let reads = 0;
+  review.toolImages = () =>
+    [
+      { id: "large", bytes: 4194304 },
+      { id: "supported", bytes: 524288 },
+    ] as any;
+  review.toolImage = async () => {
+    reads++;
+    return Buffer.alloc(524288);
+  };
+  const tools = new ReviewTools(review, "one");
+  const rejected = await tools.call("scope_evidence", { action: "image", id: "large" }, signal);
+  expect(rejected.success).toBe(false);
+  expect(payload(rejected).error).toContain("512 KiB");
+  expect(reads).toBe(0);
+  const accepted = await tools.call("scope_evidence", { action: "image", id: "supported" }, signal);
+  expect(accepted.success).toBe(true);
+  expect(reads).toBe(1);
+  expect(accepted.contentItems[1].type).toBe("inputImage");
+  expect((await tools.call("scope_evidence", { action: "list", id: "root" }, signal)).success).toBe(
+    true,
+  );
+});

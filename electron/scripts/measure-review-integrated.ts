@@ -180,6 +180,12 @@ try {
       root + "/maximum.png",
       Buffer.concat([...basic.slice(0, 3), chunk("tEXt", padding), basic[3]]),
     );
+    const agentPadding = Buffer.alloc(524288 - basic.reduce((n, b) => n + b.length, 0) - 12, 65);
+    agentPadding[1] = 0;
+    await writeFile(
+      root + "/agent-maximum.png",
+      Buffer.concat([...basic.slice(0, 3), chunk("tEXt", agentPadding), basic[3]]),
+    );
     await app.evaluate(({ dialog }, file) => {
       dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
     }, root + "/maximum.png");
@@ -398,23 +404,56 @@ try {
         ),
         "Actual source transfer missing",
       );
+      const images = await app.evaluate(() => {
+        const session = Reflect.get(globalThis, "scopeReviewSession");
+        return session.tools.review.toolImages(session.reviewId);
+      });
+      const thread = await app.evaluate(() => Reflect.get(globalThis, "scopeReviewSession").thread);
       await page
         .locator("#conversation-input")
         .fill(
-          "Use scope_evidence action images with id root, then action image with the first supplied image ID. Describe one visible image fact in one sentence. Do not use other tools.",
+          `Call scope_evidence action image with id ${images[0].id} exactly once. This is a deliberate size-limit test; report the tool omission honestly without another image request.`,
         );
       await page.locator("#conversation-send").click();
       await expect(page.locator("#conversation-state")).toContainText("running", {
         timeout: 120000,
       });
-      await page.waitForFunction(
-        () =>
-          /ready|failed|capacity/.test(
-            document.querySelector("#conversation-state")?.textContent ?? "",
+      await expect(page.locator("#conversation-state")).toContainText("ready", { timeout: 120000 });
+      assert.ok(
+        await app.evaluate(() =>
+          Reflect.get(globalThis, "integratedTools").some(
+            (call: any) => call.action === "image" && !call.success && call.imageChars === 0,
           ),
-        undefined,
-        { timeout: 120000 },
+        ),
+        "Oversize omission missing",
       );
+      await page.evaluate(
+        ({ id, image }) => window.scope.review({ action: "remove-image", id, image }),
+        { id, image: images.at(-1).id },
+      );
+      await app.evaluate(({ dialog }, file) => {
+        dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+      }, root + "/agent-maximum.png");
+      const attached = await page.evaluate(
+        (id) => window.scope.review({ action: "attach", id }),
+        id,
+      );
+      const supported = attached.images!.at(-1)!;
+      await page
+        .locator("#conversation-input")
+        .fill(
+          `Call scope_evidence action image with id ${supported.id} exactly once, then describe what is visible in one sentence.`,
+        );
+      await page.locator("#conversation-send").click();
+      await expect(page.locator("#conversation-state")).toContainText("running", {
+        timeout: 120000,
+      });
+      await expect(page.locator("#conversation-state")).toContainText("ready", { timeout: 120000 });
+      assert.equal(
+        await app.evaluate(() => Reflect.get(globalThis, "scopeReviewSession").thread),
+        thread,
+      );
+      report.sameThreadAfterImageOmission = true;
       report.liveTools = await app.evaluate(() => ({
         calls: Reflect.get(globalThis, "integratedTools"),
         status: Reflect.get(globalThis, "scopeReviewSession").read(256).status,
@@ -422,9 +461,9 @@ try {
       }));
       assert.ok(
         report.liveTools.calls.some(
-          (call: any) => call.action === "image" && call.success && call.imageChars > 5500000,
+          (call: any) => call.action === "image" && call.success && call.imageChars > 699000,
         ),
-        "Actual CLI did not request the maximum supplied PNG",
+        "Actual CLI did not consume the largest supported agent PNG",
       );
       if (report.liveTools.status === "ready")
         assert.ok(
