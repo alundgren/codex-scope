@@ -26,7 +26,7 @@ export class ReviewPosting {
   private pending: Promise<PostingState> | null = null;
   private closed = false;
   private cleanupFailed = false;
-  private initialized = false;
+  private ownedBody = false;
   private ready: Promise<void>;
   constructor(
     private directory: string,
@@ -59,9 +59,10 @@ export class ReviewPosting {
         body.size > L.bodyBytes
       )
         throw Error("Unrecognized comment body file.");
+      this.ownedBody = true;
       await rm(file);
+      this.ownedBody = false;
     }
-    this.initialized = true;
   }
   reset() {
     if (this.blocksSwitch) throw Error("Resolve the pending comment before changing review.");
@@ -93,7 +94,10 @@ export class ReviewPosting {
     this.controller?.abort();
     await this.pending;
     await this.ready.catch(() => {});
-    if (this.initialized) await rm(path.join(this.directory, "body.md"), { force: true });
+    if (this.ownedBody) {
+      await rm(path.join(this.directory, "body.md"), { force: true });
+      this.ownedBody = false;
+    }
   }
   private async api(endpoint: string, signal: AbortSignal, extra: string[] = [], writing = false) {
     const bytes = await runGh(
@@ -270,6 +274,7 @@ export class ReviewPosting {
       this.current(r.review);
       await writeFile(path.join(this.directory, "body.md"), r.body, { mode: 0o600, flag: "wx" });
       file = true;
+      this.ownedBody = true;
       this.current(r.review);
       if (signal.aborted) throw Error("Posting cancelled before delivery.");
       this.since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
@@ -317,6 +322,7 @@ export class ReviewPosting {
       if (file)
         try {
           await rm(path.join(this.directory, "body.md"));
+          this.ownedBody = false;
         } catch {
           this.cleanupFailed = true;
           this.state.message += " Private body cleanup failed. Restart Scope before posting again.";
