@@ -811,7 +811,16 @@ export function attachReview() {
       const row = document.createElement("div");
       row.className = "review-artifact";
       const label = document.createElement("span");
-      label.textContent = `${item.target.kind}${item.invalid ? " · evidence removed or stale" : ""}`;
+      const target = item.target;
+      const description =
+        target.kind === "source"
+          ? `${target.anchor.path} · ${target.anchor.side} lines ${target.anchor.line}–${target.anchor.endLine}`
+          : target.kind === "image"
+            ? `${target.name} · ${target.marks.length} marks (${[...new Set(target.marks.map((mark) => mark.kind))].join(", ")})`
+            : target.kind === "view"
+              ? `${target.lens} · ${target.view}`
+              : `Diagram · ${target.nodes.join(" → ")}`;
+      label.textContent = `${description}${item.invalid ? " · evidence removed or stale" : ""}`;
       const show = button("Show", () => {
         dialog.close();
         void navigateGuide(item, true);

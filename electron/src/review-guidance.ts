@@ -131,6 +131,7 @@ function text(value: unknown, empty = false): asserts value is string {
 }
 export class ReviewGuidance {
   private artifacts: GuideArtifact[] = [];
+  private selectedSource: { id: string; source?: number; anchor: SourceTarget } | null = null;
   constructor(
     private review: PRReview,
     readonly reviewId: string,
@@ -152,13 +153,14 @@ export class ReviewGuidance {
   }
   async content(id: string, signal: AbortSignal, source?: number, requestedOffset?: number) {
     const item = this.artifacts.find((a) => a.id === id);
-    if (!item || item.invalid) throw Error("Source target is unavailable.");
     const a =
-      item.target.kind === "source"
+      item && !item.invalid && item.target.kind === "source"
         ? item.target.anchor
-        : item.target.kind === "diagram" && Number.isInteger(source)
+        : item && !item.invalid && item.target.kind === "diagram" && Number.isInteger(source)
           ? item.target.sources[source!]
-          : undefined;
+          : this.selectedSource?.id === id && this.selectedSource.source === source
+            ? this.selectedSource.anchor
+            : undefined;
     if (!a) throw Error("Source target is unavailable.");
     const lines = (await this.source(a, signal)).split("\n");
     if (
@@ -175,6 +177,7 @@ export class ReviewGuidance {
     }));
     if (Buffer.byteLength(JSON.stringify(rows)) > 32768)
       throw Error("Source display exceeds 32 KiB. Choose a smaller source target.");
+    this.selectedSource = { id, source, anchor: a };
     return { path: a.path, mode: a.side, rows, offset, total: lines.length, omission: null };
   }
   private async anchor(value: unknown, signal: AbortSignal) {
@@ -276,6 +279,7 @@ export class ReviewGuidance {
       target = {
         kind: "image",
         image: image.id,
+        name: image.name,
         revision: image.head,
         width: image.width,
         height: image.height,

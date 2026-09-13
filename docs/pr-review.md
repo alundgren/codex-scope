@@ -137,6 +137,12 @@ follow toggle or artifacts. The base review prompt's registered default supplies
 the optional guidance instructions; saved overrides remain authoritative for
 editable wording and cannot change host validation.
 
+One validated selected-source reference remains independent of annotations so
+removing or clearing marks preserves the current page, selection and pagination.
+It is replaced by the next guided source and discarded with the active review.
+Annotation rows identify source paths and lines, screenshot marks, diagram
+participants, or lens/view targets before Show or Remove is chosen.
+
 | Resource | Limit and behavior |
 | --- | --- |
 | Guidance input | 8 KiB encoded JSON per action, validated before source reads |

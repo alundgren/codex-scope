@@ -222,8 +222,8 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
           revision: guideEntry.revision,
           path: guideEntry.path,
           side: guideEntry.side,
-          line: 2,
-          endLine: 4,
+          line: mode.includes("later") ? 202 : 2,
+          endLine: mode.includes("later") ? 204 : 4,
         };
         guideCall(
           "scope_guide",

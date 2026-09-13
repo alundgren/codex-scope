@@ -29,6 +29,7 @@ export type GuideTarget =
   | {
       kind: "image";
       image: string;
+      name: string;
       revision: string;
       width: number;
       height: number;

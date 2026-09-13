@@ -219,10 +219,62 @@ test("guided evidence walkthrough preserves pause, focus and drafts; renders and
     await page.getByRole("button", { name: "Remove screenshot", exact: true }).click();
     await page.locator("#review-artifacts").click();
     await expect(page.locator("#review-dialog")).toContainText("evidence removed or stale");
+    await expect(page.locator("#review-dialog")).toContainText("supplied.png · 3 marks");
     await shot("10-removed-evidence");
     await page.getByRole("button", { name: "Clear marks and diagrams", exact: true }).click();
     await expect(page.locator(".review-drawing,.review-sequence,.agent-highlight")).toHaveCount(0);
     await shot("11-cleared");
+    if (!live) {
+      if ((await page.locator("#review-follow").innerText()) === "Pause follow")
+        await page.locator("#review-follow").click();
+      await send("guide source removal");
+      await ready();
+      await page.locator("#review-latest-target").click();
+      await expect(page.locator(".agent-highlight")).toHaveCount(3);
+      await expect(page.locator("#review-selection")).toContainText("line 2");
+      if ((await page.locator("#review-follow").innerText()) === "Pause follow")
+        await page.locator("#review-follow").click();
+      await send("guide source later");
+      await ready();
+      await page.locator("#review-artifacts").click();
+      const first = page.locator(".review-artifact").filter({ hasText: "head lines 2–4" });
+      const later = page.locator(".review-artifact").filter({ hasText: "head lines 202–204" });
+      await expect(first).toContainText("deleted.ts");
+      await expect(later).toContainText("deleted.ts");
+      await shot("12-identifiable-source-targets");
+      await later.getByRole("button", { name: "Remove", exact: true }).click();
+      await expect(later).toHaveCount(0);
+      await expect(page.locator("#review-selection")).toContainText("line 2");
+      await first.getByRole("button", { name: "Remove", exact: true }).click();
+      await page.keyboard.press("Escape");
+      await expect(page.locator(".agent-highlight")).toHaveCount(0);
+      await expect(page.locator("#review-selection")).toContainText("line 2");
+      await page.locator("#review-next").click();
+      await expect(page.getByRole("button", { name: "head line 201", exact: true })).toBeVisible();
+      await shot("13-removed-source-next-page");
+      await page.locator("#review-previous").click();
+      await expect(page.getByRole("button", { name: "head line 1", exact: true })).toBeVisible();
+      await send("guide diagram removal");
+      await ready();
+      await page.locator("#review-latest-target").click();
+      await page.getByRole("button", { name: /deleted.ts · head lines/ }).click();
+      await page.locator("#review-next").click();
+      await expect(page.getByRole("button", { name: "head line 201", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "head line 220", exact: true }).click();
+      await page.locator("#review-artifacts").click();
+      await expect(page.locator(".review-artifact")).toContainText(
+        "Diagram · Reader → Service → Store",
+      );
+      await page.getByRole("button", { name: "Clear marks and diagrams", exact: true }).click();
+      await expect(page.getByRole("button", { name: "head line 220", exact: true })).toBeVisible();
+      await expect(page.locator("#review-selection")).toContainText("line 220");
+      await shot("14-cleared-diagram-source-position");
+      await page.locator("#review-previous").click();
+      await expect(page.getByRole("button", { name: "head line 1", exact: true })).toBeVisible();
+      await page.locator("#review-next").click();
+      await expect(page.getByRole("button", { name: "head line 201", exact: true })).toBeVisible();
+      await shot("15-cleared-diagram-source-next-page");
+    }
   } finally {
     await app.close().catch(() => {});
     await rm(root, { recursive: true, force: true });

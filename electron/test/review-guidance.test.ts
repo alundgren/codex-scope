@@ -60,6 +60,24 @@ test("guidance acknowledges retention, rejects stale IDs and anchors, and bounds
   const id = payload(good).id;
   expect((await tools.guidance.content(id, signal)).rows).toHaveLength(4);
   tools.guidance.remove(id);
+  expect((await tools.guidance.content(id, signal)).rows).toHaveLength(4);
+  await expect(tools.guidance.content("unknown", signal)).rejects.toThrow("unavailable");
+  const diagram = await tools.call(
+    "scope_guide",
+    {
+      action: "diagram",
+      data: {
+        nodes: ["Reader", "Source"],
+        messages: [{ from: 0, to: 0, text: "Read" }],
+        sources: [anchor],
+      },
+    },
+    signal,
+  );
+  const diagramId = payload(diagram).id;
+  await tools.guidance.content(diagramId, signal, 0);
+  tools.guidance.remove();
+  expect((await tools.guidance.content(diagramId, signal, 0, 2)).offset).toBe(2);
   await expect(tools.guidance.content(id, signal)).rejects.toThrow("unavailable");
 });
 test("drawing validation rejects invalid coordinates, unknown markup and excessive points; removal invalidates existing marks", async () => {
