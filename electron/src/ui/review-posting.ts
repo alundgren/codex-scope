@@ -11,7 +11,11 @@ export function attachPosting() {
     initial = "",
     busy = false;
   let state: PostingState | null = null;
-  let editor: HTMLTextAreaElement, notice: HTMLElement, actions: HTMLElement, result: HTMLElement;
+  let editor: HTMLTextAreaElement,
+    notice: HTMLElement,
+    delivery: HTMLElement,
+    actions: HTMLElement,
+    result: HTMLElement;
   const button = (label: string, action: () => void) => {
     const b = document.createElement("button");
     b.textContent = label;
@@ -130,7 +134,8 @@ export function attachPosting() {
       const next = await window.scope.posting(value);
       if (target !== review) return;
       state = next;
-      notice.textContent = next.message;
+      delivery.textContent = next.message;
+      notice.textContent = "";
       result.replaceChildren();
       if (next.status === "sent" && next.comment) {
         const link = document.createElement("a");
@@ -200,13 +205,15 @@ export function attachPosting() {
       const help = document.createElement("p");
       help.textContent =
         "The feedback revision must remain at the end. GitHub can change after the final head check; this comment records the reviewed head.";
+      delivery = document.createElement("p");
+      delivery.textContent = state?.message ?? "";
       notice = document.createElement("p");
       notice.setAttribute("role", "status");
       actions = document.createElement("div");
       actions.className = "feedback-actions";
       result = document.createElement("div");
       result.className = "posting-result";
-      dialog.append(title, destination, label, help, notice, result, actions);
+      dialog.append(title, destination, label, help, delivery, notice, result, actions);
       controls();
       if (!dialog.open) dialog.showModal();
       void request({ action: "read", review });

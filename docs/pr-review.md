@@ -310,3 +310,12 @@ CLI files and comment body. These Linux regression ceilings come from the combin
 workloads above and do not establish macOS performance or energy behavior. The
 64 KiB comment case uses the synthetic gh adapter; actual GitHub validation covers
 only the explicitly authorized body reported in the PR.
+
+A PNG accepted by the notebook can still exceed the CLI's protocol capacity when
+an installed CLI echoes its encoded image in a notification. The 1 MiB incoming
+frame limit remains enforced. Scope stops that review visibly instead of expanding
+the limit or claiming the agent consumed the image. Retained evidence and drafts
+remain available for copying; End and a new review with smaller supplied evidence
+are explicit recovery actions. Capture continues independently. The integrated
+live workload exercises this large-image failure as well as a preceding successful
+source-tool turn.

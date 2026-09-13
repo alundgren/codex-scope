@@ -383,7 +383,25 @@ try {
       await page
         .locator("#conversation-input")
         .fill(
-          "Use scope_evidence action images with id root, then action image with the first supplied image ID. Also list root and read a small bounded page from deleted.ts using its issued ID. Describe one visible image fact and one source fact in two sentences. Do not use other tools.",
+          "Use scope_evidence to list root, then read the first small bounded page of deleted.ts using its issued source ID. State one source fact in one sentence. Do not call image or guidance tools yet.",
+        );
+      await page.locator("#conversation-send").click();
+      await expect(page.locator("#conversation-state")).toContainText("running", {
+        timeout: 120000,
+      });
+      await expect(page.locator("#conversation-state")).toContainText("ready", { timeout: 120000 });
+      assert.ok(
+        await app.evaluate(() =>
+          Reflect.get(globalThis, "integratedTools").some(
+            (call: any) => call.action === "read" && call.success,
+          ),
+        ),
+        "Actual source transfer missing",
+      );
+      await page
+        .locator("#conversation-input")
+        .fill(
+          "Use scope_evidence action images with id root, then action image with the first supplied image ID. Describe one visible image fact in one sentence. Do not use other tools.",
         );
       await page.locator("#conversation-send").click();
       await expect(page.locator("#conversation-state")).toContainText("running", {
