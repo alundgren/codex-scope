@@ -68,10 +68,12 @@ test("comment preview exact copy post links failure uncertainty ambiguity stale 
     await dialog.getByRole("button", { name: "Copy exact preview" }).click();
     await expect(dialog).toContainText("Exact preview copied.");
     expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(body);
+    await editor.focus();
     await editor.evaluate((element) => {
+      element.setSelectionRange(0, 0);
       element.scrollTop = 0;
     });
-    await editor.focus();
+    await expect.poll(() => editor.evaluate((element) => element.scrollTop)).toBe(0);
     const guide = await app.evaluate(async () =>
       Reflect.get(globalThis, "scopeReviewSession").tools.call(
         "scope_guide",
