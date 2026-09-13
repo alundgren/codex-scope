@@ -173,7 +173,7 @@ export class PRReview {
         const original = this.identity(id);
         const current = await this.metadata(original, signal);
         this.identity(id);
-        return this.same(original, current) && current.state === "open";
+        return this.same(original, current);
       },
       executable,
     );

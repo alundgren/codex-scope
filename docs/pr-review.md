@@ -246,7 +246,7 @@ comment.
 
 The main process reads the current GitHub account and immediately rechecks the
 pinned repository, PR, base, fork and head before creating a comment. A changed
-identity or closed PR blocks posting and preserves the draft. Refresh and review
+identity or revision blocks posting and preserves the draft. Refresh and review
 remain explicit. The immutable revision suffix is validated independently of the
 editable prose. GitHub cannot atomically condition a top-level comment on its head,
 so the posted body records which head was reviewed.

@@ -67,6 +67,22 @@ test("stale head and definitive preflight failure preserve body without writing;
     await s.close();
   }
 });
+test("unchanged closed PR permits the explicit comment", async () => {
+  const s = await setup();
+  try {
+    await s.control({ closed: true });
+    const result = await s.review.posting.request({
+      action: "post",
+      review: s.pr.id,
+      body: s.body,
+    });
+    expect(result.status).toBe("sent");
+    expect(result.body).toBe(s.body);
+    expect((await s.requests()).filter((args) => args[0] === "pr")).toHaveLength(1);
+  } finally {
+    await s.close();
+  }
+});
 test("uncertain success is read-only verified and duplicate retry stays blocked", async () => {
   const s = await setup();
   try {

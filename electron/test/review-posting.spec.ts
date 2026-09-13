@@ -70,6 +70,7 @@ test("comment preview exact copy post links failure uncertainty ambiguity stale 
     expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(body);
     await editor.focus();
     await editor.evaluate((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) throw Error("Expected posting editor.");
       element.setSelectionRange(0, 0);
       element.scrollTop = 0;
     });
@@ -86,6 +87,13 @@ test("comment preview exact copy post links failure uncertainty ambiguity stale 
     expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
     await expect(page.locator("#review-lens")).toContainText("Overview");
     await page.screenshot({ path: info.outputPath("01-exact-preview.png") });
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].setContentSize(600, 700),
+    );
+    await page.screenshot({ path: info.outputPath("01b-narrow-exact-preview.png") });
+    await app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].setContentSize(1280, 800),
+    );
     await dialog.getByRole("button", { name: "Post comment", exact: true }).dblclick();
     await expect(dialog.getByRole("link", { name: "View posted comment" })).toBeVisible();
     await dialog.getByRole("link", { name: "View posted comment" }).click();

@@ -140,7 +140,7 @@ if (endpoint === "user") {
       number: Number(endpoint.split("/").at(-1)),
       title: "Prevent duplicate checkout orders",
       body: "Synthetic PR evidence for notebook validation.",
-      state: "open",
+      state: state.closed ? "closed" : "open",
       changed_files: state.large ? 3010 : 10,
       base: { sha: base, repo: { full_name: "example/shop" } },
       head: { sha: head, repo: state.missingFork ? null : { full_name: "contributor/shop" } },
