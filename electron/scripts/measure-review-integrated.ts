@@ -366,6 +366,21 @@ try {
     await page.locator("#posting-dialog").getByRole("button", { name: "Back to feedback" }).click();
     await page.locator("#feedback-dialog").getByRole("button", { name: "Close feedback" }).click();
   });
+  if (!live)
+    await measure("04b-image-omission", async () => {
+      await page.locator("#conversation-input").fill("agent-image");
+      await page.locator("#conversation-send").click();
+      await expect(page.locator("#conversation-state")).toContainText("ready");
+      const state = await page.evaluate(
+        (id) => window.scope.conversation({ action: "read", review: id, offset: 256 }),
+        id,
+      );
+      assert.ok(
+        state!.entries.some((entry) => entry.text.includes("512 KiB")),
+        "Visible agent image omission missing",
+      );
+      report.imageOmissionPreservedReview = true;
+    });
   if (live)
     await measure("04b-live-image-source-tools", async () => {
       await app.evaluate(() => {
