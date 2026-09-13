@@ -1,6 +1,7 @@
 import type { ScopeAPI } from "./types.ts";
 import { contextBridge, ipcRenderer } from "electron";
 
+let feedbackCopying = false;
 let inspecting = false,
   copying = false,
   clearing = false,
@@ -83,6 +84,17 @@ const scope: ScopeAPI = {
         () => ipcRenderer.send("scope:guide-ack", action.id, "Retained. Navigation failed."),
       );
     });
+  },
+  copyFeedback: async (request) => {
+    if (!request || JSON.stringify(request).length > 69632 * 6)
+      throw Error("Invalid feedback copy.");
+    if (feedbackCopying) throw Error("Feedback copy is pending.");
+    feedbackCopying = true;
+    try {
+      return await ipcRenderer.invoke("scope:feedback-copy", request);
+    } finally {
+      feedbackCopying = false;
+    }
   },
   conversation: async (request) => {
     if (conversationRequests >= 3 || !request || JSON.stringify(request).length > 20000)

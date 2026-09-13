@@ -8,7 +8,7 @@ Each review has a new temporary ID plus repository, PR number, target base OID a
 
 The [GitHub comparison contract](https://docs.github.com/en/rest/commits/commits#compare-two-commits) includes the merge base on paginated responses and files only on the first page. Scope requests page two with one commit per page to resolve the comparison base without loading a comparison-wide file list. The [PR files endpoint](https://docs.github.com/en/rest/pulls/pulls#list-pull-requests-files) exposes at most 3,000 paths. Any additional paths are counted as omitted in Evidence limits. Absent, oversized or structurally incomplete patches remain unavailable; source-side reads may still work. Accepted source is UTF-8 text only. Binary or oversized content is omitted as a whole.
 
-Refresh checks current PR identity without replacing anything. If it changed, Replace review is explicit and removes old screenshots and selections. Existing evidence never silently acquires new revision identifiers. Opening another PR and ending the review also require an explicit leave action. A failed replacement keeps the previous review. Transcript copy is available. Structured feedback copy is not yet available.
+Refresh checks current PR identity without replacing anything. If it changed, Replace review is explicit and removes old screenshots and selections. Existing evidence never silently acquires new revision identifiers. Opening another PR and ending the review also require an explicit leave action. A failed replacement keeps the previous review. Transcript and editable feedback copy remain available before removal.
 
 PNG screenshots come only from an explicit local picker. Scope checks regular-file status before opening with nonblocking/no-follow flags, checks the opened descriptor again, then checks size and PNG structure before Electron decodes the bounded pixels. The decoded dimensions must match the PNG header before attachment and on subsequent image reads. Animated PNG and other formats are unsupported. The private temporary directory stores four randomly named files at most, with owner-only permissions. A read-only local protocol URL delivers only the selected image, avoiding base64 image copies through IPC. The route accepts only the active PR and known image IDs, permits one read, validates stored bytes again, and disables caching. The renderer labels its supplied filename and pinned revision. Each destination is tracked before writing and counts against the file limit. A failed or cancelled write removes its incomplete file. Failed cleanup keeps that file owned and blocks further attachments until End or restart can clean it. Removing an image, ending/replacing the review or normal quit removes its file. Startup removes bounded abandoned screenshot files; unexpected directory entries stop startup instead of deleting unrelated data. Ordinary deletion is not forensic erasure.
 
@@ -59,8 +59,7 @@ CLI context-compaction notifications stop the review visibly with transcript cop
 ## Review prompts
 
 Settings → Review prompts exposes the complete versioned registry: base review,
-five lenses, and feedback generation. Feedback generation output remains deferred;
-its eventual invocation must consume this registry. Fixed tool schemas and host
+five lenses, and feedback generation. Explicit feedback generation consumes the same registry. Fixed tool schemas and host
 permission instructions remain implementation contracts outside the editor.
 
 The compact selector keeps one draft per registered prompt across navigation.
@@ -169,3 +168,68 @@ The command records whole-app and child RSS/CPU, timer delay and cleanup without
 video. Run `--visual` separately for the matching recorded walkthrough. Results
 belong in the PR. Linux evidence does not establish macOS performance or energy
 use.
+
+## Editable feedback
+
+Feedback stays in the notebook toolbar, including after a failed review. Its popup
+keeps separate author and agent handoff editors. Both drafts survive tool navigation,
+closing the popup, generation failure and cancellation. Generation is explicit. An
+active turn offers Wait for current turn or Stop turn first, with one cancellable
+request and a two-minute deadline. There is no second competing turn or new thread.
+A failed or absent agent leaves manual editing and copying available.
+
+The effective registered feedback prompt replaces the lens instruction for that
+turn and retains the base prompt. Its version is recorded with the conversation.
+The installed CLI's [turn output schema](https://learn.chatgpt.com/docs/app-server)
+constrains the final assistant message. Scope validates the returned JSON before
+replacing findings. Interrupted, invalid or excessive output preserves prior drafts.
+Structured feedback adds no runtime dependency or process.
+
+Findings carry stable model-supplied IDs, area, impact, a one-sentence description,
+evidence, reasoning, uncertainty, verification steps, inclusion, hypothesis state,
+and an optional suggestion with user or agent attribution. The popup supports
+correction, exclusion and removal while keeping each original evidence string
+read-only. Working hypotheses never enter generated handoffs. Applying findings
+rebuilds the handoffs only after an explicit choice when their text has been edited.
+Regeneration also asks before replacing corrected findings. All mutation controls
+are disabled during pending generation; Cancel and copying remain available.
+
+Author text starts directly with `- <area>-<impact>: <description>` bullets, or
+an honest no-findings message. Agent text includes pinned repository/PR/base/head,
+reasoning, uncertainty and concrete checks and asks the author and agent to verify
+the work and decide. Optional suggestions appear only when included. Free-form
+model evidence and verification claims are not proof that the source supports a
+finding or that a check ran. Host validation checks types, IDs and resource limits;
+it does not establish the correctness of those claims.
+
+When a finding cites a retained annotation ID, Scope appends its retained metadata.
+Diagram details include plain-text messages and pinned file/side/line/revision
+references. Image annotations identify the supplied image, dimensions and revision;
+image bytes are not copied. Artifact detail overflow is explicitly omitted and asks
+for manual references. A removed artifact can no longer be expanded during a later
+generation, but already generated text remains editable and copyable.
+
+Copy author, Copy agent and Copy both report actual success or failure. Each copied
+snapshot appends its original revision independently of editable text. Unsupported
+clipboard control characters are rejected before writing. Editing clears the prior
+copied notice; a delayed copy identifies an earlier snapshot when the draft changed. Refresh PR
+labels the retained feedback stale without disabling old-revision copy. Preparing
+and copying never posts to GitHub. End review and PR replacement open the export
+offer with explicit continue-without-copy and Cancel ending controls. Normal OS
+close keeps the existing bounded cleanup deadline and does not wait for this offer.
+
+| Resource | Limit and behavior |
+| --- | --- |
+| Findings | Eight findings, 16 KiB encoded final JSON before parsing; duplicate or malformed IDs and multiline leading descriptions are rejected |
+| Finding fields | ID 64, area 48, description 320, evidence 768, reasoning 512, uncertainty 256, verification 512 and suggestion 320 UTF-16 units, within the aggregate byte cap |
+| Artifact appendix | At most 8 KiB, including explicit omissions; only annotations referenced by returned findings are considered |
+| Drafts | Two editors of 32,768 UTF-16 units each, at most 96 KiB UTF-8 per editable draft; copy accepts at most 32 KiB UTF-8 per section |
+| Clipboard | One outstanding operation, at most 68 KiB including revision metadata; 2,500 ms acknowledgment deadline, no retry queue while an operation remains pending |
+| Pending generation | One request, two-minute wait/generation deadline; existing turn, transcript, process and temporary-file budgets remain enforced |
+
+Run `scripts/measure-review-feedback.ts` from `electron/` under the documented
+fresh Xvfb desktop. It measures actual installed-CLI feedback generation, eight
+findings at the JSON cap, both maximum accepted drafts, repeated copy and oversized
+multibyte rejection with the same idle CLI child. Whole-app and child memory, CPU,
+timer delays and temporary bytes are recorded without video. Synthetic maximum
+output does not establish maximum integrated capture/review load or macOS behavior.

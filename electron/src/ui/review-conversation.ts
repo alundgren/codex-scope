@@ -24,6 +24,7 @@ export function attachConversation(
   const nodes = new Map<string, HTMLElement>();
   function render(state: ConversationState) {
     if (state.review !== review()) return;
+    window.dispatchEvent(new CustomEvent("scope-conversation-state", { detail: state }));
     started(state.status !== "idle");
     const following = offset === L.entries;
     total = state.total;

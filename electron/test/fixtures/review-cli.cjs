@@ -8,7 +8,8 @@ let turn = "",
 const emit = (v) => process.stdout.write(JSON.stringify(v) + "\n");
 const notify = (method, params) => emit({ method, params: { threadId: thread, ...params } });
 let guideStep = 0,
-  guideEntry;
+  guideEntry,
+  diagramId = "";
 const guideCall = (tool, args) =>
   emit({
     id: 3000 + ++guideStep,
@@ -71,6 +72,39 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
   else if (m.method === "turn/start") {
     turn = "turn-" + ++count;
     mode = m.params.input[0].text.split("\n\nUser request:\n").at(-1);
+    if (m.params.outputSchema && !mode.includes("slow") && !mode.includes("malformed")) {
+      emit({ id: m.id, result: { turn: { id: turn } } });
+      notify("turn/started", { turn: { id: turn } });
+      timer = setTimeout(() => {
+        const finding = {
+          id: "F1",
+          area: "security",
+          impact: "high",
+          description: "Verify access before returning the invoice.",
+          evidence: diagramId
+            ? `Diagram ${diagramId}`
+            : "deleted.ts head line 2, revision " + "b".repeat(40),
+          reasoning: "A caller may request another account's invoice.",
+          uncertainty: "Route authorization was not supplied.",
+          verification: "Request another account's invoice and confirm rejection.",
+          included: true,
+          hypothesis: false,
+          suggestion: "Check ownership at the service boundary.",
+          attribution: "agent",
+          includeSuggestion: true,
+        };
+        notify("item/completed", {
+          turnId: turn,
+          item: {
+            id: "answer-" + turn,
+            type: "agentMessage",
+            text: JSON.stringify({ findings: mode.includes("no-findings") ? [] : [finding] }),
+          },
+        });
+        notify("turn/completed", { turn: { id: turn, status: "completed" } });
+      }, 500);
+      return;
+    }
     if (mode.includes("echo-prompts")) {
       emit({ id: m.id, result: { turn: { id: turn } } });
       notify("turn/started", { turn: { id: turn } });
@@ -246,6 +280,7 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
         );
       }
     } else {
+      if (mode.includes("diagram")) diagramId = JSON.parse(m.result.contentItems[0].text).id;
       notify("item/agentMessage/delta", {
         turnId: turn,
         itemId: "guide-result-" + turn,

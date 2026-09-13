@@ -1,3 +1,4 @@
+import { feedbackCopy, FEEDBACK_LIMITS } from "./review-feedback.ts";
 import type { GuideAction } from "./review-guidance-types.ts";
 import { GUIDANCE_LIMITS } from "./review-guidance-types.ts";
 import { validPromptId, validPromptText, snapshotReviewPrompts } from "./review-prompts.ts";
@@ -365,6 +366,56 @@ app
       }
       return review.request(request);
     });
+    let feedbackCopyPending = false;
+    ipcMain.handle("scope:feedback-copy", async (event, request) => {
+      if (
+        !trusted(event) ||
+        feedbackCopyPending ||
+        !request ||
+        JSON.stringify(request).length > FEEDBACK_LIMITS.copyBytes * 6
+      )
+        throw Error("Feedback copy is busy or invalid.");
+      const identity = review.identity(request.review);
+      if (
+        !request.draft ||
+        JSON.stringify(request.draft.revision) !==
+          JSON.stringify({
+            repository: identity.repository,
+            number: identity.number,
+            base: identity.base,
+            head: identity.head,
+          })
+      )
+        throw Error("Feedback revision does not match this retained review.");
+      const text = feedbackCopy(request.draft, request.section);
+      feedbackCopyPending = true;
+      let timer: NodeJS.Timeout | undefined;
+      const operation = Promise.resolve()
+        .then(async () => {
+          await clipboard.writeText(text);
+          if ((await clipboard.readText()) !== text)
+            throw Error(
+              "Clipboard did not retain the complete feedback text. Copy is unconfirmed.",
+            );
+        })
+        .finally(() => {
+          feedbackCopyPending = false;
+        });
+      try {
+        await Promise.race([
+          operation,
+          new Promise((_, reject) => {
+            timer = setTimeout(
+              () => reject(Error("Copy is unconfirmed. It may still finish.")),
+              2500,
+            );
+          }),
+        ]);
+        return true;
+      } finally {
+        clearTimeout(timer);
+      }
+    });
     ipcMain.handle("scope:conversation", async (event, request) => {
       if (
         !trusted(event) ||
@@ -406,8 +457,8 @@ app
         return conversation?.read(SESSION_LIMITS.entries);
       }
       if (
-        request.action !== "send" ||
-        typeof request.text !== "string" ||
+        !["send", "feedback"].includes(request.action) ||
+        (request.action === "send" && typeof request.text !== "string") ||
         !LENSES.includes(request.lens) ||
         conversationPending
       )
@@ -418,7 +469,12 @@ app
       try {
         const settings = await history.call("settings");
         if (!("review" in settings)) throw new Error("Review settings unavailable.");
-        const prompts = snapshotReviewPrompts(request.lens, settings.prompts);
+        if (request.action === "feedback" && !conversation)
+          throw Error("No live review agent. Edit feedback manually.");
+        const prompts = snapshotReviewPrompts(
+          request.action === "feedback" ? "feedback" : request.lens,
+          settings.prompts,
+        );
         if (!conversation) {
           const result = await catalog.read();
           const error = selectionError(result, settings.review);
@@ -438,7 +494,12 @@ app
           );
           conversation.on("change", present);
         }
-        await conversation.send(request.text, request.lens, settings.review, prompts);
+        await conversation.send(
+          request.action === "feedback" ? prompts.lens.text : request.text,
+          request.lens,
+          settings.review,
+          prompts,
+        );
         return conversation.read(SESSION_LIMITS.entries);
       } finally {
         conversationPending = false;

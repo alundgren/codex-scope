@@ -302,3 +302,11 @@ renderer owns follow, input focus and display cancellation. A single acknowledgm
 reports whether a target was shown or retained. DOM source rows and local SVG
 render marks and diagrams without loading agent-supplied documents. Artifact data
 stays in bounded main/renderer memory and ends with the review.
+
+Feedback generation reuses the active review thread and registered feedback prompt.
+The final turn output is validated in `review-session.ts`; `review-feedback.ts`
+defines the bounded finding contract, handoff text and retained annotation references.
+The renderer owns two temporary editable drafts and one pending generation request.
+Validated clipboard IPC checks the pinned review identity and bounds each copy.
+No remote write, new process or runtime dependency is involved. Current feedback
+limits and evidence-verification limits are maintained in `docs/pr-review.md`.

@@ -24,6 +24,7 @@ const review = {
     if (id !== "review-1") throw Error("Wrong review");
     return { repository: "example/repo", number: 1, head: "a".repeat(40) };
   },
+  toolImages: () => [],
   toolList: async () => [{ path: "a.ts", type: "blob", oid: "b".repeat(40) }],
 } as unknown as PRReview;
 function session() {
@@ -166,4 +167,34 @@ it("snapshots base and lens versions before startup and applies saved edits to t
   const count = s.read(0).total;
   await expect(s.send("invalid", "Security", selection, invalid)).rejects.toThrow();
   expect(s.read(0).total).toBe(count);
+});
+
+it("generates feedback in the same thread with the registry prompt and preserves results after interruption", async () => {
+  const { snapshotReviewPrompts } = await import("../src/review-prompts.ts");
+  const s = session();
+  await s.send("First review turn", "Overview", selection);
+  await wait(s, "ready");
+  const thread = Reflect.get(s, "thread");
+  await s.send("Generate now", "Overview", selection, snapshotReviewPrompts("feedback", {}));
+  await wait(s, "ready");
+  expect(Reflect.get(s, "thread")).toBe(thread);
+  expect(s.read(256).feedback?.error).toBeNull();
+  expect(s.read(256).feedback?.findings[0]?.id).toBe("F1");
+  await s.send("slow", "Overview", selection, snapshotReviewPrompts("feedback", {}));
+  await s.stop();
+  await wait(s, "ready");
+  expect(s.read(256).feedback?.error).toContain("interrupted");
+  expect(s.read(256).feedback?.findings[0]?.id).toBe("F1");
+});
+
+it("accepts honest empty feedback and preserves it after invalid generation", async () => {
+  const { snapshotReviewPrompts } = await import("../src/review-prompts.ts");
+  const s = session();
+  await s.send("no-findings", "Overview", selection, snapshotReviewPrompts("feedback", {}));
+  await wait(s, "ready");
+  expect(s.read(256).feedback?.findings).toEqual([]);
+  expect(s.read(256).feedback?.error).toBeNull();
+  await s.send("malformed", "Overview", selection, snapshotReviewPrompts("feedback", {}));
+  await wait(s, "failed");
+  expect(s.read(256).feedback?.findings).toEqual([]);
 });

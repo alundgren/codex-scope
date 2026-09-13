@@ -35,8 +35,8 @@ export const REVIEW_PROMPTS = {
   },
   feedback: {
     label: "Feedback generation",
-    version: 1,
-    text: "Prepare concise review feedback from the current conversation and retained findings. State concrete problems, source references, requested corrections and validation gaps. Preserve uncertainty, distinguish findings from suggestions, and do not invent verification or completed work.",
+    version: 2,
+    text: "Return structured findings from this review conversation using the supplied output contract. Reuse stable finding IDs from previous feedback. Use compact one-sentence descriptions and editable areas such as security, UX, performance, architecture or correctness. Cite file, side, line and revision or supplied evidence, including diagram source references. Include reasoning, uncertainty and concrete checks. Keep working hypotheses separate with hypothesis true and included false. Include optional suggestions only if discussed, with user or agent attribution; otherwise leave suggestion empty and includeSuggestion false. Return an empty findings array when there are no supported findings. Never invent verification or completed work.",
   },
 } as const;
 export type PromptId = keyof typeof REVIEW_PROMPTS;
@@ -109,7 +109,7 @@ export function effectivePrompt(id: PromptId, overrides: PromptOverrides): Effec
   };
 }
 export function snapshotReviewPrompts(
-  lens: ReviewLens,
+  lens: ReviewLens | "feedback",
   overrides: PromptOverrides,
 ): ReviewPromptSnapshot {
   if (!validPromptOverrides(overrides)) throw Error("Invalid saved review prompts.");

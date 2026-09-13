@@ -1,3 +1,4 @@
+import type { FeedbackResult } from "./review-feedback.ts";
 import type { TurnPromptVersions } from "./review-prompts.ts";
 import type { ModelSelection } from "./model-types.ts";
 export const SESSION_LIMITS = {
@@ -34,10 +35,12 @@ export interface ConversationState {
   total: number;
   offset: number;
   entries: ConversationEntry[];
+  feedback?: FeedbackResult;
 }
 export type ConversationRequest =
   | { action: "read"; review: string; offset: number }
   | { action: "send"; review: string; text: string; lens: ReviewLens }
+  | { action: "feedback"; review: string; lens: ReviewLens }
   | { action: "stop"; review: string }
   | { action: "copy"; review: string };
 export interface ToolResult {
