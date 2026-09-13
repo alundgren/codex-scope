@@ -1,3 +1,5 @@
+import { attachConversation } from "./review-conversation.ts";
+import type { ReviewLens } from "../review-session-types.ts";
 import { requiredElement as el } from "./elements.ts";
 import { REVIEW_LIMITS as L } from "../review-types.ts";
 import type {
@@ -33,6 +35,15 @@ export function attachReview() {
     shownChat = false,
     menu: HTMLElement | null = null,
     anchor: HTMLButtonElement | null = null;
+  const conversation = attachConversation(
+    () => pr?.id ?? null,
+    () => lens as ReviewLens,
+    () =>
+      modal("End this temporary review? Copy the transcript before removing it.", [
+        { text: "Copy transcript", action: conversation.copy },
+        { text: "End review", action: end },
+      ]),
+  );
   const scrolls = new Map<string, number>(),
     offsets = new Map<string, number>();
   const pane = el("#review-content"),
@@ -143,6 +154,7 @@ export function attachReview() {
     el<HTMLButtonElement>("#review-next").disabled =
       !content || content.offset + L.rows >= content.total;
     layout();
+    conversation.refresh();
   }
   function lock(value: boolean) {
     for (const node of document.querySelectorAll<HTMLButtonElement>(
@@ -479,8 +491,9 @@ export function attachReview() {
               if (!result) return;
               if (result.changed)
                 modal(
-                  "The PR changed. Replace this review with the new revision? Supplied screenshots and selections will be removed. Feedback copy is not available yet.",
+                  "The PR changed. Replace this review with the new revision? The conversation, supplied screenshots and selections will be removed. Copy the transcript before continuing. Feedback copy is not available yet.",
                   [
+                    { text: "Copy transcript", action: conversation.copy },
                     {
                       text: "Replace review",
                       action: () => {
@@ -521,16 +534,23 @@ export function attachReview() {
         text: "Open another PR",
         action: () =>
           modal(
-            "Leave this review to open another PR? Supplied screenshots and selections will be removed. Feedback copy is not available yet.",
-            [{ text: "Leave review", action: end }],
+            "Leave this review to open another PR? The conversation, supplied screenshots and selections will be removed. Copy the transcript before continuing. Feedback copy is not available yet.",
+            [
+              { text: "Copy transcript", action: conversation.copy },
+              { text: "Leave review", action: end },
+            ],
           ),
       },
       {
         text: "End review",
         action: () =>
-          modal("End this temporary review? Supplied screenshots and selections will be removed.", [
-            { text: "End review", action: end },
-          ]),
+          modal(
+            "End this temporary review? The conversation, supplied screenshots and selections will be removed.",
+            [
+              { text: "Copy transcript", action: conversation.copy },
+              { text: "End review", action: end },
+            ],
+          ),
       },
     ]),
   );
