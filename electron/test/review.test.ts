@@ -1,3 +1,4 @@
+import { runGh } from "../src/github-process.ts";
 import { test, expect, vi } from "vite-plus/test";
 import { mkdtemp, writeFile, readFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
@@ -7,7 +8,7 @@ vi.mock("node:fs/promises", async (importOriginal) => {
   const actual = await importOriginal<typeof import("node:fs/promises")>();
   return { ...actual, writeFile: vi.fn(actual.writeFile), rm: vi.fn(actual.rm) };
 });
-import { PRReview, parsePR, parsePatch, pngDimensions, runGh } from "../src/review.ts";
+import { PRReview, parsePR, parsePatch, pngDimensions } from "../src/review.ts";
 const fixture = path.resolve("test/fixtures/review-gh.cjs");
 async function setup(initial: unknown = {}) {
   const root = await mkdtemp("/tmp/scope-review-unit-");

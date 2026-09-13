@@ -197,3 +197,20 @@ show confirmed success or failure without posting. Copied text includes the orig
 revision even after edits. Stale feedback remains copyable. End and PR replacement
 offer copy, an explicit action without copying, and Cancel ending. OS close retains
 the bounded shutdown behavior.
+
+Post comment opens the exact combined Markdown in one editable dialog with the
+repository, PR and full reviewed head visible. This adds a final explicit posting
+step to the authored preview because edits must be checked together with the actual
+sent revision suffix. The posting editor uses the existing feedback palette and
+plain-text rendering. Copy exact preview remains available for these independent
+edits. Use current handoffs replaces them only when selected. Back to feedback keeps
+the combined draft and restores the previous popup.
+
+Stale feedback keeps its edits and copy path and offers return to refresh/review.
+A definitive preflight failure permits explicit retry. Uncertain delivery replaces
+the posting action with read-only verification, a working GitHub destination link
+and bounded matching candidates. The person must resolve an incomplete or ambiguous
+result before another write. Success shows the verified comment link and a disclosure
+of the exact sent body; subsequent edits remain an unsent draft. Dialogs and editors
+keep the existing agent-navigation focus guard. Candidate lists scroll independently
+and action controls remain reachable at narrow sizes.

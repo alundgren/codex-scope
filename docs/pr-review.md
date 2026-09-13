@@ -233,3 +233,80 @@ findings at the JSON cap, both maximum accepted drafts, repeated copy and oversi
 multibyte rejection with the same idle CLI child. Whole-app and child memory, CPU,
 timer delays and temporary bytes are recorded without video. Synthetic maximum
 output does not establish maximum integrated capture/review load or macOS behavior.
+
+## Posting a comment
+
+Post comment opens a separate exact Markdown preview from both handoffs. Changes in
+this preview remain independent of the two handoff editors. Copy exact preview
+copies those edits, including when delivery failed or the PR changed. Use current
+handoffs explicitly replaces the combined preview. The destination and full reviewed
+head remain visible. The final Post comment control is the only write trigger;
+review tools cannot post. Failed review agents do not disable a prepared current
+comment.
+
+The main process reads the current GitHub account and immediately rechecks the
+pinned repository, PR, base, fork and head before creating a comment. A changed
+identity or closed PR blocks posting and preserves the draft. Refresh and review
+remain explicit. The immutable revision suffix is validated independently of the
+editable prose. GitHub cannot atomically condition a top-level comment on its head,
+so the posted body records which head was reviewed.
+
+Creation uses local [`gh pr comment --body-file`](https://cli.github.com/manual/gh_pr_comment)
+with argument arrays and one private `0600` body file in an owned `0700` directory.
+The returned comment URL is validated against the pinned destination, then
+[`gh api`](https://cli.github.com/manual/gh_api) reads that issue comment to compare
+its exact body, account ID and creation time. Normal completion, End and quit clean
+owned temporary data. A later launch removes a recognized abandoned body file;
+foreign, linked or excessive storage is rejected without deleting its contents.
+
+Preflight or process-start failure allows an explicit retry. Every other write
+failure, timeout, invalid response or failed readback leaves delivery uncertain.
+Check GitHub for this comment only reads. It searches at most three pages of twenty
+recent comments, retaining at most twenty exact-body/account/time candidates.
+GitHub's `since` parameter filters by update time; Scope additionally compares
+creation time against the attempt window. One unique match from complete bounded
+results confirms delivery. Multiple matches, incomplete pages, read failures or no
+match require the person to inspect GitHub and select a candidate or explicitly
+confirm absence before another write. No automatic retry occurs. Ending or replacing
+the review stays blocked while a comment operation or unresolved delivery remains;
+normal OS quit still follows the existing bounded shutdown deadline.
+
+Success retains the verified link and sent body. Later edits remain an unsent draft.
+The host rejects a duplicate in-flight request or the unchanged latest sent body.
+GitHub links open only through validated host-owned PR/comment destinations; renderer
+navigation and additional Electron windows remain denied. One external-open request
+may remain pending, with a 2,500 ms unconfirmed-result deadline and no retry queue.
+Clipboard operations share one outstanding slot and native exact-text readback.
+
+The combined posting body and its clipboard snapshot each accept at most 65,536
+UTF-8 bytes, including revision text. This is a measured Scope limit, not a claim
+about GitHub's undocumented numeric maximum. Oversized edits, unsupported control
+characters, invalid Unicode and altered revision suffixes fail before a write.
+Posting accepts LF line endings. The renderer holds one editable preview, one sent
+body and one initial combined handoff; each editable textarea has a 65,536 UTF-16-unit
+limit, with byte validation before copying or posting. Invalid multibyte edits remain
+editable. One command runs at a time, with the existing ten-second command deadline,
+process budget, 32 KiB discarded diagnostics and a 2 MiB read-response ceiling.
+Creation output has a separate 2 KiB URL ceiling. No credentials or body text enter
+Scope logs.
+
+`scripts/measure-review-integrated.ts` combines active capture and review with four
+4 MiB supplied PNGs, 19,000-line source, 220 synthetic retained conversation entries,
+24 artifacts, maximum feedback and posting copies, repeated search and scrubbing,
+minimized capture and visible conversation-capacity recovery. Diagnosis is blocked
+while review owns the CLI, then becomes available after End. `--live` uses an actual
+active installed CLI with synthetic retained pressure data; it does not imply the
+model itself produced the maximum transcript or artifacts. `--visual` records the
+walkthrough separately and does not collect accepted resource measurements. The
+existing allocation, process and storage limits are enforced; combined RSS, CPU and
+responsiveness are measured regression checks rather than an aggregate runtime
+memory reservation. Results and tested environments belong in the PR.
+
+The integrated script fails above 1,152 MiB summed whole-app RSS, 100 ms main or
+renderer timer delay, 140% mean one-core CPU during active workloads, 25% during
+minimized capture, or 8% during idle phases. Its 56 MiB temporary-file check includes
+the synthetic input PNG and test metadata as well as app-owned recording, images,
+CLI files and comment body. These Linux regression ceilings come from the combined
+workloads above and do not establish macOS performance or energy behavior. The
+64 KiB comment case uses the synthetic gh adapter; actual GitHub validation covers
+only the explicitly authorized body reported in the PR.

@@ -20,6 +20,7 @@ import {
   nativeImage,
   protocol,
   session,
+  shell,
 } from "electron";
 import { readFile } from "node:fs/promises";
 import { SessionAnalysis, validSession, validModel } from "./analysis.ts";
@@ -351,6 +352,8 @@ app
         JSON.stringify(request).length > 4096
       )
         return { error: "Invalid PR request." };
+      if ((request.action === "end" || request.action === "open") && review.posting.blocksSwitch)
+        return { error: "Resolve the pending comment before ending or replacing this review." };
       if (
         (request.action === "end" || (request.action === "open" && request.replace === true)) &&
         conversation
@@ -366,28 +369,13 @@ app
       }
       return review.request(request);
     });
+    ipcMain.handle("scope:posting", (event, request) => {
+      if (!trusted(event)) throw Error("Invalid comment sender.");
+      return review.posting.request(request);
+    });
     let feedbackCopyPending = false;
-    ipcMain.handle("scope:feedback-copy", async (event, request) => {
-      if (
-        !trusted(event) ||
-        feedbackCopyPending ||
-        !request ||
-        JSON.stringify(request).length > FEEDBACK_LIMITS.copyBytes * 6
-      )
-        throw Error("Feedback copy is busy or invalid.");
-      const identity = review.identity(request.review);
-      if (
-        !request.draft ||
-        JSON.stringify(request.draft.revision) !==
-          JSON.stringify({
-            repository: identity.repository,
-            number: identity.number,
-            base: identity.base,
-            head: identity.head,
-          })
-      )
-        throw Error("Feedback revision does not match this retained review.");
-      const text = feedbackCopy(request.draft, request.section);
+    async function copyCommentText(text: string) {
+      if (feedbackCopyPending) throw Error("Clipboard operation is pending.");
       feedbackCopyPending = true;
       let timer: NodeJS.Timeout | undefined;
       const operation = Promise.resolve()
@@ -415,6 +403,72 @@ app
       } finally {
         clearTimeout(timer);
       }
+    }
+    ipcMain.handle("scope:comment-copy", async (event, request) => {
+      if (
+        !trusted(event) ||
+        !request ||
+        typeof request.body !== "string" ||
+        Buffer.byteLength(request.body) > 65536
+      )
+        throw Error("Invalid comment copy.");
+      review.identity(request.review);
+      // eslint-disable-next-line no-control-regex
+      if (
+        /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(request.body) ||
+        Buffer.from(request.body).toString("utf8") !== request.body
+      )
+        throw Error("Comment contains unsupported text.");
+      return copyCommentText(request.body);
+    });
+    let commentLinkPending = false;
+    ipcMain.handle("scope:comment-open", async (event, request) => {
+      if (!trusted(event) || !request || JSON.stringify(request).length > 1024)
+        throw Error("Invalid comment link.");
+      if (commentLinkPending) throw Error("A GitHub link is still opening.");
+      const url = review.posting.link(request.review, request.comment);
+      commentLinkPending = true;
+      let timer: NodeJS.Timeout | undefined;
+      const operation = shell.openExternal(url).finally(() => {
+        commentLinkPending = false;
+      });
+      try {
+        await Promise.race([
+          operation,
+          new Promise((_, reject) => {
+            timer = setTimeout(
+              () => reject(Error("Opening GitHub is unconfirmed. It may still finish.")),
+              2500,
+            );
+          }),
+        ]);
+        return true;
+      } finally {
+        clearTimeout(timer);
+      }
+    });
+    ipcMain.handle("scope:feedback-copy", async (event, request) => {
+      if (
+        !trusted(event) ||
+        feedbackCopyPending ||
+        !request ||
+        JSON.stringify(request).length > FEEDBACK_LIMITS.copyBytes * 6
+      )
+        throw Error("Feedback copy is busy or invalid.");
+      const identity = review.identity(request.review);
+      if (
+        !request.draft ||
+        JSON.stringify(request.draft.revision) !==
+          JSON.stringify({
+            repository: identity.repository,
+            number: identity.number,
+            base: identity.base,
+            head: identity.head,
+          })
+      )
+        throw Error("Feedback revision does not match this retained review.");
+      const text = feedbackCopy(request.draft, request.section);
+      return copyCommentText(text);
     });
     ipcMain.handle("scope:conversation", async (event, request) => {
       if (

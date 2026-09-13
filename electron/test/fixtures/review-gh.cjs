@@ -3,7 +3,7 @@ const fs = require("node:fs");
 const crypto = require("node:crypto");
 const path = require("node:path");
 const args = process.argv.slice(2);
-const endpoint = args[3];
+const endpoint = args[0] === "pr" ? `repos/${args[4]}/issues/${args[2]}/comments` : args[3];
 const root = process.env.SCOPE_REVIEW_FIXTURE_ROOT || path.dirname(process.cwd());
 let state = {};
 try {
@@ -60,7 +60,48 @@ const names = [
   ...Array.from({ length: 3000 }, (_, i) => `src/file-${i}.ts`),
 ];
 const blobId = (name) => crypto.createHash("sha1").update(name).digest("hex");
-if (endpoint === "graphql") {
+if (endpoint === "user") {
+  if (state.postMode === "preflight-failed") process.exit(1);
+  output({ id: 42, login: "fixture-user" });
+} else if (/\/issues\/\d+\/comments/.test(endpoint)) {
+  const file = path.join(root, "posted-comments.json");
+  let comments = [];
+  try {
+    comments = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {}
+  if (args[0] === "pr") {
+    const bodyFile = args[6];
+    const body = fs.readFileSync(bodyFile, "utf8");
+    if ((fs.statSync(bodyFile).mode & 0o777) !== 0o600) process.exit(2);
+    const comment = {
+      id: comments.length + 1000,
+      body,
+      user: { id: 42 },
+      created_at: new Date().toISOString(),
+      html_url: `https://github.com/example/shop/pull/${endpoint.split("/")[4]}#issuecomment-${comments.length + 1000}`,
+    };
+    comments.push(comment);
+    if (state.postMode === "ambiguous")
+      comments.push({
+        ...comment,
+        id: comment.id + 1,
+        html_url: comment.html_url.replace(/\d+$/, String(comment.id + 1)),
+      });
+    fs.writeFileSync(file, JSON.stringify(comments));
+    if (state.postMode === "timeout") {
+      setInterval(() => {}, 1000);
+      return;
+    }
+    if (["uncertain", "ambiguous"].includes(state.postMode)) process.exit(1);
+    output(comment.html_url + "\n");
+  } else {
+    const page = Number(new URL("https://x/" + endpoint).searchParams.get("page"));
+    output(comments.slice((page - 1) * 20, page * 20));
+  }
+} else if (/\/issues\/comments\/\d+$/.test(endpoint)) {
+  const comments = JSON.parse(fs.readFileSync(path.join(root, "posted-comments.json"), "utf8"));
+  output(comments.find((c) => c.id === Number(endpoint.split("/").at(-1))));
+} else if (endpoint === "graphql") {
   const expression =
     args.find((x) => x.startsWith("expression="))?.slice("expression=".length) || "";
   const parent = expression.slice(expression.indexOf(":") + 1);
@@ -94,15 +135,18 @@ if (endpoint === "graphql") {
   }
   output(result);
 } else if (/\/pulls\/\d+$/.test(endpoint)) {
-  output({
-    number: Number(endpoint.split("/").at(-1)),
-    title: "Prevent duplicate checkout orders",
-    body: "Synthetic PR evidence for notebook validation.",
-    state: "open",
-    changed_files: state.large ? 3010 : 10,
-    base: { sha: base, repo: { full_name: "example/shop" } },
-    head: { sha: head, repo: state.missingFork ? null : { full_name: "contributor/shop" } },
-  });
+  const sendMetadata = () =>
+    output({
+      number: Number(endpoint.split("/").at(-1)),
+      title: "Prevent duplicate checkout orders",
+      body: "Synthetic PR evidence for notebook validation.",
+      state: "open",
+      changed_files: state.large ? 3010 : 10,
+      base: { sha: base, repo: { full_name: "example/shop" } },
+      head: { sha: head, repo: state.missingFork ? null : { full_name: "contributor/shop" } },
+    });
+  if (state.preflightDelay) setTimeout(sendMetadata, state.preflightDelay);
+  else sendMetadata();
 } else if (endpoint.includes("/compare/")) output({ merge_base_commit: { sha: merge } });
 else if (endpoint.includes("/files?")) {
   const page = Number(new URL("https://x/" + endpoint).searchParams.get("page"));

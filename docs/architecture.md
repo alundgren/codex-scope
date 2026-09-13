@@ -310,3 +310,8 @@ The renderer owns two temporary editable drafts and one pending generation reque
 Validated clipboard IPC checks the pinned review identity and bounds each copy.
 No remote write, new process or runtime dependency is involved. Current feedback
 limits and evidence-verification limits are maintained in `docs/pr-review.md`.
+
+PR comment delivery is owned by `electron/src/review-posting.ts`, behind validated
+main/preload IPC. It serializes preflight, local gh creation and exact readback,
+retains one uncertain attempt for bounded read-only resolution, and cleans its private
+body file. The renderer owns editable previews; session tools have no posting API.
