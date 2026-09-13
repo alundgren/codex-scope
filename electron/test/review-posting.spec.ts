@@ -68,6 +68,9 @@ test("comment preview exact copy post links failure uncertainty ambiguity stale 
     await dialog.getByRole("button", { name: "Copy exact preview" }).click();
     await expect(dialog).toContainText("Exact preview copied.");
     expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(body);
+    await editor.evaluate((element) => {
+      element.scrollTop = 0;
+    });
     await editor.focus();
     const guide = await app.evaluate(async () =>
       Reflect.get(globalThis, "scopeReviewSession").tools.call(
@@ -78,6 +81,7 @@ test("comment preview exact copy post links failure uncertainty ambiguity stale 
     );
     expect(JSON.stringify(guide)).toContain("Retained");
     await expect(editor).toBeFocused();
+    expect(await editor.evaluate((element) => element.scrollTop)).toBe(0);
     await expect(page.locator("#review-lens")).toContainText("Overview");
     await page.screenshot({ path: info.outputPath("01-exact-preview.png") });
     await dialog.getByRole("button", { name: "Post comment", exact: true }).dblclick();
