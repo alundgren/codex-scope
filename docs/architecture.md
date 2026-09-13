@@ -295,3 +295,10 @@ base and lens instructions at submission and retains only their version metadata
 with transcript entries. The renderer keeps bounded drafts and renders plain
 text. Fixed host permissions remain outside editable prompts. This adds no
 runtime dependency, process or cross-launch review state.
+
+PR guidance remains inside the active review session. The dynamic-tool dispatcher
+validates evidence identities and bounded declarative actions, while the notebook
+renderer owns follow, input focus and display cancellation. A single acknowledgment
+reports whether a target was shown or retained. DOM source rows and local SVG
+render marks and diagrams without loading agent-supplied documents. Artifact data
+stays in bounded main/renderer memory and ends with the review.

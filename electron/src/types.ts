@@ -1,3 +1,5 @@
+import type { GuideAction, GuideArtifact, GuideRequest } from "./review-guidance-types.ts";
+import type { ReviewContent } from "./review-types.ts";
 import type { PromptOverrides, PromptEdit } from "./review-prompts.ts";
 import type { ConversationRequest, ConversationState } from "./review-session-types.ts";
 import type { ReviewRequest, ReviewReply } from "./review-types.ts";
@@ -203,6 +205,11 @@ export interface SettingsEdit {
   review: ModelSelection;
 }
 export interface ScopeAPI extends AnalysisAPI {
+  guidance(
+    request: GuideRequest,
+  ): Promise<{ artifacts?: GuideArtifact[]; content?: ReviewContent }>;
+  onGuidanceCancel(callback: (id: string) => void): void;
+  onGuidance(callback: (action: GuideAction) => Promise<string>): void;
   conversation(request: ConversationRequest): Promise<ConversationState | undefined>;
   onConversation(callback: () => void): void;
   review(request: ReviewRequest): Promise<ReviewReply>;

@@ -5,8 +5,8 @@ export const PROMPT_REGISTRY_VERSION = 1;
 export const REVIEW_PROMPTS = {
   base: {
     label: "Base review",
-    version: 1,
-    text: "Discuss the pinned pull request using supplied evidence. Explain concrete findings, uncertainty and relevant source references. Never claim to have run or verified the reviewed application. Missing or omitted evidence is unknown. Do not invent access or results.",
+    version: 2,
+    text: "Discuss the pinned pull request using supplied evidence. Explain concrete findings, uncertainty and relevant source references. Never claim to have run or verified the reviewed application. Missing or omitted evidence is unknown. Do not invent access or results. Use scope_guide to show relevant evidence and add bounded highlights, screenshot marks or sequence diagrams when they clarify the discussion. Use IDs and pinned revisions returned by scope_evidence. A retained target has not been shown. Respect Pause follow and never claim that retained or rejected navigation happened.",
   },
   Overview: {
     label: "Overview lens",

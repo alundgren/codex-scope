@@ -1,3 +1,5 @@
+import { imageMarks, sequenceDiagram } from "./review-marks.ts";
+import type { GuideAction, GuideArtifact } from "../review-guidance-types.ts";
 import { attachConversation } from "./review-conversation.ts";
 import type { ReviewLens } from "../review-session-types.ts";
 import { requiredElement as el } from "./elements.ts";
@@ -35,6 +37,12 @@ export function attachReview() {
     shownChat = false,
     menu: HTMLElement | null = null,
     anchor: HTMLButtonElement | null = null;
+  let following = false,
+    sessionStarted = false,
+    navigation = 0;
+  let guidedSource: { id: string; source?: number; mode: string } | null = null;
+  let artifacts: GuideArtifact[] = [],
+    latest: GuideAction | null = null;
   const conversation = attachConversation(
     () => pr?.id ?? null,
     () => lens as ReviewLens,
@@ -43,6 +51,14 @@ export function attachReview() {
         { text: "Copy transcript", action: conversation.copy },
         { text: "End review", action: end },
       ]),
+    (active) => {
+      if (active && !sessionStarted) {
+        sessionStarted = true;
+        following = true;
+      }
+      el("#review-follow").hidden = !active;
+      el("#review-artifacts").hidden = !active;
+    },
   );
   const scrolls = new Map<string, number>(),
     offsets = new Map<string, number>();
@@ -133,6 +149,11 @@ export function attachReview() {
     el("#review-chat-expand").textContent = focus === "chat" ? "Restore split" : "Expand chat";
   }
   function update() {
+    el("#review-follow").textContent = following ? "Pause follow" : "Resume follow";
+    el("#review-latest-target").hidden = !latest;
+    el("#review-return").hidden = visible || !latest;
+    el("#review-artifacts").textContent =
+      `Annotations${artifacts.length ? ` · ${artifacts.length}` : ""}`;
     el("#review-open").hidden = !!pr;
     el("#review-controls").hidden = !pr;
     grid.hidden = !pr;
@@ -160,7 +181,7 @@ export function attachReview() {
     for (const node of document.querySelectorAll<HTMLButtonElement>(
       "#review-controls button,#review-evidence-bar button,#review-footer button,#review-content button,#review-open button",
     ))
-      node.disabled = value;
+      if (node.id !== "review-follow") node.disabled = value;
   }
   async function request(value: ReviewRequest) {
     if (busy) return null;
@@ -239,13 +260,42 @@ export function attachReview() {
       line.append(code);
       if (selection?.path === path && row[selection.side] === selection.line)
         line.classList.add("selected-line");
+      if (
+        artifacts.some(
+          (a) =>
+            !a.invalid &&
+            a.target.kind === "source" &&
+            a.target.highlight &&
+            a.target.anchor.path === path &&
+            row[a.target.anchor.side] !== null &&
+            row[a.target.anchor.side]! >= a.target.anchor.line &&
+            row[a.target.anchor.side]! <= a.target.anchor.endLine,
+        )
+      )
+        line.classList.add("agent-highlight");
       pane.append(line);
     }
     restore();
   }
   async function readContent(offset = offsets.get(`${path}:${mode}`) ?? 0) {
     if (!pr || !path || busy) return;
-    const reply = await request({ action: "content", id: pr.id, path, mode, offset });
+    const readingGeneration = ++navigation;
+    let reply;
+    if (guidedSource && guidedSource.mode === mode) {
+      try {
+        reply = await window.scope.guidance({
+          action: "source",
+          review: pr.id,
+          id: guidedSource.id,
+          source: guidedSource.source,
+          offset,
+        });
+      } catch {
+        status("Source page is unavailable. The annotation may have been removed.");
+        return;
+      }
+    } else reply = await request({ action: "content", id: pr.id, path, mode, offset });
+    if (readingGeneration !== navigation) return;
     if (reply?.content) {
       content = reply.content;
       offsets.set(`${path}:${mode}`, offset);
@@ -261,6 +311,11 @@ export function attachReview() {
   async function openPR(input: string, replace = false) {
     const reply = await request({ action: "open", input, replace });
     if (!reply?.pr) return;
+    navigation++;
+    artifacts = [];
+    latest = null;
+    following = sessionStarted = false;
+    guidedSource = null;
     pr = reply.pr;
     files = [];
     images = [];
@@ -292,6 +347,7 @@ export function attachReview() {
       selected: file.path === path,
       action: () => {
         remember();
+        guidedSource = null;
         path = file.path;
         mode = "diff";
         void readContent();
@@ -395,6 +451,12 @@ export function attachReview() {
               (result) => {
                 if (result?.images) {
                   images = result.images;
+                  for (const a of artifacts)
+                    if (a.target.kind === "image" && a.target.image === selected.id)
+                      a.invalid = true;
+                  if (latest?.target.kind === "image" && latest.target.image === selected.id)
+                    latest = null;
+                  status("Screenshot removed. Its annotations are now unavailable.");
                   imageId = "";
                   drawImages();
                 }
@@ -410,6 +472,7 @@ export function attachReview() {
         status("Screenshot could not be decoded. Remove it and choose another PNG.");
       });
       pane.append(image);
+      imageMarks(image, artifacts, imageId);
     }
   }
   el("#review-view").addEventListener("click", () =>
@@ -458,6 +521,11 @@ export function attachReview() {
     if (pr)
       void request({ action: "end", id: pr.id }).then((result) => {
         if (result) {
+          navigation++;
+          artifacts = [];
+          latest = null;
+          following = sessionStarted = false;
+          guidedSource = null;
           pr = null;
           files = [];
           images = [];
@@ -506,15 +574,8 @@ export function attachReview() {
             });
         },
       },
-      {
-        text: "Findings and annotations",
-        action: () =>
-          modal(
-            selection
-              ? `Selected evidence: ${selection.path}, ${selection.side} line ${selection.line}. Findings and annotations are not available yet.`
-              : "No findings or annotations. These controls are not available yet.",
-          ),
-      },
+      { text: "Annotations", action: () => void showArtifacts() },
+      { text: "Clear marks and diagrams", action: () => void clearArtifacts() },
       {
         text: "Evidence limits",
         action: () =>
@@ -554,6 +615,234 @@ export function attachReview() {
       },
     ]),
   );
+  function guarded() {
+    return (
+      !visible ||
+      !!menu ||
+      dialog.open ||
+      !!document.querySelector("details[open]") ||
+      document.hidden ||
+      !!document.activeElement?.closest(
+        "input,textarea,select,[contenteditable=true],[data-review-focus-guard]",
+      )
+    );
+  }
+  async function refreshArtifacts() {
+    if (!pr || !sessionStarted) return;
+    const id = pr.id;
+    const result = await window.scope.guidance({ action: "read", review: id });
+    if (pr?.id === id) artifacts = result.artifacts ?? [];
+  }
+  let cancelledGuide = "";
+  window.scope.onGuidanceCancel((id) => {
+    cancelledGuide = id;
+    navigation++;
+  });
+  async function navigateGuide(
+    action: GuideAction,
+    explicit = false,
+    sourceIndex?: number,
+  ): Promise<string> {
+    if (action.review !== pr?.id) return "Rejected. Review has ended.";
+    if (!artifacts.some((a) => a.id === action.id && !a.invalid))
+      return "Rejected. Artifact was removed or its evidence is unavailable.";
+    latest = action;
+    const retained = () => {
+      update();
+      return "Retained. Use Show latest target; follow is paused or the reader is busy.";
+    };
+    if ((!following && !explicit) || guarded() || busy) return retained();
+    const ticket = ++navigation;
+    const valid = () =>
+      ticket === navigation && action.review === pr?.id && (explicit || following) && !guarded();
+    const original = action.target;
+    const t =
+      original.kind === "diagram" && sourceIndex !== undefined
+        ? { kind: "source" as const, anchor: original.sources[sourceIndex], highlight: false }
+        : original;
+    try {
+      if (t.kind === "source") {
+        const result = await window.scope.guidance({
+          action: "source",
+          review: action.review,
+          id: action.id,
+          source: sourceIndex,
+        });
+        if (!valid()) return retained();
+        if (!result.content) throw Error("Source unavailable.");
+        remember();
+        view = "Changes";
+        path = t.anchor.path;
+        mode = t.anchor.side;
+        content = result.content;
+        guidedSource = { id: action.id, source: sourceIndex, mode };
+        selection = {
+          repository: pr!.repository,
+          number: pr!.number,
+          base: pr!.base,
+          head: pr!.head,
+          path,
+          sourcePath: path,
+          sourceOid: t.anchor.revision,
+          side: t.anchor.side,
+          line: t.anchor.line,
+        };
+        drawContent();
+        pane.querySelector(".selected-line")?.scrollIntoView({ block: "center" });
+      } else if (t.kind === "image") {
+        const result = await window.scope.review({ action: "images", id: action.review });
+        if (!valid()) return retained();
+        images = result.images ?? [];
+        if (!images.some((i) => i.id === t.image))
+          throw Error("Screenshot removed; annotations are unavailable.");
+        const existingImage = pane.querySelector<HTMLImageElement>("img");
+        if (view === "Visual evidence" && imageId === t.image && existingImage) {
+          imageMarks(existingImage, artifacts, imageId);
+          latest = null;
+          update();
+          return "Shown in the notebook.";
+        }
+        const image = await window.scope.review({
+          action: "image",
+          id: action.review,
+          image: t.image,
+        });
+        if (!valid()) return retained();
+        if (!image.imageUrl) throw Error("Screenshot unavailable.");
+        remember();
+        view = "Visual evidence";
+        imageId = t.image;
+        drawImages(image.imageUrl);
+      } else if (t.kind === "diagram") {
+        remember();
+        view = "Sequence diagram";
+        pane.replaceChildren();
+        const label = document.createElement("p");
+        label.textContent = "Agent-generated sequence diagram";
+        pane.append(label, sequenceDiagram(t));
+        for (const [index, a] of t.sources.entries()) {
+          const reference = button(
+            `${a.path} · ${a.side} lines ${a.line}–${a.endLine} · ${a.revision.slice(0, 7)}`,
+            () => void navigateGuide(action, true, index),
+          );
+          pane.append(reference);
+        }
+      } else {
+        remember();
+        lens = t.lens;
+        view = t.view;
+        if (view === "Changes") drawContent();
+        else drawImages();
+      }
+      latest = null;
+      update();
+      return "Shown in the notebook.";
+    } catch (error) {
+      if (valid()) status(error instanceof Error ? error.message : "Navigation failed.");
+      update();
+      return "Retained. Navigation failed; no successful display is claimed.";
+    }
+  }
+  window.scope.onGuidance(async (action) => {
+    if (action.review !== pr?.id) return "Rejected. Review has ended.";
+    // The active session created this action, even if its first status read is pending.
+    if (!sessionStarted) {
+      sessionStarted = true;
+      following = true;
+    }
+    const arrived = navigation;
+    await refreshArtifacts();
+    if (arrived !== navigation) {
+      latest = action;
+      update();
+      return "Retained. The reader changed position or follow controls.";
+    }
+    if (cancelledGuide === action.id) {
+      latest = action;
+      update();
+      return "Retained. Navigation cancelled.";
+    }
+    return navigateGuide(action);
+  });
+  el("#review-follow").addEventListener("click", () => {
+    navigation++;
+    following = !following;
+    update();
+  });
+  el("#review-latest-target").addEventListener("click", () => {
+    if (latest) void navigateGuide(latest, true);
+  });
+  async function redrawMarks() {
+    remember();
+    if (view === "Changes") drawContent();
+    else if (view === "Visual evidence" && imageId) {
+      const image = pane.querySelector<HTMLImageElement>("img");
+      if (image) imageMarks(image, artifacts, imageId);
+      else await showImage(imageId);
+    } else if (view === "Sequence diagram") {
+      view = "Changes";
+      drawContent();
+    }
+    update();
+  }
+  async function clearArtifacts() {
+    if (!pr) return;
+    navigation++;
+    latest = null;
+    const result = await window.scope.guidance({ action: "clear", review: pr.id });
+    artifacts = result.artifacts ?? [];
+    await redrawMarks();
+    status("Marks and diagrams cleared.");
+  }
+  async function showArtifacts() {
+    try {
+      await refreshArtifacts();
+    } catch {
+      status("Annotations are unavailable until a review starts.");
+      return;
+    }
+    modal(
+      artifacts.length
+        ? "Agent-generated annotations and requested targets"
+        : "No annotations or requested targets.",
+    );
+    const box = el("#review-dialog-content");
+    for (const item of artifacts) {
+      const row = document.createElement("div");
+      row.className = "review-artifact";
+      const label = document.createElement("span");
+      label.textContent = `${item.target.kind}${item.invalid ? " · evidence removed or stale" : ""}`;
+      const show = button("Show", () => {
+        dialog.close();
+        void navigateGuide(item, true);
+      });
+      show.disabled = item.invalid;
+      row.append(
+        label,
+        show,
+        button("Remove", () => {
+          if (pr)
+            void window.scope
+              .guidance({ action: "remove", review: pr.id, id: item.id })
+              .then((result) => {
+                navigation++;
+                artifacts = result.artifacts ?? [];
+                if (latest?.id === item.id) latest = null;
+                row.remove();
+                void redrawMarks();
+              });
+        }),
+      );
+      box.append(row);
+    }
+    box.append(
+      button("Clear marks and diagrams", () => {
+        dialog.close();
+        void clearArtifacts();
+      }),
+    );
+  }
+  el("#review-artifacts").addEventListener("click", () => void showArtifacts());
   const divider = el("#review-divider"),
     setRatio = (value: number) => {
       ratio = Math.min(80, Math.max(20, value));
@@ -584,11 +873,20 @@ export function attachReview() {
   divider.addEventListener("pointerup", (event) => {
     if (divider.hasPointerCapture(event.pointerId)) divider.releasePointerCapture(event.pointerId);
   });
+  pane.addEventListener(
+    "wheel",
+    () => {
+      navigation++;
+    },
+    { passive: true },
+  );
   document.addEventListener("pointerdown", (event) => {
+    navigation++;
     if (menu && !menu.contains(event.target as Node) && !anchor?.contains(event.target as Node))
       closeMenu();
   });
   document.addEventListener("keydown", (event) => {
+    navigation++;
     if (!visible) return;
     if (menu) {
       const buttons = [...menu.querySelectorAll("button")],
@@ -609,12 +907,17 @@ export function attachReview() {
     }
   });
   window.addEventListener("resize", () => {
+    navigation++;
     closeMenu();
     if (innerWidth <= 720 && focus === "both") focus = "review";
     layout();
   });
   return {
+    latest() {
+      if (latest) void navigateGuide(latest, true);
+    },
     show(open: boolean) {
+      navigation++;
       visible = open;
       document.body.classList.toggle("review-open", open);
       if (open) el("#review-functions").append(functions);

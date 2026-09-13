@@ -10,6 +10,7 @@ export function attachConversation(
   review: () => string | null,
   lens: () => ReviewLens,
   end: () => void,
+  started: (active: boolean) => void = () => {},
 ) {
   const entries = el("#conversation-entries"),
     status = el("#conversation-state"),
@@ -23,6 +24,7 @@ export function attachConversation(
   const nodes = new Map<string, HTMLElement>();
   function render(state: ConversationState) {
     if (state.review !== review()) return;
+    started(state.status !== "idle");
     const following = offset === L.entries;
     total = state.total;
     const changed =
@@ -139,7 +141,7 @@ export function attachConversation(
     void window.scope
       .conversation({ action: "send", review: id, text, lens: lens() })
       .then((state) => {
-        input.value = "";
+        if (input.value === text) input.value = "";
         el("#conversation-notice").textContent = "";
         offset = L.entries;
         if (state) render(state);

@@ -10,11 +10,11 @@ The [GitHub comparison contract](https://docs.github.com/en/rest/commits/commits
 
 Refresh checks current PR identity without replacing anything. If it changed, Replace review is explicit and removes old screenshots and selections. Existing evidence never silently acquires new revision identifiers. Opening another PR and ending the review also require an explicit leave action. A failed replacement keeps the previous review. Transcript copy is available. Structured feedback copy is not yet available.
 
-PNG screenshots come only from an explicit local picker. Scope checks regular-file status before opening with nonblocking/no-follow flags, checks the opened descriptor again, then checks size, PNG structure and decoded dimensions before Chromium expands pixels. Animated PNG and other formats are unsupported. The private temporary directory stores four randomly named files at most, with owner-only permissions. A read-only local protocol URL delivers only the selected image, avoiding base64 image copies through IPC. The route accepts only the active PR and known image IDs, permits one read, validates stored bytes again, and disables caching. The renderer labels its supplied filename and pinned revision. Each destination is tracked before writing and counts against the file limit. A failed or cancelled write removes its incomplete file. Failed cleanup keeps that file owned and blocks further attachments until End or restart can clean it. Removing an image, ending/replacing the review or normal quit removes its file. Startup removes bounded abandoned screenshot files; unexpected directory entries stop startup instead of deleting unrelated data. Ordinary deletion is not forensic erasure.
+PNG screenshots come only from an explicit local picker. Scope checks regular-file status before opening with nonblocking/no-follow flags, checks the opened descriptor again, then checks size and PNG structure before Electron decodes the bounded pixels. The decoded dimensions must match the PNG header before attachment and on subsequent image reads. Animated PNG and other formats are unsupported. The private temporary directory stores four randomly named files at most, with owner-only permissions. A read-only local protocol URL delivers only the selected image, avoiding base64 image copies through IPC. The route accepts only the active PR and known image IDs, permits one read, validates stored bytes again, and disables caching. The renderer labels its supplied filename and pinned revision. Each destination is tracked before writing and counts against the file limit. A failed or cancelled write removes its incomplete file. Failed cleanup keeps that file owned and blocks further attachments until End or restart can clean it. Removing an image, ending/replacing the review or normal quit removes its file. Startup removes bounded abandoned screenshot files; unexpected directory entries stop startup instead of deleting unrelated data. Ordinary deletion is not forensic erasure.
 
 | Resource | Limit and behavior |
 | --- | --- |
-| Active work | One PR operation, one gh process group; overlapping requests rejected, no retry queue |
+| Active work | One manual PR operation and one session/guided evidence read, each with a bounded gh process group; overlapping work in either slot is rejected without a retry queue |
 | gh response | 2 MiB stdout, 32 KiB discarded stderr, 10-second command deadline |
 | gh process group | Existing CLI sampler: 512 MiB summed RSS, eight processes, 30 CPU seconds; check every 500 ms, kill on failure |
 | Changed-file page | Ten entries; browse up to 3,000 paths; excess path count visible on demand |
@@ -109,3 +109,55 @@ from `electron/` to exercise changed base and lens text
 through two turns of one actual installed-CLI thread using synthetic instructions
 and an explicit model/effort pair. It requests no source reads or reviewed code
 execution and checks temporary cleanup.
+
+## Guided evidence
+
+The session-attached `scope_guide` tool accepts typed view/lens selection, source
+focus/highlight, screenshot strokes/arrows/text, and local sequence diagrams.
+Source actions require an issued source ID plus its pinned revision, path, side
+and line range. Image actions require an attached image ID and pinned head.
+Unknown fields, removed evidence, stale revisions, invalid coordinates, unknown
+nodes and excessive data receive explicit rejection results. Diagram references
+use the same source validation and never fetch remote links.
+
+`review-guidance.ts` validates and retains active-session artifacts. `review-tools.ts`
+serializes tool evidence reads with guided source-page reads; concurrent work is
+rejected without a queue. Manual PR reads retain their separate existing request
+slot. `ui/review.ts` owns follow, focus guards and the navigation generation.
+Pausing, cancellation, timeout, manual navigation and tool changes invalidate
+pending display work, including messages waiting for artifact retrieval. The
+renderer acknowledges a shown target or reports that it was retained. It never
+receives an executable action or arbitrary filesystem access.
+
+The host permits one outstanding display acknowledgment for 2,500 ms, then
+cancels display and reports an unconfirmed retained target. The renderer keeps
+only the latest requested return target. Resume never drains a backlog. End,
+replace and quit remove artifacts with their active review. Settings stores no
+follow toggle or artifacts. The base review prompt's registered default supplies
+the optional guidance instructions; saved overrides remain authoritative for
+editable wording and cannot change host validation.
+
+| Resource | Limit and behavior |
+| --- | --- |
+| Guidance input | 8 KiB encoded JSON per action, validated before source reads |
+| Retained actions | 24 records; overflow rejected until explicit removal; the existing 64 dynamic-tool-call session limit also bounds additions |
+| Source marks | 1–200 lines within accepted pinned UTF-8 source; displayed in 200-line pages with a 32 KiB row-result cap |
+| Screenshot marks | 16 marks per action, 128 points per mark, 256 characters per text, 2,048 retained points per image, and the action byte cap; all coordinates inside decoded image dimensions |
+| Sequence diagrams | 2–8 nodes, 1–24 messages, 256 characters per label, 1–4 validated source references; no remote links or supplied executable markup |
+| Renderer copies | One bounded artifact list and latest target; at most 24 × 8 KiB of agent input per list, plus fixed IDs/validated metadata; main and renderer both count toward app memory |
+
+Source highlights use DOM rows; drawings and diagrams use locally created SVG
+elements and plain text. No runtime dependency or additional process is added. These controls retain Electron's [sandbox and context-isolation protections](https://www.electronjs.org/docs/latest/tutorial/security).
+Image overlays share the displayed image box and an original-pixel view box.
+Long diagram labels use bounded text rows. Rendering never evaluates agent HTML,
+JavaScript, SVG strings or diagram URLs.
+
+Run `electron/scripts/measure-review-guidance.ts` from `electron/` under the
+standard isolated Xvfb desktop to exercise one near-limit drawing and 23 smaller records on a
+4,194,304-pixel PNG, overflow rejection, scaling, paused diagram bursts, long
+labels, self messages, 384 maximum-length screenshot text marks, 384 arrows and clear. `--live` includes the installed Codex CLI with an
+explicit gpt-6-astra/low selection; the artifact pressure data remains synthetic.
+The command records whole-app and child RSS/CPU, timer delay and cleanup without
+video. Run `--visual` separately for the matching recorded walkthrough. Results
+belong in the PR. Linux evidence does not establish macOS performance or energy
+use.
