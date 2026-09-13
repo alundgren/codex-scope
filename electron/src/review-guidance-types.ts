@@ -53,5 +53,5 @@ export type GuideRequest = { review: string } & (
   | { action: "read" }
   | { action: "remove"; id: string }
   | { action: "clear" }
-  | { action: "source"; id: string; source?: number; offset?: number }
+  | { action: "source"; id: string; source?: number; offset?: number; selected?: SourceTarget }
 );

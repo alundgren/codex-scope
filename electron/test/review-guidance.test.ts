@@ -60,7 +60,7 @@ test("guidance acknowledges retention, rejects stale IDs and anchors, and bounds
   const id = payload(good).id;
   expect((await tools.guidance.content(id, signal)).rows).toHaveLength(4);
   tools.guidance.remove(id);
-  expect((await tools.guidance.content(id, signal)).rows).toHaveLength(4);
+  expect((await tools.guidance.content(id, signal, undefined, 0, anchor)).rows).toHaveLength(4);
   await expect(tools.guidance.content("unknown", signal)).rejects.toThrow("unavailable");
   const diagram = await tools.call(
     "scope_guide",
@@ -77,8 +77,20 @@ test("guidance acknowledges retention, rejects stale IDs and anchors, and bounds
   const diagramId = payload(diagram).id;
   await tools.guidance.content(diagramId, signal, 0);
   tools.guidance.remove();
-  expect((await tools.guidance.content(diagramId, signal, 0, 2)).offset).toBe(2);
+  expect((await tools.guidance.content(diagramId, signal, 0, 2, anchor)).offset).toBe(2);
   await expect(tools.guidance.content(id, signal)).rejects.toThrow("unavailable");
+  for (const change of [
+    { id: "x".repeat(32) },
+    { revision: "d".repeat(40) },
+    { path: "other.ts" },
+    { side: "base" },
+    { endLine: 20 },
+    { line: 0 },
+    { html: "<script>" },
+  ])
+    await expect(
+      tools.guidance.content(id, signal, undefined, 0, { ...anchor, ...change }),
+    ).rejects.toThrow();
 });
 test("drawing validation rejects invalid coordinates, unknown markup and excessive points; removal invalidates existing marks", async () => {
   const { tools, removeImage } = await fixture();

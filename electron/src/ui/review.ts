@@ -1,5 +1,5 @@
 import { imageMarks, sequenceDiagram } from "./review-marks.ts";
-import type { GuideAction, GuideArtifact } from "../review-guidance-types.ts";
+import type { GuideAction, GuideArtifact, SourceTarget } from "../review-guidance-types.ts";
 import { attachConversation } from "./review-conversation.ts";
 import type { ReviewLens } from "../review-session-types.ts";
 import { requiredElement as el } from "./elements.ts";
@@ -40,7 +40,7 @@ export function attachReview() {
   let following = false,
     sessionStarted = false,
     navigation = 0;
-  let guidedSource: { id: string; source?: number; mode: string } | null = null;
+  let guidedSource: { anchor: SourceTarget; mode: string } | null = null;
   let artifacts: GuideArtifact[] = [],
     latest: GuideAction | null = null;
   const conversation = attachConversation(
@@ -286,12 +286,12 @@ export function attachReview() {
         reply = await window.scope.guidance({
           action: "source",
           review: pr.id,
-          id: guidedSource.id,
-          source: guidedSource.source,
+          id: guidedSource.anchor.id,
+          selected: guidedSource.anchor,
           offset,
         });
       } catch {
-        status("Source page is unavailable. The annotation may have been removed.");
+        status("Source page is unavailable. Retry when the evidence read has finished.");
         return;
       }
     } else reply = await request({ action: "content", id: pr.id, path, mode, offset });
@@ -675,7 +675,7 @@ export function attachReview() {
         path = t.anchor.path;
         mode = t.anchor.side;
         content = result.content;
-        guidedSource = { id: action.id, source: sourceIndex, mode };
+        guidedSource = { anchor: t.anchor, mode };
         selection = {
           repository: pr!.repository,
           number: pr!.number,

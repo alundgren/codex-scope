@@ -137,9 +137,11 @@ follow toggle or artifacts. The base review prompt's registered default supplies
 the optional guidance instructions; saved overrides remain authoritative for
 editable wording and cannot change host validation.
 
-One validated selected-source reference remains independent of annotations so
+One renderer-owned selected-source reference remains independent of annotations so
 removing or clearing marks preserves the current page, selection and pagination.
-It is replaced by the next guided source and discarded with the active review.
+It changes only when navigation is accepted, and is discarded with the active
+review. Each page request revalidates its issued ID, path, side, revision and
+line range; cancelled source reads cannot replace the displayed reference.
 Annotation rows identify source paths and lines, screenshot marks, diagram
 participants, or lens/view targets before Show or Remove is chosen.
 

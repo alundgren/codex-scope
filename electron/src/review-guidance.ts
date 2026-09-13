@@ -131,7 +131,6 @@ function text(value: unknown, empty = false): asserts value is string {
 }
 export class ReviewGuidance {
   private artifacts: GuideArtifact[] = [];
-  private selectedSource: { id: string; source?: number; anchor: SourceTarget } | null = null;
   constructor(
     private review: PRReview,
     readonly reviewId: string,
@@ -151,18 +150,25 @@ export class ReviewGuidance {
     this.artifacts = id ? this.artifacts.filter((a) => a.id !== id) : [];
     return this.read();
   }
-  async content(id: string, signal: AbortSignal, source?: number, requestedOffset?: number) {
+  async content(
+    id: string,
+    signal: AbortSignal,
+    source?: number,
+    requestedOffset?: number,
+    selected?: unknown,
+  ) {
     const item = this.artifacts.find((a) => a.id === id);
     const a =
-      item && !item.invalid && item.target.kind === "source"
-        ? item.target.anchor
-        : item && !item.invalid && item.target.kind === "diagram" && Number.isInteger(source)
-          ? item.target.sources[source!]
-          : this.selectedSource?.id === id && this.selectedSource.source === source
-            ? this.selectedSource.anchor
+      selected !== undefined
+        ? this.sourceAnchor(selected)
+        : item && !item.invalid && item.target.kind === "source"
+          ? item.target.anchor
+          : item && !item.invalid && item.target.kind === "diagram" && Number.isInteger(source)
+            ? item.target.sources[source!]
             : undefined;
     if (!a) throw Error("Source target is unavailable.");
     const lines = (await this.source(a, signal)).split("\n");
+    if (a.endLine > lines.length) throw Error("Source line is outside the evidence.");
     if (
       requestedOffset !== undefined &&
       (!Number.isInteger(requestedOffset) || requestedOffset < 0 || requestedOffset >= lines.length)
@@ -177,10 +183,9 @@ export class ReviewGuidance {
     }));
     if (Buffer.byteLength(JSON.stringify(rows)) > 32768)
       throw Error("Source display exceeds 32 KiB. Choose a smaller source target.");
-    this.selectedSource = { id, source, anchor: a };
     return { path: a.path, mode: a.side, rows, offset, total: lines.length, omission: null };
   }
-  private async anchor(value: unknown, signal: AbortSignal) {
+  private sourceAnchor(value: unknown) {
     const a = object(value);
     keys(a, ["id", "revision", "path", "side", "line", "endLine"]);
     if (
@@ -200,7 +205,10 @@ export class ReviewGuidance {
     const pr = this.review.identity(this.reviewId);
     if (a.revision !== (a.side === "head" ? pr.head : pr.diffBase))
       throw Error("Stale source revision.");
-    const anchor = a as SourceTarget;
+    return a as SourceTarget;
+  }
+  private async anchor(value: unknown, signal: AbortSignal) {
+    const anchor = this.sourceAnchor(value);
     const content = await this.source(anchor, signal);
     if (anchor.endLine > content.split("\n").length)
       throw Error("Source line is outside the evidence.");

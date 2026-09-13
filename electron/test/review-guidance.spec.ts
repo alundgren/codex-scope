@@ -274,6 +274,41 @@ test("guided evidence walkthrough preserves pause, focus and drafts; renders and
       await page.locator("#review-next").click();
       await expect(page.getByRole("button", { name: "head line 201", exact: true })).toBeVisible();
       await shot("15-cleared-diagram-source-next-page");
+      await page.locator("#review-previous").click();
+      await expect(page.getByRole("button", { name: "head line 1", exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "head line 20", exact: true }).click();
+      await page.locator("#review-follow").click();
+      await app.evaluate(({ ipcMain }) => {
+        const handler = Reflect.get(ipcMain, "_invokeHandlers").get("scope:guidance");
+        ipcMain.removeHandler("scope:guidance");
+        ipcMain.handle("scope:guidance", async (event, request) => {
+          if (request.action === "source") {
+            ipcMain.removeHandler("scope:guidance");
+            ipcMain.handle("scope:guidance", handler);
+            Reflect.set(globalThis, "guideSourceDelayed", true);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+          return handler(event, request);
+        });
+      });
+      await send("guide source second cancelled");
+      await expect
+        .poll(() => app.evaluate(() => Reflect.get(globalThis, "guideSourceDelayed")))
+        .toBe(true);
+      await page.locator("#review-follow").click();
+      await ready();
+      await expect(page.locator("#review-selection")).toContainText("deleted.ts · head line 20");
+      await shot("16-cancelled-second-source");
+      await page.locator("#review-artifacts").click();
+      await expect(page.locator(".review-artifact")).toContainText("truncated.ts · head lines 2–4");
+      await page.getByRole("button", { name: "Clear marks and diagrams", exact: true }).click();
+      await page.locator("#review-next").click();
+      await expect(page.getByRole("button", { name: "head line 201", exact: true })).toBeVisible();
+      await expect(page.locator("#review-files")).toContainText("deleted.ts");
+      await page.locator("#review-previous").click();
+      await expect(page.getByRole("button", { name: "head line 20", exact: true })).toBeVisible();
+      await expect(page.locator("#review-selection")).toContainText("deleted.ts · head line 20");
+      await shot("17-cancelled-source-clear-paging");
     }
   } finally {
     await app.close().catch(() => {});

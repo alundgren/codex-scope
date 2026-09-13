@@ -334,6 +334,7 @@ app
             controller.signal,
             request.source,
             request.offset,
+            request.selected,
           ),
         };
       } finally {

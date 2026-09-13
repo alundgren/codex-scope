@@ -216,7 +216,9 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
           },
         });
       } else {
-        guideEntry = result.entries.find((e) => e.path === "deleted.ts");
+        guideEntry = result.entries.find(
+          (e) => e.path === (mode.includes("second") ? "truncated.ts" : "deleted.ts"),
+        );
         const anchor = {
           id: guideEntry.id,
           revision: guideEntry.revision,
