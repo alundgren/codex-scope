@@ -37,7 +37,7 @@ let reviewPending = false;
 let catalogPending: Promise<unknown> | null = null;
 let settingsBusy = false;
 async function settingsInvoke(operation: string, value?: unknown) {
-  if (settingsBusy || (value !== undefined && JSON.stringify(value).length > 5000))
+  if (settingsBusy || (value !== undefined && JSON.stringify(value).length > 17000))
     throw new Error("Settings are busy or too large. Try again.");
   settingsBusy = true;
   try {
@@ -94,6 +94,7 @@ const scope: ScopeAPI = {
     if (catalogPending) ipcRenderer.send("scope:models-cancel");
   },
   settings: () => settingsInvoke("settings"),
+  savePrompt: (value) => settingsInvoke("savePrompt", value),
   saveSettings: (value) => settingsInvoke("saveSettings", value),
   capture: (start) => settingsInvoke("capture", start),
   analysisList: (generation) => analysisInvoke("scope:analysis-list", generation),

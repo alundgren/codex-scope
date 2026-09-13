@@ -1,3 +1,5 @@
+import { currentPromptOverrides } from "./prompt-settings.ts";
+import { effectivePrompt } from "../review-prompts.ts";
 import { requiredElement as el } from "./elements.ts";
 import {
   SESSION_LIMITS as L,
@@ -23,8 +25,13 @@ export function attachConversation(
     if (state.review !== review()) return;
     const following = offset === L.entries;
     total = state.total;
+    const changed =
+      state.prompts &&
+      (state.prompts.base !== effectivePrompt("base", currentPromptOverrides).version ||
+        state.lens !== lens() ||
+        state.prompts.lens !== effectivePrompt(lens(), currentPromptOverrides).version);
     status.textContent = state.selection
-      ? `${state.selection.model} · ${state.selection.effort} · ${state.status}. ${state.error ?? `Next turn: ${lens()}. Settings changes apply to the next review.`}`
+      ? `${state.selection.model} · ${state.selection.effort} · ${state.status}. ${state.error ?? `Next turn: ${lens()}. ${changed ? "Saved prompts or lens pending for next turn. " : ""}Model changes apply to the next review.`}`
       : "Choose a review model and effort in Settings, then send a message.";
     el<HTMLButtonElement>("#conversation-send").disabled = !["idle", "ready"].includes(
       state.status,
@@ -152,6 +159,7 @@ export function attachConversation(
           status.textContent = "Stop failed. End the review.";
         });
   });
+  window.addEventListener("scope-prompts", () => void refresh());
   window.scope.onConversation(() => void refresh());
   return { refresh: () => void refresh(), copy: () => void copy() };
 }

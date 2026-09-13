@@ -70,7 +70,7 @@ adds no renderer data injection or filesystem API. These switches are for automa
 
 Use Settings to enter an HTTPS collector origin and token. A Linux pairing URL such as `https://host:port/?token=secret` fills both fields. The URL field discards the query after extraction; the token field stays masked and clears after save. Duplicate or unknown query parameters, empty tokens and malformed links are rejected.
 
-Settings writes one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and separate diagnosis/review model and effort choices, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. Only one settings save may run at a time. A save that exceeds the 2500 ms reply deadline remains owned until the worker finishes; Settings shows it as pending and prevents retries from overlapping the private temporary file. Completion updates the form with the actual success or failure. Stop capture remains available while a save is pending. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
+Connection and model settings write one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and separate diagnosis/review model and effort choices, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. Only one settings save may run at a time. A save that exceeds the 2500 ms reply deadline remains owned until the worker finishes; Settings shows it as pending and prevents retries from overlapping the private temporary file. Completion updates the form with the actual success or failure. Stop capture remains available while a save is pending. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
 
 For external configuration import, create a private JSON file outside Git with two fields:
 
@@ -324,3 +324,8 @@ xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec 
 ```
 
 This exercises 110 fixture turns, twenty-entry presentation, concurrent capture, diagnosis busy handling, a bounded large source result, conversation capacity and quit cleanup. Reports stay under ignored `measurements/`. `scripts/measure-review-live.ts` is an explicit, optional live check that uses installed Codex authentication, `gpt-6-astra` with low effort and public repository source. It starts real model turns and measures their whole-app cost, so it is excluded from routine tests. Neither command proves macOS performance or native lifecycle behavior.
+
+Review prompt editing uses a separate private `review-prompts.json` with only
+explicit overrides. Its 128 KiB document and one 128 KiB atomic temporary file
+are separate from the 4 KiB connection/model document. Prompt saves preserve
+capture and other settings. See [review prompt behavior and limits](../docs/pr-review.md#review-prompts).

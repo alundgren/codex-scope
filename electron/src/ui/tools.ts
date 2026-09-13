@@ -1,3 +1,4 @@
+import { attachPromptSettings } from "./prompt-settings.ts";
 import { attachReview } from "./review.ts";
 import { attachModelSettings } from "./model-settings.ts";
 import type { HistoryStatus, ConnectionSettings, Reply } from "../types.ts";
@@ -10,6 +11,19 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   const endpoint = requiredElement<HTMLInputElement>("#collector-url");
   const token = requiredElement<HTMLInputElement>("#collector-token");
   const models = attachModelSettings();
+  const prompts = attachPromptSettings();
+  for (const [id, prompt] of [
+    ["settings-general", false],
+    ["settings-prompts", true],
+  ] as const) {
+    requiredElement(`#${id}`).addEventListener("click", () => {
+      requiredElement("#connection-settings").hidden = prompt;
+      requiredElement("#prompt-settings").hidden = !prompt;
+      requiredElement("#settings-general").setAttribute("aria-pressed", String(!prompt));
+      requiredElement("#settings-prompts").setAttribute("aria-pressed", String(prompt));
+      prompts.close();
+    });
+  }
   const status = requiredElement("#settings-status");
   const capture = requiredElement<HTMLButtonElement>("#capture");
   const save = requiredElement<HTMLButtonElement>("#settings-save");
@@ -42,6 +56,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-tool]")];
   function show(next: string) {
     if (view === "settings" && next !== "settings") models.stop();
+    prompts.close();
     view = next;
     review.show(next === "review");
     document.body.classList.toggle("tool-open", next !== "journal");
@@ -65,6 +80,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
     if (next === "journal") journal();
   }
   function apply(value: Awaited<ReturnType<typeof window.scope.settings>>) {
+    prompts.apply(value);
     endpoint.value = value.endpoint;
     token.value = "";
     models.apply(value.diagnosis, value.review);
@@ -172,6 +188,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   show("idle");
   return {
     receive(value: HistoryStatus) {
+      prompts.receive(value);
       capturing = !!value.capturing;
       settingsSave = value.settingsSave;
       settleSave();

@@ -135,3 +135,35 @@ it("rejects a no-writer auth FIFO and permits immediate cleanup", async () => {
   await s.close();
   expect(await readdir(path.join(root, "session"))).toEqual([]);
 }, 2000);
+
+it("snapshots base and lens versions before startup and applies saved edits to the next turn", async () => {
+  const { snapshotReviewPrompts } = await import("../src/review-prompts.ts");
+  const { randomUUID } = await import("node:crypto");
+  const prompts = snapshotReviewPrompts("Security", {
+    base: { text: "BASE FIRST", version: randomUUID() },
+    Security: { text: "LENS FIRST", version: randomUUID() },
+  });
+  const s = session();
+  const sending = s.send("echo-prompts", "Security", selection, prompts);
+  const firstVersion = prompts.base.version;
+  prompts.base.text = "BASE SECOND";
+  prompts.base.version = randomUUID();
+  prompts.lens.text = "LENS SECOND";
+  prompts.lens.version = randomUUID();
+  await sending;
+  await wait(s, "ready");
+  expect(s.export()).toContain("BASE FIRST");
+  expect(s.export()).not.toContain("BASE SECOND");
+  expect(s.read(0).entries[0].prompts.base).toBe(firstVersion);
+  await s.send("echo-prompts next", "Security", selection, prompts);
+  await wait(s, "ready");
+  expect(s.export()).toContain("BASE SECOND");
+  expect(s.export()).toContain("LENS SECOND");
+  expect(s.read(0).entries[0].prompts.base).toBe(firstVersion);
+  expect(s.read(0).prompts!.base).toBe(prompts.base.version);
+  const invalid = structuredClone(prompts);
+  invalid.base.text = "x".repeat(8193);
+  const count = s.read(0).total;
+  await expect(s.send("invalid", "Security", selection, invalid)).rejects.toThrow();
+  expect(s.read(0).total).toBe(count);
+});

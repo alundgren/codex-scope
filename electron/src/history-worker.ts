@@ -1,3 +1,5 @@
+import { loadPromptPreferences, savePromptPreferences } from "./prompt-preferences.ts";
+import type { PromptOverrides } from "./review-prompts.ts";
 import { emptySelection } from "./model-types.ts";
 import { sessionEvidence } from "./analysis-evidence.ts";
 import { prepare, type Statement } from "./database.ts";
@@ -83,6 +85,11 @@ let state: HistoryStatus & { retainedBytes: number; evicted: number } = {
 let activation = 0;
 let diagnosis = emptySelection(),
   review = emptySelection();
+let prompts: PromptOverrides = {};
+let promptLoadError: string | undefined;
+const promptFile = workerData.settingsFile
+  ? path.join(path.dirname(workerData.settingsFile), "review-prompts.json")
+  : null;
 let settingsError: string | undefined;
 let settingsSave: HistoryStatus["settingsSave"];
 let commandLineOverride = !workerData.optionalConnection;
@@ -92,6 +99,7 @@ function settings() {
     hasToken: !!connectionConfig?.token,
     diagnosis,
     review,
+    prompts,
     commandLineOverride,
     error: settingsError,
   };
@@ -537,6 +545,14 @@ port.on("message", async (message: WorkerRequest) => {
           settingsError = "Saved settings could not be read. Enter the connection again and save.";
         }
       }
+      if (promptFile) {
+        try {
+          prompts = await loadPromptPreferences(promptFile);
+        } catch (error) {
+          promptLoadError = (error as Error).message;
+          settingsError = promptLoadError;
+        }
+      }
       state.synthetic = !!workerData.synthetic;
       if (workerData.synthetic) {
         const fixture = await loadRecording(workerData.fixture);
@@ -550,6 +566,23 @@ port.on("message", async (message: WorkerRequest) => {
       result = { ok: true };
     } else if (operation === "settings") {
       result = settings();
+    } else if (operation === "savePrompt") {
+      try {
+        if (!promptFile || promptLoadError)
+          throw Error(promptLoadError ?? "Prompt settings unavailable.");
+        if (faults.settingsDelay)
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(5000, faults.settingsDelay!)),
+          );
+        prompts = await savePromptPreferences(promptFile, prompts, message.value);
+        settingsError = undefined;
+      } catch {
+        settingsError =
+          promptLoadError ??
+          "Prompt was not saved. Check its byte limit and the private settings directory, then try again.";
+      }
+      result = settings();
+      settingsSave = { id: request, result: settings() };
     } else if (operation === "saveSettings") {
       try {
         const value = validateSettings(message.value, connectionConfig);

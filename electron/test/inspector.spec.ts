@@ -265,6 +265,7 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
         "onHidden",
         "onStatus",
         "review",
+        "savePrompt",
         "saveSettings",
         "settings",
         "status",
@@ -292,6 +293,7 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
         const results = await Promise.allSettled([
           window.scope.analysisStart(generation, "session", "bad;model", "low", null),
           window.scope.analysisRun(generation - 1, "old-run"),
+          window.scope.savePrompt({ id: "base", text: "x".repeat(8193) }),
           window.scope.analysisDecide(generation, "missing-run", "missing-finding", "kept"),
         ]);
         return results.every((result) => result.status === "rejected");

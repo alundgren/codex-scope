@@ -46,13 +46,22 @@ export async function loadPreferences(file: string) {
 export async function savePreferences(file: string, value: SettingsEdit) {
   const text = JSON.stringify({ version: 2, ...value }) + "\n";
   if (Buffer.byteLength(text) > 4096) throw new Error("Settings are too long.");
+  await savePrivatePreferences(file, text, 4096, ".preferences.tmp");
+}
+export async function savePrivatePreferences(
+  file: string,
+  text: string,
+  limit: number,
+  temporaryName: string,
+) {
+  if (Buffer.byteLength(text) > limit) throw new Error("Settings are too long.");
   const parent = path.dirname(file);
   const stat = await fs.lstat(parent);
   if (!stat.isDirectory() || (process.getuid && stat.uid !== process.getuid()))
     throw new Error("Settings directory is unavailable.");
-  const temporary = path.join(parent, ".preferences.tmp");
+  const temporary = path.join(parent, temporaryName);
   try {
-    await privateText(temporary, 4096);
+    await privateText(temporary, limit);
     await fs.rm(temporary);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;

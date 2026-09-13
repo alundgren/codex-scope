@@ -1,3 +1,4 @@
+import { validPromptId, validPromptText, snapshotReviewPrompts } from "./review-prompts.ts";
 import { ReviewSession } from "./review-session.ts";
 import { LENSES, SESSION_LIMITS } from "./review-session-types.ts";
 import { PRReview } from "./review.ts";
@@ -299,6 +300,7 @@ app
             version: 0,
             status: "idle",
             selection: null,
+            prompts: null,
             lens: "Overview",
             error: null,
             total: 0,
@@ -328,6 +330,7 @@ app
       try {
         const settings = await history.call("settings");
         if (!("review" in settings)) throw new Error("Review settings unavailable.");
+        const prompts = snapshotReviewPrompts(request.lens, settings.prompts);
         if (!conversation) {
           const result = await catalog.read();
           const error = selectionError(result, settings.review);
@@ -345,7 +348,7 @@ app
           );
           conversation.on("change", present);
         }
-        await conversation.send(request.text, request.lens, settings.review);
+        await conversation.send(request.text, request.lens, settings.review, prompts);
         return conversation.read(SESSION_LIMITS.entries);
       } finally {
         conversationPending = false;
@@ -377,7 +380,7 @@ app
     ipcMain.on("scope:models-cancel", (event) => {
       if (trusted(event) && pickerDiscovery) catalog.cancel();
     });
-    for (const operation of ["settings", "saveSettings", "capture"] as const) {
+    for (const operation of ["settings", "saveSettings", "savePrompt", "capture"] as const) {
       ipcMain.handle(`scope:${operation}`, async (event, value) => {
         const stopping = operation === "capture" && value === false;
         if (!trusted(event) || (!stopping && history.savingSettings))
@@ -397,11 +400,20 @@ app
             !validSelection(value.review))
         )
           throw new Error("Check the connection and model settings.");
+        if (
+          operation === "savePrompt" &&
+          (!value ||
+            typeof value !== "object" ||
+            Object.keys(value).length !== 2 ||
+            !validPromptId(value.id) ||
+            (value.text !== null && !validPromptText(value.text)))
+        )
+          throw new Error("Enter a nonempty prompt of at most 8 KiB without control characters.");
         return operation === "settings"
           ? history.call("settings")
           : operation === "capture"
             ? history.call("capture", { start: value })
-            : history.call("saveSettings", { value });
+            : history.call(operation, { value });
       });
     }
     ipcMain.on("scope:ack", (event, kind) => {

@@ -287,3 +287,11 @@ The screenshot picker accepts bounded PNG bytes and checks dimensions before Chr
 The main process owns one `ReviewSession`, independent of the PR evidence browser's selected page. Its app-server thread lasts only until review end or Scope quit. A restricted private CLI home excludes unrelated configuration and thread history. Session-attached evidence tools map host-issued IDs to pinned GitHub source or supplied PNG files through `PRReview`; they expose no arbitrary local path or execution operation. The renderer receives coalesced twenty-entry conversation pages through validated IPC. Capture remains independent; diagnosis and review share one permitted model process group. See [temporary conversation limits and CLI logging exception](pr-review.md#temporary-conversation).
 
 The session uses asynchronous child I/O and capped parsing in main, with no new runtime package, embedded server or additional renderer worker. The installed CLI owns model execution. This follows Electron's [performance guidance](https://www.electronjs.org/docs/latest/tutorial/performance) to defer optional work, avoid blocking I/O and measure all affected processes. Conversation IPC checks the exact main-frame sender and preserves the sandboxed, isolated preload contract described in Electron's [security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
+
+The versioned review prompt registry is shared by Settings and turn construction.
+The existing worker atomically persists explicit overrides in a bounded private
+settings document independent of collector credentials. Main snapshots effective
+base and lens instructions at submission and retains only their version metadata
+with transcript entries. The renderer keeps bounded drafts and renders plain
+text. Fixed host permissions remain outside editable prompts. This adds no
+runtime dependency, process or cross-launch review state.

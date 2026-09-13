@@ -56,7 +56,18 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     });
   else if (m.method === "turn/start") {
     turn = "turn-" + ++count;
-    mode = m.params.input[0].text;
+    mode = m.params.input[0].text.split("\n\nUser request:\n").at(-1);
+    if (mode.includes("echo-prompts")) {
+      emit({ id: m.id, result: { turn: { id: turn } } });
+      notify("turn/started", { turn: { id: turn } });
+      notify("item/agentMessage/delta", {
+        turnId: turn,
+        itemId: "answer-" + turn,
+        delta: m.params.input[0].text,
+      });
+      notify("turn/completed", { turn: { id: turn, status: "completed" } });
+      return;
+    }
     emit({ id: m.id, result: { turn: { id: turn } } });
     notify("turn/started", { turn: { id: turn } });
     if (mode.includes("compaction")) {
