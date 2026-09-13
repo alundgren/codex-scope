@@ -104,7 +104,8 @@ private settings file size, whole-app process sampling and input timing. Run it
 without video on the documented fresh Xvfb desktop. These measured workloads set
 the maintained editing limits; results belong in the PR rather than this guide.
 
-`electron/scripts/probe-review-prompts.ts` exercises changed base and lens text
+Run `vp exec node --experimental-transform-types scripts/probe-review-prompts.ts`
+from `electron/` to exercise changed base and lens text
 through two turns of one actual installed-CLI thread using synthetic instructions
 and an explicit model/effort pair. It requests no source reads or reviewed code
 execution and checks temporary cleanup.
