@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vite-plus/test";
 import { mkdtemp, mkdir, writeFile, rm, readdir } from "node:fs/promises";
 import path from "node:path";
+import { execFileSync } from "node:child_process";
 import { ReviewSession } from "../src/review-session.ts";
 import type { PRReview } from "../src/review.ts";
 let root: string, original: string | undefined, sessions: ReviewSession[];
@@ -123,3 +124,14 @@ it("stops visibly when CLI context compaction occurs", async () => {
   expect(s.read(256).error).toContain("shortened its model context");
   expect(s.export()).toContain("compaction");
 });
+
+it("rejects a no-writer auth FIFO and permits immediate cleanup", async () => {
+  const auth = path.join(root, "auth", "auth.json");
+  await rm(auth);
+  execFileSync("mkfifo", ["-m", "600", auth]);
+  const s = session();
+  await s.send("First turn", "Overview", selection);
+  await wait(s, "failed");
+  await s.close();
+  expect(await readdir(path.join(root, "session"))).toEqual([]);
+}, 2000);

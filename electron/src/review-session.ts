@@ -283,7 +283,7 @@ export class ReviewSession extends EventEmitter {
     // Only the bounded authentication file is copied; its contents never enter IPC or diagnostics.
     const auth = await open(
       path.join(process.env.CODEX_HOME ?? path.join(homedir(), ".codex"), "auth.json"),
-      constants.O_RDONLY | constants.O_NOFOLLOW,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
     );
     try {
       const stat = await auth.stat();

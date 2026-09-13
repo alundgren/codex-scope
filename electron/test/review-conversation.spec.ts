@@ -88,6 +88,34 @@ test("review conversation walkthrough streams, stops, survives navigation and pr
     await expect(page.locator("#conversation-state")).toContainText("ready");
     await expect(page.locator("#conversation-entries")).not.toContainText("exit-fixture");
     await shot("09-recovered");
+    for (let index = 0; index < 11; index++) {
+      await page.locator("#conversation-input").fill(`Paging question ${index}`);
+      await page.locator("#conversation-send").click();
+      await expect(page.locator("#conversation-state")).toContainText("ready");
+      await expect(page.locator("#conversation-entries")).toContainText(`Paging question ${index}`);
+    }
+    const reviewId = await app.evaluate(
+      () => Reflect.get(globalThis, "scopeReviewSession").reviewId,
+    );
+    const first = await page.evaluate(
+      (review) => window.scope.conversation({ action: "read", review, offset: 0 }),
+      reviewId,
+    );
+    expect(first?.total).toBe(25);
+    await page.locator("#conversation-previous").click();
+    await expect(page.locator(".conversation-message pre")).toHaveText(
+      first!.entries.map((entry) => entry.text),
+    );
+    await shot("09-earlier-page");
+    const latest = await page.evaluate(
+      (review) => window.scope.conversation({ action: "read", review, offset: 256 }),
+      reviewId,
+    );
+    await page.locator("#conversation-latest").click();
+    await expect(page.locator(".conversation-message pre")).toHaveText(
+      latest!.entries.map((entry) => entry.text),
+    );
+    await shot("09-latest-page");
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].setContentSize(600, 700),
     );

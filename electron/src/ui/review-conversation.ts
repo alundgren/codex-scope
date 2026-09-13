@@ -44,7 +44,7 @@ export function attachConversation(
         node.remove();
         nodes.delete(id);
       }
-    for (const item of state.entries) {
+    for (const [index, item] of state.entries.entries()) {
       let node = nodes.get(item.id);
       if (!node) {
         node = document.createElement("div");
@@ -54,8 +54,9 @@ export function attachConversation(
         const body = document.createElement("pre");
         node.append(label, body);
         nodes.set(item.id, node);
-        entries.append(node);
       }
+      const position = entries.children.item(index);
+      if (position !== node) entries.insertBefore(node, position);
       const body = node.lastElementChild!;
       if (body.textContent !== item.text) body.textContent = item.text;
     }
