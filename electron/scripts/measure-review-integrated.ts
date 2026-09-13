@@ -360,6 +360,61 @@ try {
     await page.locator("#posting-dialog").getByRole("button", { name: "Back to feedback" }).click();
     await page.locator("#feedback-dialog").getByRole("button", { name: "Close feedback" }).click();
   });
+  if (live)
+    await measure("04b-live-image-source-tools", async () => {
+      await app.evaluate(() => {
+        const s = Reflect.get(globalThis, "scopeReviewSession"),
+          original = s.tools.call.bind(s.tools);
+        Reflect.set(globalThis, "integratedTools", []);
+        s.tools.call = async (...args: any[]) => {
+          const result = await original(...args);
+          const records = Reflect.get(globalThis, "integratedTools");
+          if (records.length < 8)
+            records.push({
+              action: args[1]?.action,
+              success: result.success,
+              imageChars:
+                result.contentItems?.find((item: any) => item.type === "inputImage")?.imageUrl
+                  ?.length ?? 0,
+            });
+          return result;
+        };
+      });
+      await page
+        .locator("#conversation-input")
+        .fill(
+          "Use scope_evidence action images with id root, then action image with the first supplied image ID. Also list root and read a small bounded page from deleted.ts using its issued ID. Describe one visible image fact and one source fact in two sentences. Do not use other tools.",
+        );
+      await page.locator("#conversation-send").click();
+      await expect(page.locator("#conversation-state")).toContainText("running", {
+        timeout: 120000,
+      });
+      await page.waitForFunction(
+        () =>
+          /ready|failed|capacity/.test(
+            document.querySelector("#conversation-state")?.textContent ?? "",
+          ),
+        undefined,
+        { timeout: 120000 },
+      );
+      report.liveTools = await app.evaluate(() => ({
+        calls: Reflect.get(globalThis, "integratedTools"),
+        status: Reflect.get(globalThis, "scopeReviewSession").read(256).status,
+        error: Reflect.get(globalThis, "scopeReviewSession").read(256).error,
+      }));
+      assert.ok(
+        report.liveTools.calls.some(
+          (call: any) => call.action === "image" && call.success && call.imageChars > 5500000,
+        ),
+        "Actual CLI did not request the maximum supplied PNG",
+      );
+      if (report.liveTools.status === "ready")
+        assert.ok(
+          report.liveTools.calls.some((call: any) => call.action === "read" && call.success),
+          "Actual CLI source round trip missing",
+        );
+      else assert.match(report.liveTools.error ?? "", /resource|storage|capacity|limit/);
+    });
   await measure("05-minimized-capture", async () => {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].minimize());
     await wait(3000);
@@ -370,7 +425,9 @@ try {
       const s = Reflect.get(globalThis, "scopeReviewSession");
       s.add("assistant", "X".repeat(524288), "overflow");
     });
-    await expect(page.locator("#conversation-state")).toContainText("capacity");
+    await expect(page.locator("#conversation-state")).toContainText(
+      report.liveTools?.status === "failed" ? "failed" : "capacity",
+    );
     await page.locator("#review-more").click();
     await page.getByRole("menuitem", { name: "End review", exact: true }).click();
     await page
