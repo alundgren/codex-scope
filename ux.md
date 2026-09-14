@@ -140,15 +140,15 @@ The selected [lens notebook](docs/mockups/lens-notebook-v2.html) sets the compac
 
 Open a github.com PR URL or owner/repository plus number. Source uses the full workspace initially. Chat reveals the temporary conversation and message composer. Send starts a session only after explicit model and effort selection. On desktop the split starts at 60/40. Drag the divider or use arrows, Home/End; double-click and Reset divider restore 60/40. Either pane can expand and restore. Narrow windows use the same Chat/Review control to switch panes. Functions remains available, and tool navigation preserves the PR, selection and reading position.
 
-Overview, Security, UX, Performance and Architecture select the lens without running an agent. Changes and Visual evidence select the evidence view. Custom dropdowns open below their buttons, fit the viewport, support arrows, Home/End, Enter, Escape with focus return, and dismiss outside. PR details, findings/annotations availability and evidence limits stay under More. Annotations are available during the active review; structured findings and feedback remain deferred.
+Overview, Security, UX, Performance and Architecture select the lens without running an agent. Changes and Visual evidence select the evidence view. Custom dropdowns open below their buttons, fit the viewport, support arrows, Home/End, Enter, Escape with focus return, and dismiss outside. PR details, findings/annotations availability and evidence limits stay under More. Annotations are available during the active review. Feedback remains visible for preparing and copying editable handoffs.
 
 Changed files page ten at a time. Diff rows expose separate base/head line buttons. Source uses the comparison merge base for the left side and the pinned fork head for the right, with renamed paths resolved on the base side. Long accepted content displays 200 lines per page; Previous/Next lines keeps renderer work bounded. The selected line and up to twenty recent file/view reading positions remain while navigating. Scrollbars use the existing warm palette and a thin native track here because these independently paged source and image panes need direct scrolling without the journal's time-navigation behavior.
 
 Add screenshot opens an explicit local PNG picker. Attached files are listed, selected and removable, with their filename, dimensions and revision attribution. They are supplied evidence, never a running app. Unsupported formats, invalid images, missing patches, binary source and limit failures are stated next to the evidence. No remote screenshot is fetched.
 
-Refresh PR checks the target base and head without moving the pinned review. A changed revision offers Replace review or Close to retain the old evidence. Opening another PR or ending the review asks before removing screenshots and selections. Copy feedback is explicitly unavailable. Closing Scope ends temporary review state with no restoration.
+Refresh PR checks the target base and head without moving the pinned review. A changed revision opens the stale feedback export offer. Opening another PR or ending the review offers feedback copy before removing conversation, screenshots and selections. Cancel ending retains the old evidence; continuing without copy is explicit. Closing Scope ends temporary review state with no restoration.
 
-The conversation streams accepted text and bounded evidence outcomes. Earlier and Latest page the retained messages. Keep the source selection and conversation page across lens changes, pane resizing and Functions navigation. The selected lens applies to the next message. Stop turn stays available during active work. Failure and capacity retain accepted text with Copy transcript and End review; restarting requires an explicit new review. End and replace confirmations offer transcript copy before removal. Structured feedback remains unavailable. A busy diagnosis or review prevents a second model process while capture stays independent.
+The conversation streams accepted text and bounded evidence outcomes. Earlier and Latest page the retained messages. Keep the source selection and conversation page across lens changes, pane resizing and Functions navigation. The selected lens applies to the next message. Stop turn stays available during active work. Failure and capacity retain accepted text with Copy transcript and End review; restarting requires an explicit new review. End and replace confirmations open editable feedback before removal. A busy diagnosis or review prevents a second model process while capture stays independent.
 
 Settings has Connection and models and Review prompts controls. Review prompts
 uses a compact custom selector for every registered prompt, a plain text editor,
@@ -159,8 +159,7 @@ Save prompt, and Cancel restores the saved value. Drafts survive tool and prompt
 navigation, including failed saves. Saved edits apply to the next turn in the
 same conversation; active work and earlier messages retain their instructions.
 The notebook reports pending prompt or lens changes. Model changes still apply
-to the next review session. Feedback prompt editing is available without feedback
-output controls. The authored reference's additional planned prompt categories
+to the next review session. Feedback generation consumes the registered feedback prompt. The authored reference's additional planned prompt categories
 will appear only when their behavior is implemented and registered. Category
 controls keep the editor available without scrolling past connection setup.
 
@@ -171,8 +170,7 @@ target is an explicit choice. Manual navigation preserves the follow setting.
 Open menus, dialogs, text editing, Settings and other tools prevent agent
 navigation. A pending target shows Review target available in the global toolbar
 while away. Selecting it returns explicitly; incoming targets never switch tools.
-The feedback editor can use the same `data-review-focus-guard` convention when it
-is implemented.
+The feedback popup and controls use `data-review-focus-guard` and prevent agent navigation.
 
 Annotations opens a temporary list with Show, Remove and Clear marks and diagrams.
 Paused items remain listed without changing selection, scrolling or the draft.
@@ -183,3 +181,19 @@ agent origin and offer source-reference buttons. Their labels wrap and self
 messages use return arrows. All text is plain text; supplied markup creates no
 active document content. The compact toolbar wraps at narrower widths so Pause
 and annotation controls remain reachable.
+
+Feedback opens a popup with separate author and agent editors. Desktop shows both
+editors together; narrow windows stack them. This differs from the authored tabbed
+preview so both independent editable drafts stay directly accessible. The one
+Feedback title and editor labels keep the existing notebook palette. Findings use
+compact disclosures for correction, selection and removal; original evidence stays
+read-only. Working hypotheses remain separate from included findings. Regeneration
+asks before replacing edited text or findings. Cancel preserves both drafts, and
+pending generation disables mutations while Copy and Cancel stay available.
+
+Generate feedback uses the current thread and offers to wait or stop an active turn.
+Failed sessions permit manual text and copying. Copy author, Copy agent and Copy both
+show confirmed success or failure without posting. Copied text includes the original
+revision even after edits. Stale feedback remains copyable. End and PR replacement
+offer copy, an explicit action without copying, and Cancel ending. OS close retains
+the bounded shutdown behavior.

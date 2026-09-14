@@ -256,6 +256,7 @@ test("security boundaries deny Node, remote content, navigation, extra windows a
         "choices",
         "clear",
         "conversation",
+        "copyFeedback",
         "copyPayload",
         "guidance",
         "inspect",

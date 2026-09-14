@@ -1,3 +1,4 @@
+import type { FeedbackDraft } from "./review-feedback.ts";
 import type { GuideAction, GuideArtifact, GuideRequest } from "./review-guidance-types.ts";
 import type { ReviewContent } from "./review-types.ts";
 import type { PromptOverrides, PromptEdit } from "./review-prompts.ts";
@@ -210,6 +211,11 @@ export interface ScopeAPI extends AnalysisAPI {
   ): Promise<{ artifacts?: GuideArtifact[]; content?: ReviewContent }>;
   onGuidanceCancel(callback: (id: string) => void): void;
   onGuidance(callback: (action: GuideAction) => Promise<string>): void;
+  copyFeedback(request: {
+    review: string;
+    draft: FeedbackDraft;
+    section: "author" | "agent" | "both";
+  }): Promise<boolean>;
   conversation(request: ConversationRequest): Promise<ConversationState | undefined>;
   onConversation(callback: () => void): void;
   review(request: ReviewRequest): Promise<ReviewReply>;

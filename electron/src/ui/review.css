@@ -265,7 +265,8 @@ body.review-open main > header {
 .review-menu button[aria-current="true"] {
   background: var(--raised);
 }
-#review-dialog {
+#review-dialog,
+.feedback-dialog {
   background: var(--bg);
   color: var(--text);
   border: 1px solid var(--line);
@@ -275,7 +276,8 @@ body.review-open main > header {
   max-height: 85vh;
   overflow: auto;
 }
-#review-dialog::backdrop {
+#review-dialog::backdrop,
+.feedback-dialog::backdrop {
   background: #29201988;
 }
 #review-dialog p {
@@ -516,4 +518,93 @@ body.review-open main > footer {
     flex: 1 1 100%;
     flex-wrap: wrap;
   }
+}
+
+.feedback-dialog {
+  max-width: min(1100px, calc(100vw - 40px));
+  width: min(1100px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+}
+.feedback-dialog h1 {
+  font-size: 20px;
+  margin: 0;
+}
+.feedback-editors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.feedback-editors label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.feedback-editors textarea {
+  background: var(--field);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
+  font:
+    13.5px/1.5 ui-monospace,
+    monospace;
+  min-height: 240px;
+  width: 100%;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.feedback-findings {
+  max-height: 180px;
+  overflow: auto;
+  margin-bottom: 12px;
+}
+.feedback-findings label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 5px 0;
+}
+.feedback-findings input:not([type="checkbox"]) {
+  flex: 1;
+  min-width: 0;
+}
+.feedback-findings pre {
+  white-space: pre-wrap;
+}
+@media (max-width: 720px) {
+  .feedback-editors {
+    grid-template-columns: 1fr;
+  }
+  .feedback-editors textarea {
+    background: var(--field);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    font:
+      13.5px/1.5 ui-monospace,
+      monospace;
+    min-height: 160px;
+  }
+}
+
+#review-title {
+  display: flex;
+  gap: 4px;
+  min-width: 110px;
+}
+.review-pr-repository {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.review-pr-number {
+  flex-shrink: 0;
 }

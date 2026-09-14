@@ -1,3 +1,10 @@
+import {
+  FEEDBACK_SCHEMA,
+  feedbackReferences,
+  FEEDBACK_LIMITS,
+  validateFindings,
+  type FeedbackResult,
+} from "./review-feedback.ts";
 import type { GuideAction } from "./review-guidance-types.ts";
 import { EventEmitter } from "node:events";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
@@ -90,6 +97,8 @@ export function reviewCliArgs(directory: string, effort: string) {
 }
 export class ReviewSession extends EventEmitter {
   version = 0;
+  private feedback: FeedbackResult = { sequence: 0, findings: [], error: null };
+  private feedbackStart = -1;
   private status: ConversationState["status"] = "idle";
   private entries: ConversationEntry[] = [];
   private bytes = 0;
@@ -156,6 +165,7 @@ export class ReviewSession extends EventEmitter {
       error: this.error,
       total: this.entries.length,
       offset: start,
+      feedback: structuredClone(this.feedback),
       entries: this.entries
         .slice(start, start + L.pageEntries)
         .map((e) => ({ ...e, prompts: { ...e.prompts } })),
@@ -228,7 +238,7 @@ export class ReviewSession extends EventEmitter {
       Buffer.byteLength(text) > L.messageBytes ||
       !LENSES.includes(lens) ||
       prompts.base.id !== "base" ||
-      prompts.lens.id !== lens ||
+      (prompts.lens.id !== lens && prompts.lens.id !== "feedback") ||
       !validPromptText(prompts.base.text) ||
       !validPromptText(prompts.lens.text) ||
       !validModel((this.selection ?? selection).model) ||
@@ -256,6 +266,7 @@ export class ReviewSession extends EventEmitter {
     this.lens = lens;
     this.stopped = false;
     this.interrupting = false;
+    this.feedbackStart = prompts.lens.id === "feedback" ? this.entries.length : -1;
     this.add("user", text, `user-${++this.sequence}`);
     if (this.status === "capacity") return;
     try {
@@ -274,6 +285,7 @@ export class ReviewSession extends EventEmitter {
         threadId: this.thread,
         model: this.selection!.model,
         effort: this.selection!.effort,
+        ...(prompts.lens.id === "feedback" ? { outputSchema: FEEDBACK_SCHEMA } : {}),
         input: [
           {
             type: "text",
@@ -648,6 +660,36 @@ export class ReviewSession extends EventEmitter {
       clearTimeout(this.turnTimer);
       this.toolController?.abort();
       this.toolController = null;
+      if (this.feedbackStart >= 0) {
+        const answers = this.entries
+          .slice(this.feedbackStart)
+          .filter((e) => e.role === "assistant");
+        try {
+          if (this.interrupting || p.turn.status !== "completed")
+            throw Error("Feedback generation interrupted. Drafts were preserved.");
+          const text = answers.at(-1)?.text ?? "";
+          if (Buffer.byteLength(text) > FEEDBACK_LIMITS.dataBytes)
+            throw Error("Feedback exceeds its limit. Drafts were preserved.");
+          const findings = validateFindings(JSON.parse(text));
+          const references = feedbackReferences(findings, this.tools.guidance.read());
+          this.feedback = {
+            sequence: this.feedback.sequence + 1,
+            findings,
+            references,
+            error: null,
+          };
+        } catch (error) {
+          this.feedback = {
+            ...this.feedback,
+            sequence: this.feedback.sequence + 1,
+            error:
+              error instanceof Error && !(error instanceof SyntaxError)
+                ? error.message
+                : "Invalid feedback result. Drafts were preserved.",
+          };
+        }
+        this.feedbackStart = -1;
+      }
       this.turn = "";
       this.interrupting = false;
       if (!["failed", "capacity"].includes(this.status)) {

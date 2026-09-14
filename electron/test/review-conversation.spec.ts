@@ -75,8 +75,8 @@ test("review conversation walkthrough streams, stops, survives navigation and pr
     await page.getByRole("menuitem", { name: "End review", exact: true }).click();
     await shot("08-end-confirm");
     await page
-      .locator("#review-dialog")
-      .getByRole("button", { name: "End review", exact: true })
+      .locator("#feedback-dialog")
+      .getByRole("button", { name: "End without copy", exact: true })
       .click();
     await expect(page.locator("#review-open")).toBeVisible();
     await page.locator("#review-address").fill("example/shop #148");

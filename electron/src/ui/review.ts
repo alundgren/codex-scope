@@ -1,3 +1,4 @@
+import { attachFeedback } from "./review-feedback.ts";
 import { imageMarks, sequenceDiagram } from "./review-marks.ts";
 import type { GuideAction, GuideArtifact, SourceTarget } from "../review-guidance-types.ts";
 import { attachConversation } from "./review-conversation.ts";
@@ -43,14 +44,14 @@ export function attachReview() {
   let guidedSource: { anchor: SourceTarget; mode: string } | null = null;
   let artifacts: GuideArtifact[] = [],
     latest: GuideAction | null = null;
+  const feedback = attachFeedback(
+    () => pr,
+    () => lens as ReviewLens,
+  );
   const conversation = attachConversation(
     () => pr?.id ?? null,
     () => lens as ReviewLens,
-    () =>
-      modal("End this temporary review? Copy the transcript before removing it.", [
-        { text: "Copy transcript", action: conversation.copy },
-        { text: "End review", action: end },
-      ]),
+    () => feedback.open(end),
     (active) => {
       if (active && !sessionStarted) {
         sessionStarted = true;
@@ -157,7 +158,21 @@ export function attachReview() {
     el("#review-open").hidden = !!pr;
     el("#review-controls").hidden = !pr;
     grid.hidden = !pr;
-    el("#review-title").textContent = pr ? `${pr.repository} #${pr.number}` : "PR review";
+    const title = el("#review-title");
+    title.replaceChildren();
+    if (pr) {
+      const repository = document.createElement("span");
+      repository.className = "review-pr-repository";
+      repository.textContent = pr.repository;
+      const number = document.createElement("span");
+      number.className = "review-pr-number";
+      number.textContent = `#${pr.number}`;
+      title.append(repository, " ", number);
+      title.title = `${pr.repository} #${pr.number}`;
+    } else {
+      title.textContent = "PR review";
+      title.title = "";
+    }
     el("#review-revision").textContent = pr ? `Revision ${pr.head.slice(0, 7)}` : "";
     el("#review-files").textContent = path || "Choose file ⌄";
     el("#review-view").textContent = `${view} ⌄`;
@@ -175,6 +190,7 @@ export function attachReview() {
     el<HTMLButtonElement>("#review-next").disabled =
       !content || content.offset + L.rows >= content.total;
     layout();
+    feedback.reset();
     conversation.refresh();
   }
   function lock(value: boolean) {
@@ -517,6 +533,7 @@ export function attachReview() {
   el("#review-chat-expand").addEventListener("click", () =>
     chat(focus === "chat" ? "both" : "chat"),
   );
+  el("#review-feedback").addEventListener("click", () => feedback.open());
   function end() {
     if (pr)
       void request({ action: "end", id: pr.id }).then((result) => {
@@ -557,20 +574,12 @@ export function attachReview() {
           if (pr)
             void request({ action: "refresh", id: pr.id }).then((result) => {
               if (!result) return;
-              if (result.changed)
-                modal(
-                  "The PR changed. Replace this review with the new revision? The conversation, supplied screenshots and selections will be removed. Copy the transcript before continuing. Feedback copy is not available yet.",
-                  [
-                    { text: "Copy transcript", action: conversation.copy },
-                    {
-                      text: "Replace review",
-                      action: () => {
-                        if (pr) void openPR(`${pr.repository} #${pr.number}`, true);
-                      },
-                    },
-                  ],
-                );
-              else status("The PR still matches this pinned revision.");
+              if (result.changed) {
+                feedback.stale();
+                feedback.open(() => {
+                  if (pr) void openPR(`${pr.repository} #${pr.number}`, true);
+                }, "Replace without copy");
+              } else status("The PR still matches this pinned revision.");
             });
         },
       },
@@ -593,26 +602,9 @@ export function attachReview() {
       },
       {
         text: "Open another PR",
-        action: () =>
-          modal(
-            "Leave this review to open another PR? The conversation, supplied screenshots and selections will be removed. Copy the transcript before continuing. Feedback copy is not available yet.",
-            [
-              { text: "Copy transcript", action: conversation.copy },
-              { text: "Leave review", action: end },
-            ],
-          ),
+        action: () => feedback.open(end),
       },
-      {
-        text: "End review",
-        action: () =>
-          modal(
-            "End this temporary review? The conversation, supplied screenshots and selections will be removed.",
-            [
-              { text: "Copy transcript", action: conversation.copy },
-              { text: "End review", action: end },
-            ],
-          ),
-      },
+      { text: "End review", action: () => feedback.open(end) },
     ]),
   );
   function guarded() {
@@ -620,6 +612,7 @@ export function attachReview() {
       !visible ||
       !!menu ||
       dialog.open ||
+      !!document.querySelector("#feedback-dialog[open]") ||
       !!document.querySelector("details[open]") ||
       document.hidden ||
       !!document.activeElement?.closest(
