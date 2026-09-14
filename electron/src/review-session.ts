@@ -1,3 +1,4 @@
+import type { GuideAction } from "./review-guidance-types.ts";
 import { EventEmitter } from "node:events";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { mkdir, open, writeFile, rm } from "node:fs/promises";
@@ -119,7 +120,7 @@ export class ReviewSession extends EventEmitter {
   private timer: NodeJS.Timeout | undefined;
   private lifetime: NodeJS.Timeout | undefined;
   private turnTimer: NodeJS.Timeout | undefined;
-  private tools: ReviewTools;
+  readonly tools: ReviewTools;
   private toolController: AbortController | null = null;
   private calls = new Set<string>();
   private completed = new Set<string>();
@@ -131,9 +132,10 @@ export class ReviewSession extends EventEmitter {
     private root: string,
     private executable = "codex",
     private executableArgs: string[] = [],
+    dispatch?: (action: GuideAction, signal: AbortSignal) => Promise<string>,
   ) {
     super();
-    this.tools = new ReviewTools(review, reviewId);
+    this.tools = new ReviewTools(review, reviewId, dispatch);
   }
   get ownsProcess() {
     return !!this.child || this.status === "starting";
@@ -567,7 +569,7 @@ export class ReviewSession extends EventEmitter {
       this.toolController = controller;
       this.add(
         "activity",
-        `Reading evidence with ${p.tool === "scope_evidence" ? "scope_evidence" : "an unsupported tool"}.`,
+        `Using ${["scope_evidence", "scope_guide"].includes(p.tool) ? p.tool : "an unsupported tool"}.`,
         `tool-${p.callId}`,
       );
       void this.tools

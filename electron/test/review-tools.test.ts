@@ -5,6 +5,7 @@ const signal = new AbortController().signal;
 const payload = (r: any) => JSON.parse(r.contentItems[0].text);
 function fixture() {
   return {
+    identity: () => ({ head: "a".repeat(40), diffBase: "b".repeat(40) }),
     toolList: async (_id: string, _path: string, _signal: AbortSignal, side: string) => [
       { path: side === "base" ? "deleted.ts" : "file.ts", type: "blob", oid: "a".repeat(40) },
       { path: "link", type: "unsupported", oid: "b".repeat(40) },

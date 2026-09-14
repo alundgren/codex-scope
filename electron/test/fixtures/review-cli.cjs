@@ -7,6 +7,20 @@ let turn = "",
   thread = "fixture-thread";
 const emit = (v) => process.stdout.write(JSON.stringify(v) + "\n");
 const notify = (method, params) => emit({ method, params: { threadId: thread, ...params } });
+let guideStep = 0,
+  guideEntry;
+const guideCall = (tool, args) =>
+  emit({
+    id: 3000 + ++guideStep,
+    method: "item/tool/call",
+    params: {
+      threadId: thread,
+      turnId: turn,
+      callId: `guide-${turn}-${guideStep}`,
+      tool,
+      arguments: args,
+    },
+  });
 const done = () => {
   notify("item/completed", {
     turnId: turn,
@@ -108,6 +122,18 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
         });
       return;
     }
+    if (mode.startsWith("guide")) {
+      guideStep = 0;
+      if (mode.includes("burst"))
+        return guideCall("scope_guide", {
+          action: "view",
+          data: { lens: "Security", view: "Changes" },
+        });
+      return guideCall("scope_evidence", {
+        action: mode.includes("image") ? "images" : "list",
+        id: "root",
+      });
+    }
     if (mode.includes("source"))
       return emit({
         id: 900 + count,
@@ -146,6 +172,87 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     });
     emit({ id: m.id, result: {} });
     notify("turn/completed", { turn: { id: turn, status: "interrupted" } });
+  } else if (m.id >= 3000 && m.result) {
+    if (mode.includes("burst")) {
+      if (guideStep < 12)
+        setTimeout(
+          () =>
+            guideCall("scope_guide", {
+              action: "view",
+              data: { lens: guideStep % 2 ? "UX" : "Security", view: "Changes" },
+            }),
+          100,
+        );
+      else done();
+    } else if (guideStep === 1) {
+      const result = JSON.parse(m.result.contentItems[0].text);
+      if (mode.includes("image")) {
+        const image = result.images[0];
+        guideCall("scope_guide", {
+          action: "image",
+          data: {
+            image: image.id,
+            revision: image.head,
+            marks: [
+              {
+                kind: "arrow",
+                points: [
+                  [20, 20],
+                  [180, 100],
+                ],
+                text: "",
+              },
+              {
+                kind: "stroke",
+                points: [
+                  [30, 130],
+                  [180, 140],
+                  [230, 120],
+                ],
+                text: "",
+              },
+              { kind: "text", points: [[50, 60]], text: "Check this control" },
+            ],
+          },
+        });
+      } else {
+        guideEntry = result.entries.find(
+          (e) => e.path === (mode.includes("second") ? "truncated.ts" : "deleted.ts"),
+        );
+        const anchor = {
+          id: guideEntry.id,
+          revision: guideEntry.revision,
+          path: guideEntry.path,
+          side: guideEntry.side,
+          line: mode.includes("later") ? 202 : 2,
+          endLine: mode.includes("later") ? 204 : 4,
+        };
+        guideCall(
+          "scope_guide",
+          mode.includes("diagram")
+            ? {
+                action: "diagram",
+                data: {
+                  nodes: ["Reader", "Service", "Store"],
+                  messages: [
+                    { from: 0, to: 1, text: "Request evidence" },
+                    { from: 1, to: 2, text: "Read pinned source" },
+                    { from: 2, to: 0, text: "Return evidence" },
+                  ],
+                  sources: [anchor],
+                },
+              }
+            : { action: "source", data: { anchor, highlight: true } },
+        );
+      }
+    } else {
+      notify("item/agentMessage/delta", {
+        turnId: turn,
+        itemId: "guide-result-" + turn,
+        delta: m.result.contentItems[0].text,
+      });
+      done();
+    }
   } else if (m.id >= 900 && m.result) {
     if (mode.includes("large-source") && m.id < 2000) {
       const entries = JSON.parse(m.result.contentItems[0].text).entries;

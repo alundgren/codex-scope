@@ -458,3 +458,62 @@ body.review-open main > footer {
   scrollbar-width: thin;
   scrollbar-color: var(--line) var(--panel);
 }
+.review-code-row.agent-highlight {
+  background: var(--raised, #e0d2bd);
+  box-shadow: inset 3px 0 #784f26;
+}
+.review-image-marked {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+#review-content .review-image-marked img {
+  display: block;
+  margin: 0;
+}
+.review-drawing {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.review-drawing,
+.review-sequence {
+  fill: none;
+  stroke: #8f3a2d;
+  stroke-width: 2;
+}
+.review-drawing text,
+.review-sequence text {
+  fill: #604939;
+  stroke: none;
+  font-size: 16px;
+}
+.review-sequence {
+  width: 100%;
+  min-width: 600px;
+}
+.review-artifact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block: 8px;
+}
+.review-artifact span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.review-artifact button {
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  #review-bar {
+    flex-wrap: wrap;
+  }
+  #review-controls {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+}

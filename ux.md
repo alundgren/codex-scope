@@ -140,7 +140,7 @@ The selected [lens notebook](docs/mockups/lens-notebook-v2.html) sets the compac
 
 Open a github.com PR URL or owner/repository plus number. Source uses the full workspace initially. Chat reveals the temporary conversation and message composer. Send starts a session only after explicit model and effort selection. On desktop the split starts at 60/40. Drag the divider or use arrows, Home/End; double-click and Reset divider restore 60/40. Either pane can expand and restore. Narrow windows use the same Chat/Review control to switch panes. Functions remains available, and tool navigation preserves the PR, selection and reading position.
 
-Overview, Security, UX, Performance and Architecture select the lens without running an agent. Changes and Visual evidence select the evidence view. Custom dropdowns open below their buttons, fit the viewport, support arrows, Home/End, Enter, Escape with focus return, and dismiss outside. PR details, findings/annotations availability and evidence limits stay under More. Findings, annotations and feedback remain unavailable until their respective implementation work is complete.
+Overview, Security, UX, Performance and Architecture select the lens without running an agent. Changes and Visual evidence select the evidence view. Custom dropdowns open below their buttons, fit the viewport, support arrows, Home/End, Enter, Escape with focus return, and dismiss outside. PR details, findings/annotations availability and evidence limits stay under More. Annotations are available during the active review; structured findings and feedback remain deferred.
 
 Changed files page ten at a time. Diff rows expose separate base/head line buttons. Source uses the comparison merge base for the left side and the pinned fork head for the right, with renamed paths resolved on the base side. Long accepted content displays 200 lines per page; Previous/Next lines keeps renderer work bounded. The selected line and up to twenty recent file/view reading positions remain while navigating. Scrollbars use the existing warm palette and a thin native track here because these independently paged source and image panes need direct scrolling without the journal's time-navigation behavior.
 
@@ -163,3 +163,23 @@ to the next review session. Feedback prompt editing is available without feedbac
 output controls. The authored reference's additional planned prompt categories
 will appear only when their behavior is implemented and registered. Category
 controls keep the editor available without scrolling past connection setup.
+
+During a user-started review, Pause follow stays visible separately from Stop turn.
+Validated agent targets navigate immediately while following. Pause invalidates
+queued and in-flight navigation. Resume accepts future actions only; Show latest
+target is an explicit choice. Manual navigation preserves the follow setting.
+Open menus, dialogs, text editing, Settings and other tools prevent agent
+navigation. A pending target shows Review target available in the global toolbar
+while away. Selecting it returns explicitly; incoming targets never switch tools.
+The feedback editor can use the same `data-review-focus-guard` convention when it
+is implemented.
+
+Annotations opens a temporary list with Show, Remove and Clear marks and diagrams.
+Paused items remain listed without changing selection, scrolling or the draft.
+Source highlights use pinned source lines. Screenshot marks use the image's
+original pixel coordinates and scale with its displayed size. Removed screenshots
+leave their annotations visibly unavailable. Sequence diagrams identify their
+agent origin and offer source-reference buttons. Their labels wrap and self
+messages use return arrows. All text is plain text; supplied markup creates no
+active document content. The compact toolbar wraps at narrower widths so Pause
+and annotation controls remain reachable.

@@ -48,7 +48,42 @@ async function settingsInvoke(operation: string, value?: unknown) {
 }
 let conversationRequests = 0;
 let conversationCallback: (() => void) | undefined;
+let guidanceReading = false,
+  guidanceControl = false;
+let guidanceCallback = false,
+  guidanceCancelCallback = false;
 const scope: ScopeAPI = {
+  guidance: async (request) => {
+    if (
+      !request ||
+      (request.action === "source" ? guidanceReading : guidanceControl) ||
+      JSON.stringify(request).length > 2048
+    )
+      throw Error("Guidance is busy or invalid.");
+    if (request.action === "source") guidanceReading = true;
+    else guidanceControl = true;
+    try {
+      return await ipcRenderer.invoke("scope:guidance", request);
+    } finally {
+      if (request.action === "source") guidanceReading = false;
+      else guidanceControl = false;
+    }
+  },
+  onGuidanceCancel: (callback) => {
+    if (guidanceCancelCallback || typeof callback !== "function") return;
+    guidanceCancelCallback = true;
+    ipcRenderer.on("scope:guide-cancel", (_event, id) => callback(id));
+  },
+  onGuidance: (callback) => {
+    if (guidanceCallback || typeof callback !== "function") return;
+    guidanceCallback = true;
+    ipcRenderer.on("scope:guide", (_event, action) => {
+      void Promise.resolve(callback(action)).then(
+        (outcome) => ipcRenderer.send("scope:guide-ack", action.id, String(outcome).slice(0, 256)),
+        () => ipcRenderer.send("scope:guide-ack", action.id, "Retained. Navigation failed."),
+      );
+    });
+  },
   conversation: async (request) => {
     if (conversationRequests >= 3 || !request || JSON.stringify(request).length > 20000)
       throw new Error("Conversation request is busy or invalid.");

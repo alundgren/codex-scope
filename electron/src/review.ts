@@ -247,6 +247,7 @@ export class PRReview {
     private directory: string,
     private picker: () => Promise<string | undefined>,
     private executable = "gh",
+    private decodeImage?: (bytes: Buffer) => { width: number; height: number },
   ) {
     this.ready = this.storage();
   }
@@ -292,6 +293,9 @@ export class PRReview {
       const image = this.images.find((item) => url.endsWith(`/${item.id}`))!;
       const bytes = await readScreenshot(path.join(this.directory, `image-${image.id}.png`));
       const dimensions = pngDimensions(bytes);
+      const decoded = this.decodeImage?.(bytes);
+      if (decoded && (decoded.width !== dimensions.width || decoded.height !== dimensions.height))
+        throw Error("Decoded screenshot dimensions do not match its evidence.");
       if (
         !this.acceptsImage(url) ||
         bytes.length !== image.bytes ||
@@ -735,6 +739,9 @@ export class PRReview {
       if (signal.aborted) throw new Error("Screenshot attachment cancelled.");
       const bytes = await readScreenshot(selected, signal);
       const dimensions = pngDimensions(bytes);
+      const decoded = this.decodeImage?.(bytes);
+      if (decoded && (decoded.width !== dimensions.width || decoded.height !== dimensions.height))
+        throw Error("Decoded screenshot dimensions do not match its evidence.");
       const id = randomUUID();
       const name = path.basename(selected).slice(0, 200);
       const destination = path.join(this.directory, `image-${id}.png`);

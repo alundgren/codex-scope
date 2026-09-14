@@ -1,3 +1,5 @@
+import type { GuideAction } from "./review-guidance-types.ts";
+import { GUIDANCE_LIMITS } from "./review-guidance-types.ts";
 import { validPromptId, validPromptText, snapshotReviewPrompts } from "./review-prompts.ts";
 import { ReviewSession } from "./review-session.ts";
 import { LENSES, SESSION_LIMITS } from "./review-session-types.ts";
@@ -7,7 +9,17 @@ import { validEffort, validSelection, selectionError } from "./model-types.ts";
 import { runAnalysisCli } from "./analysis-cli.ts";
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron";
 import type { ChoiceField, Direction, NavigationRequest } from "./types.ts";
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, protocol, session } from "electron";
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeImage,
+  protocol,
+  session,
+} from "electron";
 import { readFile } from "node:fs/promises";
 import { SessionAnalysis, validSession, validModel } from "./analysis.ts";
 import type { AnalysisDecision } from "./analysis-types.ts";
@@ -180,6 +192,11 @@ app
             .find((value) => value.startsWith("--review-test-gh="))
             ?.slice("--review-test-gh=".length)
         : undefined,
+      (bytes) => {
+        const decoded = nativeImage.createFromBuffer(bytes);
+        if (decoded.isEmpty()) throw Error("Screenshot could not be decoded.");
+        return decoded.getSize();
+      },
     );
     catalog = new CatalogDiscovery(
       path.join(app.getPath("userData"), "catalog"),
@@ -254,6 +271,77 @@ app
       event.sender === window.webContents &&
       event.senderFrame === window.webContents.mainFrame &&
       event.senderFrame?.url === PAGE;
+    let guidePending: { id: string; finish: (outcome: string) => void } | null = null;
+    const dispatchGuide = (action: GuideAction, signal: AbortSignal): Promise<string> =>
+      new Promise((resolve) => {
+        if (guidePending || signal.aborted || window.isDestroyed()) {
+          resolve("Retained. Notebook is unavailable.");
+          return;
+        }
+        const finish = (outcome: string) => {
+          clearTimeout(timer);
+          signal.removeEventListener("abort", cancel);
+          guidePending = null;
+          resolve(outcome);
+        };
+        const cancel = () => {
+          window.webContents.send("scope:guide-cancel", action.id);
+          finish("Retained. Navigation cancelled.");
+        };
+        const timer = setTimeout(() => {
+          window.webContents.send("scope:guide-cancel", action.id);
+          finish("Retained. Notebook acknowledgment timed out; navigation is unconfirmed.");
+        }, GUIDANCE_LIMITS.acknowledgmentsMs);
+        guidePending = { id: action.id, finish };
+        signal.addEventListener("abort", cancel, { once: true });
+        window.webContents.send("scope:guide", action);
+      });
+    ipcMain.on("scope:guide-ack", (event, id, outcome) => {
+      if (
+        trusted(event) &&
+        guidePending?.id === id &&
+        typeof outcome === "string" &&
+        outcome.length <= 256
+      )
+        guidePending?.finish(outcome);
+    });
+    let guidanceBusy = false;
+    ipcMain.handle("scope:guidance", async (event, request) => {
+      if (
+        !trusted(event) ||
+        !request ||
+        JSON.stringify(request).length > 2048 ||
+        !conversation ||
+        request.review !== conversation.reviewId
+      )
+        throw Error("Guidance unavailable or busy.");
+      review.identity(request.review);
+      const guidance = conversation.tools.guidance;
+      if (request.action === "read") return { artifacts: guidance.read() };
+      if (request.action === "clear") return { artifacts: guidance.remove() };
+      if (typeof request.id !== "string" || request.id.length > 36)
+        throw Error("Invalid artifact ID.");
+      if (request.action === "remove") return { artifacts: guidance.remove(request.id) };
+      if (request.action !== "source") throw Error("Unknown guidance request.");
+      if (guidanceBusy) throw Error("Guided source is busy.");
+      guidanceBusy = true;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      try {
+        return {
+          content: await guidance.content(
+            request.id,
+            controller.signal,
+            request.source,
+            request.offset,
+            request.selected,
+          ),
+        };
+      } finally {
+        guidanceBusy = false;
+        clearTimeout(timer);
+      }
+    });
     ipcMain.handle("scope:review", async (event, request) => {
       if (
         !trusted(event) ||
@@ -345,6 +433,8 @@ app
                   .find((v) => v.startsWith("--review-test-cli="))
                   ?.slice("--review-test-cli=".length)
               : undefined,
+            [],
+            dispatchGuide,
           );
           conversation.on("change", present);
         }

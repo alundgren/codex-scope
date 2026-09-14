@@ -60,9 +60,9 @@ describe("temporary review session", () => {
     await wait(s, "running");
     await s.stop();
     await wait(s, "ready");
-    expect(s.read(256).entries.filter((e) => e.text.startsWith("Reading evidence"))).toHaveLength(
-      1,
-    );
+    expect(
+      s.read(256).entries.filter((e) => e.text.startsWith("Using scope_evidence")),
+    ).toHaveLength(1);
   });
   for (const mode of ["malformed", "oversized", "approval", "exit-fixture"])
     it(`preserves copy after ${mode}`, async () => {

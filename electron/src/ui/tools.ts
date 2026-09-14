@@ -53,6 +53,10 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
     pendingSave = null;
     unlockSave();
   }
+  requiredElement("#review-return").addEventListener("click", () => {
+    show("review");
+    review.latest();
+  });
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-tool]")];
   function show(next: string) {
     if (view === "settings" && next !== "settings") models.stop();
