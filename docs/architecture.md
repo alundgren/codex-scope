@@ -17,8 +17,7 @@ Local HTML/CSS and compiled TypeScript supply the selected journal and custom pa
 scrollbar. Capture and history add no runtime package or extra OS process.
 Optional session analysis starts a bounded local Codex CLI process group.
 
-Each application recording starts in Live. A configured collector supplies live
-events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
+Normal launch leaves capture off and creates no input connection. Functions selects the journal, analyzer, review entry or Settings without destroying task state. Start and Stop control input separately from recording lifetime. Each journal starts its viewing position in Live. An explicitly started configured collector supplies live events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
 while capture continues. Retained bounds and arrival counts stay current.
 Literal search covers complete accepted payloads and metadata. Full session IDs
 and several hook selections filter history and matching-arrival counters equally.
@@ -41,8 +40,8 @@ Admission, worker requests, database/cache/journal sizes, retention and cleanup
 all have fixed limits. The [Electron development guide](../electron/README.md)
 explains commands, ownership and resource limits.
 
-The worker also owns authenticated HTTP NDJSON transport. Local private
-settings contain an HTTPS origin and token-file location; literal loopback HTTP
+The worker also owns connection preferences and authenticated HTTP NDJSON transport. Settings reads expose the origin and token presence, never the saved token. Successful settings edits stop input; a separate activation identifier rejects delayed arrivals without clearing the recording or analysis generation. Local private
+settings store an HTTPS origin, token and diagnosis model in one bounded atomic private document. External connection files with token-file locations are read-only imports; literal loopback HTTP
 is accepted for same-host tests. Node HTTP APIs use separate connections for the
 stream and heartbeat, strict certificate checks, fixed deadlines and one retry
 timer. No redirects or replay requests are followed. Stream parsing uses a fixed

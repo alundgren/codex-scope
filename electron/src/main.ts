@@ -126,6 +126,8 @@ app
       directory: path.join(app.getPath("userData"), "recordings"),
       fixture: path.join(import.meta.dirname, "fixtures", "journal.jsonl"),
       continuous: !process.argv.includes("--fixtures-only"),
+      synthetic,
+      settingsFile: path.join(app.getPath("userData"), "preferences.json"),
       testMode,
     });
     analysis = new SessionAnalysis(
@@ -185,6 +187,32 @@ app
       event.sender === window.webContents &&
       event.senderFrame === window.webContents.mainFrame &&
       event.senderFrame?.url === PAGE;
+    for (const operation of ["settings", "saveSettings", "capture"] as const) {
+      ipcMain.handle(`scope:${operation}`, async (event, value) => {
+        const stopping = operation === "capture" && value === false;
+        if (!trusted(event) || (!stopping && history.savingSettings))
+          throw new Error("Settings are busy. Wait for the current save to finish.");
+        if (operation === "capture" && typeof value !== "boolean")
+          throw new Error("Invalid capture request.");
+        if (
+          operation === "saveSettings" &&
+          (!value ||
+            typeof value !== "object" ||
+            Object.keys(value).length !== 3 ||
+            typeof value.endpoint !== "string" ||
+            value.endpoint.length > 4096 ||
+            typeof value.token !== "string" ||
+            value.token.length > 256 ||
+            !validModel(value.model))
+        )
+          throw new Error("Check the connection and model settings.");
+        return operation === "settings"
+          ? history.call("settings")
+          : operation === "capture"
+            ? history.call("capture", { start: value })
+            : history.call("saveSettings", { value });
+      });
+    }
     ipcMain.on("scope:ack", (event, kind) => {
       if (!trusted(event)) return;
       if (kind === "hidden") {

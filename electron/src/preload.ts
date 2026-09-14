@@ -33,7 +33,21 @@ async function analysisInvoke(channel: string, generation: number, ...args: unkn
     analysisRequests--;
   }
 }
+let settingsBusy = false;
+async function settingsInvoke(operation: string, value?: unknown) {
+  if (settingsBusy || (value !== undefined && JSON.stringify(value).length > 5000))
+    throw new Error("Settings are busy or too large. Try again.");
+  settingsBusy = true;
+  try {
+    return await ipcRenderer.invoke(`scope:${operation}`, value);
+  } finally {
+    settingsBusy = false;
+  }
+}
 const scope: ScopeAPI = {
+  settings: () => settingsInvoke("settings"),
+  saveSettings: (value) => settingsInvoke("saveSettings", value),
+  capture: (start) => settingsInvoke("capture", start),
   analysisList: (generation) => analysisInvoke("scope:analysis-list", generation),
   analysisRun: (generation, id) => analysisInvoke("scope:analysis-run", generation, id),
   analysisStart: (generation, session, model, source) =>

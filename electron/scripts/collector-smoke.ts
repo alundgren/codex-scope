@@ -66,6 +66,9 @@ try {
     },
   });
   const page = await app.firstWindow();
+  await page.evaluate(() => window.scope.capture(true));
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="journal"]').click();
   await page.waitForFunction(
     () => document.querySelector<HTMLElement>(".connection")!.textContent === "Connected",
   );

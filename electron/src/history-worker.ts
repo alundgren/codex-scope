@@ -24,6 +24,7 @@ import { randomUUID } from "node:crypto";
 import { performance } from "node:perf_hooks";
 import { parseRecording, loadRecording, MAX_PAYLOAD_BYTES, MAX_FRAME_BYTES } from "./recording.ts";
 
+import { defaultModel, loadPreferences, savePreferences, validateSettings } from "./preferences.ts";
 import { loadConnection } from "./connection.ts";
 import { Transport } from "./transport.ts";
 
@@ -78,6 +79,35 @@ let state: HistoryStatus & { retainedBytes: number; evicted: number } = {
   drops: {},
   evicted: 0,
 };
+let activation = 0;
+let model = defaultModel;
+let settingsError: string | undefined;
+let settingsSave: HistoryStatus["settingsSave"];
+let commandLineOverride = !workerData.optionalConnection;
+function settings() {
+  return {
+    endpoint: connectionConfig?.endpoint ?? "",
+    hasToken: !!connectionConfig?.token,
+    model,
+    commandLineOverride,
+    error: settingsError,
+  };
+}
+function stopInput() {
+  activation++;
+  state.capturing = false;
+  transport?.stop();
+  transport = null;
+  clearInterval(timer);
+  state.transport = {
+    state: "disconnected",
+    reason: "stopped",
+    coverageUnknown: true,
+    requests: 0,
+    processing: 0,
+    retryPending: false,
+  };
+}
 let faults: Faults = {};
 let maximumTransactionMs = 0;
 let maximumDiskBytes = 0;
@@ -99,7 +129,7 @@ function notify() {
 }
 
 function snapshot() {
-  return { ...state, view: search?.status(), maximumTransactionMs, maximumDiskBytes };
+  return { ...state, settingsSave, view: search?.status(), maximumTransactionMs, maximumDiskBytes };
 }
 
 function entriesIn(location: string, maximum: number) {
@@ -204,6 +234,9 @@ function openDatabase() {
   sequence = 0;
   state = {
     generation: Atomics.load(shared, 0),
+    capturing: false,
+    synthetic: !!workerData.synthetic,
+    transport: state.transport,
     connectionId: randomUUID(),
     total: 0,
     accepted: 0,
@@ -375,6 +408,8 @@ function ingest(frames: string[], connectionId: string | undefined) {
   appendEvents(events);
 }
 function startInput() {
+  stopInput();
+  if (!connectionConfig && !workerData.synthetic) configError = true;
   if (configError || terminalReason) {
     state.transport = {
       state: "disconnected",
@@ -384,21 +419,24 @@ function startInput() {
     };
     return;
   }
+  state.capturing = true;
   if (!connectionConfig) {
+    state.transport = undefined;
     startSynthetic();
     return;
   }
   const generation = state.generation;
+  const active = activation;
   transport = new Transport({
     config: connectionConfig,
-    current: () => current(generation),
+    current: () => current(generation) && active === activation,
     onEvent: async (event, active) => {
       if (faults.transportDelay)
         await new Promise((resolve) => setTimeout(resolve, faults.transportDelay));
-      if (active() && current(generation)) appendEvents([event]);
+      if (active() && current(generation) && state.capturing) appendEvents([event]);
     },
     onStatus: (value) => {
-      if (current(generation)) {
+      if (current(generation) && active === activation) {
         state.transport = value;
         if (value.requiresRestart) terminalReason = value.reason;
         if (value.connectionId) state.connectionId = value.connectionId;
@@ -446,9 +484,7 @@ function inspect(id: number | null, rows: number): Reply<Inspection> {
   };
 }
 function closeDatabase() {
-  transport?.stop();
-  transport = null;
-  clearInterval(timer);
+  stopInput();
   if (database) {
     database.close();
     database = null;
@@ -483,18 +519,67 @@ port.on("message", async (message: WorkerRequest) => {
           configError = true;
         }
       }
-      if (!connectionConfig && !configError) {
+      if (workerData.settingsFile) {
+        try {
+          const saved = await loadPreferences(workerData.settingsFile);
+          if (saved) {
+            model = saved.model;
+            if (!commandLineOverride && !workerData.synthetic) {
+              connectionConfig = saved;
+              configError = false;
+            }
+          }
+        } catch {
+          settingsError = "Saved settings could not be read. Enter the connection again and save.";
+        }
+      }
+      state.synthetic = !!workerData.synthetic;
+      if (workerData.synthetic) {
         const fixture = await loadRecording(workerData.fixture);
         templates = fixture.events.map((event) => ({ ...event, connectionId: undefined }));
         state.drops = { ...fixture.drops };
         appendEvents(templates);
         sequence = Math.max(0, ...templates.map((event) => event.sequence));
       }
-      startInput();
+      if (workerData.synthetic) startInput();
+      else stopInput();
       result = { ok: true };
+    } else if (operation === "settings") {
+      result = settings();
+    } else if (operation === "saveSettings") {
+      try {
+        const value = validateSettings(message.value, connectionConfig);
+        if (!workerData.settingsFile) throw new Error("Settings unavailable");
+        if (faults.settingsDelay)
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.min(5000, faults.settingsDelay!)),
+          );
+        await savePreferences(workerData.settingsFile, value);
+        stopInput();
+        connectionConfig = { endpoint: value.endpoint, token: value.token };
+        model = value.model;
+        configError = false;
+        terminalReason = null;
+        settingsError = undefined;
+        result = settings();
+      } catch {
+        settingsError =
+          "Settings were not saved. Check the origin URL, token, model and private settings directory, then try again.";
+        result = settings();
+      }
+      settingsSave = { id: request, result: settings() };
+    } else if (operation === "capture") {
+      if (message.start) startInput();
+      else stopInput();
+      result =
+        state.capturing || !message.start
+          ? { ok: true }
+          : { error: "Open Settings and save a valid connection before starting." };
     } else if (operation === "clear" || operation === "close") {
+      const resume = state.capturing;
       state = {
         generation,
+        synthetic: !!workerData.synthetic,
         retainedBytes: 0,
         evicted: 0,
         total: 0,
@@ -511,7 +596,7 @@ port.on("message", async (message: WorkerRequest) => {
       closeDatabase();
       if (operation === "clear") {
         openDatabase();
-        startInput();
+        if (resume) startInput();
       }
       result = { ok: true, generation };
     } else if (operation === "test" && workerData.testMode) {

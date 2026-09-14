@@ -234,6 +234,7 @@ async function done(id: string, state = "completed"): Promise<AnalysisRun> {
 }
 
 async function open() {
+  await page.locator("#functions summary").click();
   await page.locator("#open-analysis").click();
   await expect(page.locator("#analysis-session option").filter({ hasText: session })).toHaveCount(
     1,

@@ -168,7 +168,7 @@ export function attachAnalysis(
     cursor: string | null = pageCursor,
     direction: Direction = pageDirection,
   ) {
-    if (!history) return;
+    if (!history || history.clearing) return;
     const ticket = ++choiceRequest,
       generation = history.generation;
     try {
@@ -203,7 +203,7 @@ export function attachAnalysis(
   }
   async function refresh(preferred?: string) {
     dirty = true;
-    if (!visible() || !history) return;
+    if (!visible() || !history || history.clearing) return;
     if (loading && !preferred) return;
     const ticket = ++request,
       generation = history.generation,
@@ -599,7 +599,7 @@ export function attachAnalysis(
         node(
           "p",
           selectedSession
-            ? "Analyze this session to inspect its tool calls and review suggestions. Choose the model above before starting."
+            ? "Analyze this session to inspect its tool calls and review suggestions. Choose the diagnosis model in Settings before starting."
             : "Choose a captured session to begin.",
           "analysis-empty",
         ),
@@ -633,8 +633,8 @@ export function attachAnalysis(
     const toggle = requiredElement<HTMLButtonElement>("#analysis-settings-toggle");
     toggle.hidden = !compact;
     toggle.textContent = setupExpanded
-      ? "Hide session and model controls"
-      : `${selectedLabel || selectedSession} · ${run?.model ?? model.value} · Change`;
+      ? "Hide session controls"
+      : `${selectedLabel || selectedSession} · Change session`;
     toggle.setAttribute("aria-expanded", String(setupExpanded));
     requiredElement<HTMLElement>("#analysis-setup").hidden = compact && !setupExpanded;
     drawStatus();
@@ -662,16 +662,12 @@ export function attachAnalysis(
     drawCoverage();
     drawBody();
   }
-  requiredElement("#open-analysis").addEventListener("click", () => {
+  function show(open: boolean) {
     if (!panel.hidden) saveScroll();
-    panel.hidden = !panel.hidden;
-    document.body.classList.toggle("analysis-open", !panel.hidden);
-    journalVisible(panel.hidden);
-    requiredElement("h1").textContent = panel.hidden ? "Event journal" : "Session analyzer";
-    requiredElement("#open-analysis").textContent = panel.hidden
-      ? "Analyze session"
-      : "Event journal";
-    if (!panel.hidden) {
+    panel.hidden = !open;
+    document.body.classList.toggle("analysis-open", open);
+    journalVisible(!open);
+    if (open) {
       if (!selectedSession && journalSession()) {
         selectedSession = journalSession()!;
         selectedLabel = selectedSession;
@@ -680,7 +676,7 @@ export function attachAnalysis(
       void loadSessions();
       void refresh();
     }
-  });
+  }
   session.addEventListener("pointerdown", () => void loadSessions());
   session.addEventListener("keydown", (event) => {
     if (["Enter", " ", "ArrowDown"].includes(event.key)) void loadSessions();
@@ -812,6 +808,7 @@ export function attachAnalysis(
     }
   });
   function receive(value: HistoryStatus) {
+    const cleared = !!history?.clearing && !value.clearing;
     const changed = history?.generation !== value.generation;
     const evicted = history?.first?.id !== value.first?.id;
     history = value;
@@ -848,6 +845,10 @@ export function attachAnalysis(
         drawStatus();
       }
     }
+    if (cleared && !changed && visible()) {
+      void loadSessions();
+      void refresh();
+    }
   }
   api.onAnalysis(() => {
     dirty = true;
@@ -859,5 +860,5 @@ export function attachAnalysis(
   document.addEventListener("visibilitychange", () => {
     if (visible() && dirty) void refresh();
   });
-  return { receive };
+  return { receive, show };
 }

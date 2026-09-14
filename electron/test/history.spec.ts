@@ -28,7 +28,7 @@ async function launch(
       appPath,
       "--history-test",
       `--scope-test-root=${root}`,
-      ...(continuous ? [] : ["--fixtures-only"]),
+      ...(continuous ? ["--synthetic"] : ["--fixtures-only"]),
     ],
     chromiumSandbox: true,
     recordVideo: { dir: info.outputPath("video"), size: { width: 1180, height: 820 } },
@@ -321,6 +321,43 @@ test("Clear rejects delayed input and query results; intake queue is bounded", a
     await video.saveAs(info.outputPath("late-work.webm"));
   }
 });
+
+for (const view of ["journal", "analysis"]) {
+  test(`Clear opens the empty ${view} after old requests release their slots`, async ({}, info) => {
+    const { app, page, video } = await launch(info);
+    try {
+      if (view === "analysis") {
+        await page.locator("#functions summary").click();
+        await page.locator("#open-analysis").click();
+      }
+      await expect.poll(() => app.evaluate(() => globalThis.scopeHistory.pending.size)).toBe(0);
+      await fault(app, { delay: 800 });
+      const results = await app.evaluate(async () => {
+        const history = globalThis.scopeHistory;
+        const requests = [
+          history.inspect(1, 1, 5),
+          history.inspect(1, 2, 5),
+          history.inspect(1, 3, 5),
+        ];
+        await history.clear(1);
+        return Promise.all(requests);
+      });
+      expect(results).toEqual([{ stale: true }, { stale: true }, { stale: true }]);
+      if (view === "journal")
+        await expect(page.locator("#entries")).toContainText("No synthetic events");
+      else {
+        await page.waitForTimeout(350);
+        await expect(page.locator("#analysis-status")).toBeEmpty();
+        await expect(page.locator("#analysis-session option")).toHaveCount(1);
+      }
+      expect((await state(app)).peakPending).toBeLessThanOrEqual(4);
+      await capture(page, info, "clear-capacity-recovered");
+    } finally {
+      await app.close();
+      await video.saveAs(info.outputPath("clear-capacity.webm"));
+    }
+  });
+}
 
 test("an old intake timeout after Clear preserves newly accepted events and counters", async ({}, info) => {
   const { app, page, video } = await launch(info);

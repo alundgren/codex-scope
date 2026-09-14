@@ -70,4 +70,4 @@ async function loadConnection(file: string, optional = false) {
     throw new Error("config");
   }
 }
-export { origin, loadConnection };
+export { origin, loadConnection, privateText };

@@ -9,10 +9,10 @@
 #analyzer[hidden] {
   display: none;
 }
-.analysis-open main > .toolbar,
-.analysis-open main > .mode,
-.analysis-open main > #notice,
-.analysis-open main > .workspace {
+.tool-open main > .toolbar,
+.tool-open main > .mode,
+.tool-open main > #notice,
+.tool-open main > .workspace {
   display: none;
 }
 #analyzer {

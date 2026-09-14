@@ -591,3 +591,78 @@ footer {
   margin-left: 10px;
   padding: 3px 8px;
 }
+
+#functions {
+  position: relative;
+}
+#functions summary {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.function-menu {
+  position: absolute;
+  z-index: 10;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.function-menu button {
+  text-align: left;
+}
+.function-menu input {
+  width: 100%;
+}
+.tool-page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+.tool-page[hidden],
+.function-menu [hidden] {
+  display: none;
+}
+#connection-settings {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+#connection-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#connection-settings p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+#connection-settings input {
+  width: 100%;
+}
+#settings-save {
+  align-self: start;
+}
+@media (max-width: 640px) {
+  .header-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: end;
+  }
+  header {
+    gap: 12px;
+  }
+  .tool-page {
+    padding: 16px;
+  }
+}
