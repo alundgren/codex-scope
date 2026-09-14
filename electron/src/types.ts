@@ -1,3 +1,4 @@
+import type { PostingRequest, PostingState } from "./review-posting-types.ts";
 import type { FeedbackDraft } from "./review-feedback.ts";
 import type { GuideAction, GuideArtifact, GuideRequest } from "./review-guidance-types.ts";
 import type { ReviewContent } from "./review-types.ts";
@@ -206,6 +207,9 @@ export interface SettingsEdit {
   review: ModelSelection;
 }
 export interface ScopeAPI extends AnalysisAPI {
+  copyComment(request: { review: string; body: string }): Promise<boolean>;
+  openComment(request: { review: string; comment: number | null }): Promise<boolean>;
+  posting(request: PostingRequest): Promise<PostingState>;
   guidance(
     request: GuideRequest,
   ): Promise<{ artifacts?: GuideArtifact[]; content?: ReviewContent }>;

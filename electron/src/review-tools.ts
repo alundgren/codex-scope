@@ -109,6 +109,16 @@ export class ReviewTools {
       if (a.action === "images")
         return text({ images: this.review.toolImages(this.reviewId), omission: null });
       if (a.action === "image") {
+        const image = this.review.toolImages(this.reviewId).find((image) => image.id === a.id);
+        if (!image) throw Error("Supplied image is unavailable.");
+        if (image.bytes > SESSION_LIMITS.imageToolBytes)
+          return text(
+            {
+              error:
+                "Image omitted from agent transfer because it exceeds 512 KiB. The original remains viewable in the notebook. Supply a smaller PNG to discuss its pixels with the agent.",
+            },
+            false,
+          );
         const bytes = await this.readEvidence(() =>
           this.review.toolImage(this.reviewId, a.id as string),
         );

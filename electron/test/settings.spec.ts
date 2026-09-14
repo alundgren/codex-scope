@@ -306,7 +306,16 @@ test("slow saves retain ownership, report pending and publish the eventual resul
     await page.locator("#clear").click();
     await page.locator("#clear").click();
     await expect
-      .poll(async () => (await page.evaluate(() => window.scope.status())).generation)
+      .poll(async () =>
+        page.evaluate(async () => {
+          try {
+            return (await window.scope.status()).generation;
+          } catch (error) {
+            if (error instanceof Error && error.message === "History is busy.") return null;
+            throw error;
+          }
+        }),
+      )
       .toBe(2);
     await page.waitForTimeout(300);
     await expect(page.locator(".connection")).toHaveText("Stopped");

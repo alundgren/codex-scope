@@ -160,6 +160,10 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
         });
       return;
     }
+    if (mode === "agent-image") {
+      guideStep = 0;
+      return guideCall("scope_evidence", { action: "images", id: "root" });
+    }
     if (mode.startsWith("guide")) {
       guideStep = 0;
       if (mode.includes("burst"))
@@ -211,6 +215,20 @@ readline.createInterface({ input: process.stdin }).on("line", (line) => {
     emit({ id: m.id, result: {} });
     notify("turn/completed", { turn: { id: turn, status: "interrupted" } });
   } else if (m.id >= 3000 && m.result) {
+    if (mode === "agent-image") {
+      if (guideStep === 1) {
+        const images = JSON.parse(m.result.contentItems[0].text).images;
+        guideCall("scope_evidence", { action: "image", id: images[0].id });
+      } else {
+        notify("item/agentMessage/delta", {
+          turnId: turn,
+          itemId: "answer-" + turn,
+          delta: m.result.success ? "Image received." : m.result.contentItems[0].text,
+        });
+        done();
+      }
+      return;
+    }
     if (mode.includes("burst")) {
       if (guideStep < 12)
         setTimeout(

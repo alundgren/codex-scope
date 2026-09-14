@@ -1,9 +1,9 @@
-import { spawn } from "node:child_process";
+import { ReviewPosting } from "./review-posting.ts";
+import { runGh } from "./github-process.ts";
 import { constants } from "node:fs";
 import { mkdir, lstat, open, opendir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { checkProcesses, CLI_RESOURCE_LIMITS } from "./cli-resources.ts";
 import { REVIEW_LIMITS as L } from "./review-types.ts";
 import type {
   ReviewPR,
@@ -144,93 +144,6 @@ async function readScreenshot(file: string, signal?: AbortSignal): Promise<Buffe
     await handle.close();
   }
 }
-export function runGh(
-  args: string[],
-  signal: AbortSignal,
-  cwd: string,
-  executable = "gh",
-  limit: number = L.responseBytes,
-): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    if (signal.aborted) {
-      reject(new Error("PR read cancelled."));
-      return;
-    }
-    const child = spawn(executable, args, {
-      cwd,
-      detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
-      env: {
-        ...process.env,
-        GH_PROMPT_DISABLED: "1",
-        GH_PAGER: "cat",
-        GH_DEBUG: "",
-        GH_HOST: "github.com",
-      },
-    });
-    let size = 0,
-      diagnostics = 0,
-      error: string | undefined,
-      monitoring = false,
-      closed = false;
-    const chunks: Buffer[] = [];
-    const kill = () => {
-      if (child.pid)
-        try {
-          process.kill(-child.pid, "SIGKILL");
-        } catch {
-          /* Already exited. */
-        }
-    };
-    const stop = (message: string) => {
-      if (closed) return;
-      error ??= message;
-      kill();
-    };
-    const cancel = () => stop("PR read cancelled.");
-    signal.addEventListener("abort", cancel, { once: true });
-    const deadline = setTimeout(
-      () => stop("GitHub read timed out. Retry when the connection is available."),
-      L.commandMs,
-    );
-    const sampler = setInterval(() => {
-      if (monitoring || !child.pid || error) return;
-      monitoring = true;
-      void checkProcesses(child.pid)
-        .catch(() => stop("GitHub read exceeded its process limit or monitoring failed."))
-        .finally(() => {
-          monitoring = false;
-        });
-    }, CLI_RESOURCE_LIMITS.sampleMs);
-    child.stdout.on("data", (chunk: Buffer) => {
-      size += chunk.length;
-      if (size > limit) stop("GitHub response exceeds the read limit. This evidence is omitted.");
-      else if (!error) chunks.push(chunk);
-    });
-    child.stderr.on("data", (chunk: Buffer) => {
-      diagnostics += chunk.length;
-      if (diagnostics > 32768) stop("GitHub diagnostics exceeded the limit.");
-    });
-    child.on("error", () => {
-      error = "GitHub CLI is unavailable. Install gh and authenticate, then retry.";
-    });
-    child.on("close", (code) => {
-      closed = true;
-      clearTimeout(deadline);
-      clearInterval(sampler);
-      signal.removeEventListener("abort", cancel);
-      kill();
-      if (error) reject(new Error(error));
-      else if (code !== 0)
-        reject(
-          new Error(
-            "GitHub read failed. Check gh authentication, repository access and network, then retry.",
-          ),
-        );
-      else resolve(Buffer.concat(chunks, size));
-    });
-  });
-}
 export class PRReview {
   private active: ReviewPR | null = null;
   private files: (ReviewFile & { patch?: string })[] = [];
@@ -242,7 +155,9 @@ export class PRReview {
   private controller: AbortController | null = null;
   private pending: Promise<ReviewReply> | null = null;
   private initialized = false;
+  private changingIdentity = false;
   readonly ready: Promise<void>;
+  readonly posting: ReviewPosting;
   constructor(
     private directory: string,
     private picker: () => Promise<string | undefined>,
@@ -250,11 +165,24 @@ export class PRReview {
     private decodeImage?: (bytes: Buffer) => { width: number; height: number },
   ) {
     this.ready = this.storage();
+    this.posting = new ReviewPosting(
+      path.join(path.dirname(directory), "comment"),
+      (id) => this.identity(id),
+      async (id, signal) => {
+        if (this.changingIdentity) throw Error("A review replacement is pending.");
+        const original = this.identity(id);
+        const current = await this.metadata(original, signal);
+        this.identity(id);
+        return this.same(original, current);
+      },
+      executable,
+    );
   }
   cancel() {
     this.controller?.abort();
   }
   async close() {
+    await this.posting.close();
     this.cancel();
     await this.pending;
     if (this.initialized) await this.clearImages();
@@ -328,11 +256,14 @@ export class PRReview {
     }
   }
   async request(request: ReviewRequest): Promise<ReviewReply> {
+    if ((request.action === "end" || request.action === "open") && this.posting.blocksSwitch)
+      return { error: "Resolve the pending comment before ending or replacing this review." };
     if (this.pending) return { error: "A PR operation is running. Cancel it or wait." };
     if (!record(request) || JSON.stringify(request).length > 4096)
       return { error: "Invalid PR request." };
     const controller = new AbortController();
     this.controller = controller;
+    this.changingIdentity = request.action === "open" || request.action === "end";
     this.pending = this.perform(request, controller.signal).catch((error) => ({
       error: error instanceof Error ? error.message : "PR evidence is unavailable.",
     }));
@@ -340,6 +271,7 @@ export class PRReview {
       return await this.pending;
     } finally {
       this.pending = null;
+      this.changingIdentity = false;
       this.controller = null;
     }
   }
@@ -566,6 +498,7 @@ export class PRReview {
         throw new Error("GitHub comparison base is unavailable.");
       pr.diffBase = comparison.merge_base_commit.sha;
       await this.clearImages();
+      this.posting.reset();
       this.active = pr;
       this.selectedFile = null;
       this.files = [];
@@ -576,6 +509,7 @@ export class PRReview {
     if (!pr || r.id !== pr.id) throw new Error("This PR review has ended. Open a PR to continue.");
     if (r.action === "end") {
       await this.clearImages();
+      this.posting.reset();
       this.active = null;
       this.selectedFile = null;
       this.files = [];

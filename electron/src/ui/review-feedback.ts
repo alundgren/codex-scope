@@ -1,3 +1,4 @@
+import { attachPosting } from "./review-posting.ts";
 import {
   feedbackText,
   validateFindings,
@@ -15,6 +16,7 @@ const button = (text: string, action: () => void) => {
   return b;
 };
 export function attachFeedback(review: () => ReviewPR | null, lens: () => ReviewLens) {
+  const posting = attachPosting();
   const dialog = document.createElement("dialog");
   dialog.id = "feedback-dialog";
   dialog.dataset.reviewFocusGuard = "";
@@ -42,6 +44,7 @@ export function attachFeedback(review: () => ReviewPR | null, lens: () => Review
   function reset() {
     const p = review();
     if (p?.id === id) return;
+    posting.reset();
     clearTimeout(timer);
     pending = null;
     id = p?.id ?? "";
@@ -254,6 +257,17 @@ export function attachFeedback(review: () => ReviewPR | null, lens: () => Review
       button("Copy agent", () => void copy("agent")),
       button("Copy both", () => void copy("both")),
     );
+    if (!pending && !leaving)
+      actions.append(
+        button("Post comment…", () => {
+          if (!draft) return;
+          try {
+            posting.open(id, draft);
+          } catch (error) {
+            say(error instanceof Error ? error.message : "Preview unavailable.");
+          }
+        }),
+      );
     if (leaving)
       actions.append(
         button(leaveLabel, () => {

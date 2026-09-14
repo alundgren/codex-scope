@@ -2,6 +2,8 @@ import type { ScopeAPI } from "./types.ts";
 import { contextBridge, ipcRenderer } from "electron";
 
 let feedbackCopying = false;
+let postingPending = false;
+let commentOpening = false;
 let inspecting = false,
   copying = false,
   clearing = false,
@@ -84,6 +86,36 @@ const scope: ScopeAPI = {
         () => ipcRenderer.send("scope:guide-ack", action.id, "Retained. Navigation failed."),
       );
     });
+  },
+  copyComment: async (request) => {
+    if (feedbackCopying || !request || JSON.stringify(request).length > 65536 * 6 + 1024)
+      throw Error("Comment copy is busy or invalid.");
+    feedbackCopying = true;
+    try {
+      return await ipcRenderer.invoke("scope:comment-copy", request);
+    } finally {
+      feedbackCopying = false;
+    }
+  },
+  openComment: async (request) => {
+    if (!request || JSON.stringify(request).length > 1024) throw Error("Invalid comment link.");
+    if (commentOpening) throw Error("A GitHub link is opening.");
+    commentOpening = true;
+    try {
+      return await ipcRenderer.invoke("scope:comment-open", request);
+    } finally {
+      commentOpening = false;
+    }
+  },
+  posting: async (request) => {
+    if (postingPending || !request || JSON.stringify(request).length > 65536 * 6 + 1024)
+      throw Error("Comment operation is busy or invalid.");
+    postingPending = true;
+    try {
+      return await ipcRenderer.invoke("scope:posting", request);
+    } finally {
+      postingPending = false;
+    }
   },
   copyFeedback: async (request) => {
     if (!request || JSON.stringify(request).length > 69632 * 6)

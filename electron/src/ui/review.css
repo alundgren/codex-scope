@@ -541,7 +541,8 @@ body.review-open main > footer {
   gap: 8px;
   min-width: 0;
 }
-.feedback-editors textarea {
+.feedback-editors textarea,
+.posting-dialog textarea {
   background: var(--field);
   color: var(--text);
   border: 1px solid var(--line);
@@ -607,4 +608,41 @@ body.review-open main > footer {
 }
 .review-pr-number {
   flex-shrink: 0;
+}
+
+.posting-dialog textarea {
+  width: 100%;
+  min-height: 240px;
+  height: 36vh;
+  resize: vertical;
+}
+.posting-dialog > p {
+  overflow-wrap: anywhere;
+}
+.posting-result pre {
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.posting-dialog a {
+  color: var(--link);
+}
+.posting-dialog .feedback-actions {
+  position: sticky;
+  bottom: -24px;
+  background: var(--bg);
+  padding: 12px 0;
+}
+.posting-candidates {
+  flex-basis: 100%;
+  max-height: 120px;
+  overflow: auto;
+}
+.posting-candidates > span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
 }
