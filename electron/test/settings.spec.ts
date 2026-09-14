@@ -86,21 +86,36 @@ test("idle, Functions, private pairing settings, stop restart and retained inspe
     await page.locator("#settings-save").click();
     await expect(page.locator("#settings-status")).toContainText("not saved");
     await screenshot("03-invalid-settings");
-    await page.locator("#collector-url").evaluate((input, text) => {
-      const data = new DataTransfer();
-      data.setData("text/plain", text);
-      input.dispatchEvent(
-        new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }),
+    const paste = async (text: string) => {
+      await app.evaluate(({ clipboard }, value) => clipboard.writeText(value), text);
+      await page.locator("#collector-url").focus();
+      await page.keyboard.press("ControlOrMeta+V");
+    };
+    if (process.platform === "darwin") {
+      const roles = await app.evaluate(({ Menu }) =>
+        Menu.getApplicationMenu()?.items.flatMap((item) =>
+          item.submenu?.items.map((child) => child.role),
+        ),
       );
-    }, server.endpoint + "/?token=synthetic-test-token&token=other");
+      expect(roles).toEqual(expect.arrayContaining(["copy", "cut", "paste", "selectall", "undo"]));
+    }
+    await page.locator("#collector-url").click();
+    await page.keyboard.press("ControlOrMeta+A");
+    await paste(server.endpoint);
+    await expect(page.locator("#collector-url")).toHaveValue(server.endpoint);
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.press("ControlOrMeta+C");
+    expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(server.endpoint);
+    await page.keyboard.press("ControlOrMeta+X");
+    await expect(page.locator("#collector-url")).toHaveValue("");
+    await page.keyboard.press("ControlOrMeta+Z");
+    await expect(page.locator("#collector-url")).toHaveValue(server.endpoint);
+    await screenshot("03a-native-editing");
+    await paste(server.endpoint + "/?token=synthetic-test-token&token=other");
     await expect(page.locator("#settings-status")).toContainText("invalid");
-    await page.locator("#collector-url").evaluate((input, text) => {
-      const data = new DataTransfer();
-      data.setData("text/plain", text);
-      input.dispatchEvent(
-        new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }),
-      );
-    }, server.endpoint + "/?token=synthetic-test-token");
+    await expect(page.locator("#collector-url")).toHaveValue(server.endpoint);
+    await screenshot("03b-invalid-pairing-paste");
+    await paste(server.endpoint + "/?token=synthetic-test-token");
     await expect(page.locator("#collector-url")).toHaveValue(server.endpoint + "/");
     await expect(page.locator("#collector-token")).toHaveValue("synthetic-test-token");
     await screenshot("04-pairing-import");
