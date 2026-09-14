@@ -43,7 +43,6 @@ protocol.registerSchemesAsPrivileged([
 ]);
 app.enableSandbox();
 app.setName("Codex Scope");
-Menu.setApplicationMenu(null);
 const testMode = process.argv.includes("--history-test");
 const testRoot =
   testMode &&
@@ -132,6 +131,12 @@ app.on("before-quit", (event) => {
 app
   .whenReady()
   .then(async () => {
+    // macOS routes standard editing shortcuts through the native application menu.
+    Menu.setApplicationMenu(
+      process.platform === "darwin"
+        ? Menu.buildFromTemplate([{ role: "appMenu" }, { role: "editMenu" }])
+        : null,
+    );
     const isolated = session.fromPartition("synthetic");
     isolated.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
     isolated.setPermissionCheckHandler(() => false);
