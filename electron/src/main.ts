@@ -1,3 +1,6 @@
+import { CatalogDiscovery } from "./model-catalog.ts";
+import { validEffort, validSelection, selectionError } from "./model-types.ts";
+import { runAnalysisCli } from "./analysis-cli.ts";
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron";
 import type { ChoiceField, Direction, NavigationRequest } from "./types.ts";
 import { app, BrowserWindow, clipboard, ipcMain, Menu, protocol, session } from "electron";
@@ -34,6 +37,8 @@ const testRoot =
 if (testRoot) app.setPath("userData", testRoot);
 const owner = app.requestSingleInstanceLock();
 let analysis: SessionAnalysis;
+let catalog: CatalogDiscovery;
+let pickerDiscovery = false;
 let sentAnalysisVersion = -1;
 let history: History,
   window: BrowserWindow,
@@ -82,7 +87,7 @@ app.on("before-quit", (event) => {
     console.error("Temporary recording cleanup timed out. Startup will retry removal.");
     app.exit(1);
   }, LIMITS.requestMs + 250);
-  Promise.all([history.close(), analysis?.close()]).then(
+  Promise.all([history.close(), analysis?.close(), catalog?.close()]).then(
     ([ok]) => {
       if (!ok) console.error("Temporary recording cleanup failed. Startup will retry removal.");
       clearTimeout(deadline);
@@ -130,6 +135,14 @@ app
       settingsFile: path.join(app.getPath("userData"), "preferences.json"),
       testMode,
     });
+    catalog = new CatalogDiscovery(
+      path.join(app.getPath("userData"), "catalog"),
+      testMode
+        ? process.argv
+            .find((value) => value.startsWith("--catalog-test-cli="))
+            ?.slice("--catalog-test-cli=".length)
+        : undefined,
+    );
     analysis = new SessionAnalysis(
       history.generation,
       async (selectedSession) => {
@@ -143,7 +156,12 @@ app
         );
         return value;
       },
-      undefined,
+      async (options) => {
+        const result = await catalog.read(options.signal);
+        const error = selectionError(result, options);
+        if (error) throw new Error(error);
+        return runAnalysisCli(options);
+      },
       testMode
         ? process.argv
             .find((value) => value.startsWith("--analysis-test-cli="))
@@ -187,6 +205,28 @@ app
       event.sender === window.webContents &&
       event.senderFrame === window.webContents.mainFrame &&
       event.senderFrame?.url === PAGE;
+    ipcMain.handle("scope:models", async (event) => {
+      if (
+        !trusted(event) ||
+        catalog.busy ||
+        analysis.list().activeRunId ||
+        analysis.list().handoffRunId
+      )
+        return {
+          models: [],
+          complete: false,
+          error: "Codex is busy. Wait for the current task and refresh models.",
+        };
+      pickerDiscovery = true;
+      try {
+        return await catalog.read();
+      } finally {
+        pickerDiscovery = false;
+      }
+    });
+    ipcMain.on("scope:models-cancel", (event) => {
+      if (trusted(event) && pickerDiscovery) catalog.cancel();
+    });
     for (const operation of ["settings", "saveSettings", "capture"] as const) {
       ipcMain.handle(`scope:${operation}`, async (event, value) => {
         const stopping = operation === "capture" && value === false;
@@ -198,12 +238,13 @@ app
           operation === "saveSettings" &&
           (!value ||
             typeof value !== "object" ||
-            Object.keys(value).length !== 3 ||
+            Object.keys(value).length !== 4 ||
             typeof value.endpoint !== "string" ||
             value.endpoint.length > 4096 ||
             typeof value.token !== "string" ||
             value.token.length > 256 ||
-            !validModel(value.model))
+            !validSelection(value.diagnosis) ||
+            !validSelection(value.review))
         )
           throw new Error("Check the connection and model settings.");
         return operation === "settings"
@@ -248,16 +289,18 @@ app
         generation: number,
         selectedSession: string,
         model: string,
+        effort: string,
         source: string | null,
       ) => {
         analysisRequest(event, generation);
         if (
           !validSession(selectedSession) ||
           !validModel(model) ||
+          !validEffort(effort) ||
           !(source === null || runId(source))
         )
           throw new Error("Choose a session and a valid Codex model identifier.");
-        return analysis.start(selectedSession, model, source);
+        return analysis.start(selectedSession, model, effort, source);
       },
     );
     ipcMain.handle("scope:analysis-cancel", (event, generation: number) => {

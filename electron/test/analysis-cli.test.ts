@@ -25,6 +25,7 @@ async function setup(mode: string) {
   const controller = new AbortController();
   const options = {
     model: "gpt-5.6-luna",
+    effort: "xhigh",
     prompt: '{"calls":[{"order":1,"command":"rg timeout ."}]}',
     signal: controller.signal,
     executable: process.execPath,
@@ -66,6 +67,7 @@ test("Codex runs once in a private directory with stdin evidence, isolated instr
     for (const feature of ["hooks", "plugins", "apps", "multi_agent", "shell_tool"])
       assert.equal(observed.args[observed.args.indexOf(feature) - 1], "--disable");
     assert(observed.args.includes("project_doc_max_bytes=0"));
+    assert(observed.args.includes('model_reasoning_effort="xhigh"'));
     assert.equal(observed.args[observed.args.indexOf("--sandbox") + 1], "read-only");
     assert.equal(observed.args[observed.args.indexOf("--model") + 1], "gpt-5.6-luna");
     await assert.rejects(stat(observed.cwd), { code: "ENOENT" });
@@ -75,7 +77,12 @@ test("Codex runs once in a private directory with stdin evidence, isolated instr
 });
 
 test("invalid or oversized inputs and missing CLI produce fixed errors without evidence", async () => {
-  const options = { model: "luna", prompt: "synthetic", signal: new AbortController().signal };
+  const options = {
+    model: "luna",
+    effort: "low",
+    prompt: "synthetic",
+    signal: new AbortController().signal,
+  };
   await assert.rejects(
     runAnalysisCli({ ...options, model: "--private-synthetic-evidence" }),
     /model identifier/,

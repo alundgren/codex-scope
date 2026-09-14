@@ -635,7 +635,7 @@ footer {
   max-width: 600px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 #connection-settings label {
   display: flex;
@@ -664,5 +664,21 @@ footer {
   }
   .tool-page {
     padding: 16px;
+  }
+}
+
+.model-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.model-pair select {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 440px) {
+  .model-pair {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

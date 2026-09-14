@@ -6,10 +6,20 @@ import { loadPreferences, savePreferences, validateSettings } from "../src/prefe
 
 test("pairing import keeps strict origins and rejects ambiguous or malformed secrets", () => {
   const saved = validateSettings(
-    { endpoint: "https://host:443/?token=secret%2Bvalue", token: "", model: "gpt-5.6-luna" },
+    {
+      endpoint: "https://host:443/?token=secret%2Bvalue",
+      token: "",
+      diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+      review: { model: "", effort: "" },
+    },
     null,
   );
-  expect(saved).toEqual({ endpoint: "https://host", token: "secret+value", model: "gpt-5.6-luna" });
+  expect(saved).toEqual({
+    endpoint: "https://host",
+    token: "secret+value",
+    diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+    review: { model: "", effort: "" },
+  });
   for (const endpoint of [
     "https://host/path?token=a",
     "https://host/?token=a&token=b",
@@ -22,12 +32,29 @@ test("pairing import keeps strict origins and rejects ambiguous or malformed sec
     "https://host/../?token=a",
     "https://host/?token=a+b",
   ]) {
-    expect(() => validateSettings({ endpoint, token: "", model: "gpt-5.6-luna" }, null)).toThrow();
+    expect(() =>
+      validateSettings(
+        {
+          endpoint,
+          token: "",
+          diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+          review: { model: "", effort: "" },
+        },
+        null,
+      ),
+    ).toThrow();
   }
   expect(() => connectionInput("x".repeat(4097), "")).toThrow();
   expect(
-    validateSettings({ endpoint: "http://127.0.0.1:8080", token: "", model: "gpt-5.6-luna" }, saved)
-      .token,
+    validateSettings(
+      {
+        endpoint: "http://127.0.0.1:8080",
+        token: "",
+        diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+        review: { model: "", effort: "" },
+      },
+      saved,
+    ).token,
   ).toBe(saved.token);
 });
 
@@ -37,7 +64,12 @@ test("preferences are private atomic bounded writes and failed validation keeps 
   try {
     expect(await loadPreferences(file)).toBeNull();
     const value = validateSettings(
-      { endpoint: "https://host", token: "private-test-token", model: "gpt-5.6-luna" },
+      {
+        endpoint: "https://host",
+        token: "private-test-token",
+        diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+        review: { model: "", effort: "" },
+      },
       null,
     );
     await savePreferences(file, value);
@@ -52,6 +84,37 @@ test("preferences are private atomic bounded writes and failed validation keeps 
     expect(await readdir(root)).toEqual(["preferences.json"]);
     await writeFile(file, "x".repeat(4097));
     await expect(loadPreferences(file)).rejects.toThrow("Saved settings");
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("legacy defaults migrate empty and explicit pairs persist without a collector connection", async () => {
+  const root = await mkdtemp("/tmp/scope-model-preferences-");
+  const file = path.join(root, "preferences.json");
+  try {
+    await writeFile(
+      file,
+      JSON.stringify({ endpoint: "https://host", token: "old-token", model: "gpt-5.6-luna" }),
+      { mode: 0o600 },
+    );
+    expect(await loadPreferences(file)).toEqual({
+      endpoint: "https://host",
+      token: "old-token",
+      diagnosis: { model: "", effort: "" },
+      review: { model: "", effort: "" },
+    });
+    const value = validateSettings(
+      {
+        endpoint: "",
+        token: "",
+        diagnosis: { model: "explicit-model", effort: "future-effort" },
+        review: { model: "hidden-model", effort: "xhigh" },
+      },
+      null,
+    );
+    await savePreferences(file, value);
+    expect(await loadPreferences(file)).toEqual(value);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

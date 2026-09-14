@@ -196,11 +196,11 @@ test("model runs reuse evidence without rerunning on reads, with separate decisi
       return result();
     },
   );
-  const first = (await analysis.start("session-a", "model-a", null)).runs[0].id;
+  const first = (await analysis.start("session-a", "model-a", "low", null)).runs[0].id;
   await tick();
   analysis.decide(first, "narrow", "kept");
   assert.match(exportRecommendations(analysis.get(first)!), /Captured call IDs: 2/);
-  const second = (await analysis.start("session-a", "model-b", first)).runs[1].id;
+  const second = (await analysis.start("session-a", "model-b", "low", first)).runs[1].id;
   await tick();
   assert.equal(captures, 1);
   assert.equal(analysis.get(second)!.snapshot, analysis.get(first)!.snapshot);
@@ -209,9 +209,9 @@ test("model runs reuse evidence without rerunning on reads, with separate decisi
   analysis.get(first);
   analysis.get(second);
   assert.equal(executions, 2);
-  await assert.rejects(analysis.start("session-b", "model-b", first));
+  await assert.rejects(analysis.start("session-b", "model-b", "low", first));
   for (let n = 0; n < 4; n++) {
-    await analysis.start("session-a", "model-a", null);
+    await analysis.start("session-a", "model-a", "low", null);
     await tick();
   }
   assert.equal(analysis.list().runs.length, 4);
@@ -229,11 +229,11 @@ test("cancellation and clear reject stale completion and prevent overlapping exe
         finish = resolve;
       }),
   );
-  await analysis.start("session-a", "model-a", null);
-  await assert.rejects(analysis.start("session-a", "model-a", null), /already running/);
+  await analysis.start("session-a", "model-a", "low", null);
+  await assert.rejects(analysis.start("session-a", "model-a", "low", null), /already running/);
   analysis.reset(2);
   assert.equal(analysis.list().runs.length, 0);
-  await assert.rejects(analysis.start("session-a", "model-a", null), /already running/);
+  await assert.rejects(analysis.start("session-a", "model-a", "low", null), /already running/);
   finish!(result());
   await tick();
   assert.equal(analysis.list().runs.length, 0);
@@ -260,14 +260,14 @@ test("handoff uses the run model and kept findings without recapture, and reject
       });
     },
   );
-  const id = (await analysis.start("session-a", "original-model", null)).runs[0].id;
+  const id = (await analysis.start("session-a", "original-model", "low", null)).runs[0].id;
   await tick();
   await assert.rejects(analysis.handoff(id), /Keep a recommendation/);
   analysis.decide(id, "narrow", "kept");
   const handoff = analysis.handoff(id);
   assert.equal(analysis.list().handoffRunId, id);
   await assert.rejects(analysis.handoff(id), /already running/);
-  await assert.rejects(analysis.start("session-a", "other-model", null), /already running/);
+  await assert.rejects(analysis.start("session-a", "other-model", "low", null), /already running/);
   finish!({ text: JSON.stringify({ handoff: "Try a task directory first." }), usage: null });
   assert.match(await handoff, /Session analysis handoff for session-a/);
   assert.equal(captures, 1);

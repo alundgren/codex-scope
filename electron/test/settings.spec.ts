@@ -73,7 +73,8 @@ test("idle, Functions, private pairing settings, stop restart and retained inspe
           await window.scope.saveSettings({
             endpoint: "x".repeat(6000),
             token: "",
-            model: "gpt-5.6-luna",
+            diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+            review: { model: "", effort: "" },
           });
           return false;
         } catch {
@@ -278,7 +279,8 @@ test("slow saves retain ownership, report pending and publish the eventual resul
           await window.scope.saveSettings({
             endpoint: "http://127.0.0.1:9",
             token: "other",
-            model: "gpt-5.6-luna",
+            diagnosis: { model: "gpt-5.6-luna", effort: "low" },
+            review: { model: "", effort: "" },
           });
           return false;
         } catch {

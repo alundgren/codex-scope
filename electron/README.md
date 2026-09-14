@@ -70,7 +70,7 @@ adds no renderer data injection or filesystem API. These switches are for automa
 
 Use Settings to enter an HTTPS collector origin and token. A Linux pairing URL such as `https://host:port/?token=secret` fills both fields. The URL field discards the query after extraction; the token field stays masked and clears after save. Duplicate or unknown query parameters, empty tokens and malformed links are rejected.
 
-Settings writes one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and diagnosis model, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. Only one settings save may run at a time. A save that exceeds the 2500 ms reply deadline remains owned until the worker finishes; Settings shows it as pending and prevents retries from overlapping the private temporary file. Completion updates the form with the actual success or failure. Stop capture remains available while a save is pending. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
+Settings writes one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and separate diagnosis/review model and effort choices, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. Only one settings save may run at a time. A save that exceeds the 2500 ms reply deadline remains owned until the worker finishes; Settings shows it as pending and prevents retries from overlapping the private temporary file. Completion updates the form with the actual success or failure. Stop capture remains available while a save is pending. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
 
 For external configuration import, create a private JSON file outside Git with two fields:
 
@@ -95,7 +95,7 @@ literal loopback IPs may use HTTP for same-host testing. `localhost` is not a
 plaintext exception because its name resolution is external to the URL.
 The repository ignores `electron/connection.local.json` and `electron/token.local`
 for local development, but app settings should normally remain outside the clone.
-Scope never writes imported configuration or token files. A command-line file overrides the saved connection at launch. Settings explains this override; saving applies the replacement for the current launch, while the command-line file wins again on the next launch. Diagnosis model selection stays in Settings and never starts a turn on its own.
+Scope never writes imported configuration or token files. A command-line file overrides the saved connection at launch. Settings explains this override; saving applies the replacement for the current launch, while the command-line file wins again on the next launch. Model and effort selection stays in Settings and never starts a turn on its own. Both pairs begin empty. Legacy settings retain the connection but discard the old prefilled model because they did not record an explicit choice. Save settings persists new explicit choices, including when no collector connection is configured.
 
 Authentication, version, endpoint and certificate failures stop retrying. Correct the connection in Settings, save and Start capture to recover. Transient failures use one
 retry timer with backoff from 500 ms to 8 seconds. Existing history remains
@@ -292,3 +292,23 @@ Results, Search trail, Agent routing and Recommendations. Select the analysis
 model before running Codex. Switching views reuses the selected run and focused
 call. See [session analysis](../docs/session-analysis.md) for CLI requirements,
 evidence definitions, resource limits, temporary state and capture limitations.
+
+## Local model catalog
+
+Open a model picker or choose Refresh models in Settings to ask the installed `codex app-server` for its catalog. Scope sends `initialize`, `initialized` and cursor-paged `model/list` requests with `includeHidden: true`, then ends the discovery process. It never starts a thread or turn for discovery. Hidden models stay visible and selectable. The CLI's default model and effort are ignored. A returned model does not prove account access; execution errors remain explicit. Empty catalogs, stale choices, unsupported efforts and incomplete reads keep input intact and offer refresh or reselection.
+
+Diagnosis and handoff preparation reread the catalog immediately before restricted `codex exec --ephemeral` execution. Both use the explicitly selected model and effort recorded on that analysis run. Model discovery cannot enable tools or project access. PR review choices persist now; review execution is not yet available.
+
+One discovery can run at a time, without a queue. Navigation away from Settings, Cancel discovery and app shutdown cancel its process group. Discovery and analysis do not run CLI processes concurrently. The catalog is held only in memory and is never recovered after closing Scope. A private `catalog/work` directory holds temporary files and logs only while discovery runs, with an ownership marker preventing reuse while an earlier process remains alive. Codex keeps ownership of its existing authentication, configuration and SQLite state. Scope does not copy that state, change its location, read its contents or include its existing disk footprint in the app temporary-storage budget. Initialization may maintain that CLI-owned state through normal CLI behavior; Scope sends no thread, conversation or configuration-write requests.
+
+| Catalog resource              | Limit and behavior                                                                                                        |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Duration                      | 5 seconds from process launch; cancellation kills the process group                                                       |
+| Output                        | 512 KiB stdout, 32 KiB discarded stderr, checked before buffering                                                         |
+| Pagination                    | 16 pages of requested size 32, at most 256 models, repeated cursors fail incomplete                                       |
+| Fields                        | Model identifiers 128 characters, 32 efforts per model, effort 64 characters, cursor 1,024 bytes                          |
+| Process and temporary storage | Existing CLI limits: 8 processes, 512 MiB summed RSS, 30 seconds CPU, 16 MiB / 64 temporary entries; sampled every 500 ms |
+
+Limits accommodate measured installed-CLI catalog reads and the bounded maximum-catalog fixture. The catalog process retains the inherited CPU limit and disables core dumps. Its private temporary directory is sampled, but the analysis executor's per-file size limit is not imposed on the CLI's existing SQLite files. Exceeding any limit marks the result incomplete and permits explicit retry. Raw child output never appears in logs or IPC errors.
+
+After building, run `xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec node scripts/measure-catalog.ts` from `electron` without concurrent tests or recording. Add `--real` for installed-CLI discovery with existing authentication and no model turn. The fixture run measures maximum catalogs, output/page pressure, cancellation and recovery. Reports include all app processes and descendants, temporary bytes, frame delay and quit time under ignored `measurements/`. Linux measurements do not establish macOS behavior.

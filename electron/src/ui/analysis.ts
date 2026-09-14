@@ -47,7 +47,8 @@ export function attachAnalysis(
   const api = window.scope as typeof window.scope & AnalysisAPI;
   const panel = requiredElement("#analyzer");
   const session = requiredElement<HTMLSelectElement>("#analysis-session");
-  const model = requiredElement<HTMLInputElement>("#analysis-model");
+  const model = requiredElement<HTMLSelectElement>("#analysis-model");
+  const effort = requiredElement<HTMLSelectElement>("#analysis-effort");
   const runSelect = requiredElement<HTMLSelectElement>("#analysis-run");
   const fresh = requiredElement<HTMLInputElement>("#analysis-fresh");
   const search = requiredElement<HTMLInputElement>("#analysis-search");
@@ -126,7 +127,8 @@ export function attachAnalysis(
       !!active ||
       handoff ||
       !selectedSession ||
-      !model.value.trim() ||
+      !model.value ||
+      !effort.value ||
       !!history?.error ||
       !!history?.clearing;
     cancel.textContent = handoff ? "Cancel handoff" : "Cancel analysis";
@@ -599,7 +601,7 @@ export function attachAnalysis(
         node(
           "p",
           selectedSession
-            ? "Analyze this session to inspect its tool calls and review suggestions. Choose the diagnosis model in Settings before starting."
+            ? "Analyze this session to inspect its tool calls and review suggestions. Choose the diagnosis model and effort in Settings before starting."
             : "Choose a captured session to begin.",
           "analysis-empty",
         ),
@@ -730,7 +732,8 @@ export function attachAnalysis(
       const next = await api.analysisStart(
         generation,
         sessionId,
-        model.value.trim(),
+        model.value,
+        effort.value,
         !fresh.checked && run ? run.id : null,
       );
       if (generation !== history?.generation || sessionId !== selectedSession) return;

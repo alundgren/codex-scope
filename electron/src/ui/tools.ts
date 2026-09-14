@@ -1,3 +1,4 @@
+import { attachModelSettings } from "./model-settings.ts";
 import type { HistoryStatus, ConnectionSettings, Reply } from "../types.ts";
 import { connectionInput } from "../connection-input.ts";
 import { requiredElement } from "./elements.ts";
@@ -6,7 +7,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   const search = requiredElement<HTMLInputElement>("#function-search");
   const endpoint = requiredElement<HTMLInputElement>("#collector-url");
   const token = requiredElement<HTMLInputElement>("#collector-token");
-  const model = requiredElement<HTMLInputElement>("#analysis-model");
+  const models = attachModelSettings();
   const status = requiredElement("#settings-status");
   const capture = requiredElement<HTMLButtonElement>("#capture");
   const save = requiredElement<HTMLButtonElement>("#settings-save");
@@ -18,7 +19,8 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   let settingsSave: HistoryStatus["settingsSave"];
   function unlockSave() {
     busy = false;
-    save.disabled = capture.disabled = endpoint.disabled = token.disabled = model.disabled = false;
+    models.disable(false);
+    save.disabled = capture.disabled = endpoint.disabled = token.disabled = false;
   }
   function saved(value: Reply<ConnectionSettings>) {
     if (value.error) status.textContent = value.error;
@@ -37,6 +39,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   }
   const buttons = [...document.querySelectorAll<HTMLButtonElement>("[data-tool]")];
   function show(next: string) {
+    if (view === "settings" && next !== "settings") models.stop();
     view = next;
     document.body.classList.toggle("tool-open", next !== "journal");
     analyzer.show(next === "analysis");
@@ -61,8 +64,7 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
   function apply(value: Awaited<ReturnType<typeof window.scope.settings>>) {
     endpoint.value = value.endpoint;
     token.value = "";
-    model.value = value.model;
-    model.dispatchEvent(new Event("input"));
+    models.apply(value.diagnosis, value.review);
     requiredElement("#token-state").textContent = value.hasToken
       ? "A token is saved. Leave blank to keep it, or enter a replacement."
       : "Enter a token.";
@@ -120,13 +122,14 @@ export function attachTools(analyzer: { show(open: boolean): void }, journal: ()
       event.preventDefault();
       if (busy) return;
       busy = true;
-      save.disabled = capture.disabled = endpoint.disabled = token.disabled = model.disabled = true;
+      models.disable(true);
+      save.disabled = capture.disabled = endpoint.disabled = token.disabled = true;
       status.textContent = "Saving settings…";
       try {
         const value = await window.scope.saveSettings({
           endpoint: endpoint.value,
           token: token.value,
-          model: model.value.trim(),
+          ...models.values(),
         });
         if (value.pending) {
           pendingSave = value.pending;

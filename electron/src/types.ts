@@ -1,3 +1,4 @@
+import type { ModelSelection, ModelCatalog } from "./model-types.ts";
 import type { AnalysisAPI, AnalysisSnapshot } from "./analysis-types.ts";
 export interface EventValue {
   context?: string;
@@ -186,16 +187,20 @@ export interface Faults {
 export interface ConnectionSettings {
   endpoint: string;
   hasToken: boolean;
-  model: string;
+  diagnosis: ModelSelection;
+  review: ModelSelection;
   commandLineOverride: boolean;
   error?: string;
 }
 export interface SettingsEdit {
   endpoint: string;
   token: string;
-  model: string;
+  diagnosis: ModelSelection;
+  review: ModelSelection;
 }
 export interface ScopeAPI extends AnalysisAPI {
+  models(): Promise<ModelCatalog>;
+  cancelModels(): void;
   settings(): Promise<ConnectionSettings>;
   saveSettings(value: SettingsEdit): Promise<Reply<ConnectionSettings>>;
   capture(start: boolean): Promise<Reply<{ ok: boolean }>>;

@@ -1,8 +1,7 @@
 # Session analysis
 
 Open **Analyze session** from the event journal, choose a retained session and
-enter a Codex model identifier. The initial suggestion is `gpt-5.6-luna`; model
-availability depends on the locally installed CLI and account. **Analyze** sends
+choose an explicit diagnosis model and supported reasoning effort in Settings. Both values start empty. Refresh models or open its picker to discover the installed CLI catalog, including hidden entries. Saved choices persist; unavailable choices are never substituted. **Analyze** sends
 a bounded snapshot of captured hook evidence to that CLI's model provider.
 The CLI runs on the viewer machine. Inference is not necessarily local.
 
@@ -24,7 +23,7 @@ scroll positions belong to their respective views. A hidden selection offers
 **Show selected call**.
 The original event journal remains available with its reading position.
 
-Changing views does not invoke Codex. Analysis runs keep separate model choices,
+Changing views does not invoke Codex. Analysis runs keep separate model and effort choices,
 findings, usage and recommendation decisions. By default another model analyzes
 the selected run's existing evidence snapshot. Select **New snapshot** to include
 newer retained data. Previous results remain readable while one run executes.
@@ -34,7 +33,7 @@ No runs, recommendation decisions or missed events are recovered on restart.
 
 **Copy session handoff** sends only the kept findings, call references and snapshot
 identity back through the analysis run's model. A fresh ephemeral request receives
-that context because analyzer conversations are not retained. It prepares a
+that context with the run's original model and effort because analyzer conversations are not retained. The current catalog is checked again before handoff generation. It prepares a
 handoff for the agent still working in the source session, describing findings,
 uncertainty and suggested corrections for current and future work. The completed
 handoff goes to the clipboard for the user to paste into that session. It does
@@ -88,7 +87,7 @@ future work. The existing whole-hook admission limit still applies.
 
 `analysis-evidence.ts` extracts summaries in the existing SQLite worker.
 `analysis.ts` owns bounded temporary runs in main and validates source references.
-`analysis-cli.ts` starts one transient CLI process group for explicit analysis.
+`analysis-cli.ts` starts one transient CLI process group for explicit analysis. `model-catalog.ts` discovers and validates the chosen pair first, using only initialization and model-list requests. Both use the existing process and temporary-storage limits in `cli-resources.ts`.
 The renderer receives only the selected bounded run, keeps at most four small
 view-state records, and requests original payload text separately.
 

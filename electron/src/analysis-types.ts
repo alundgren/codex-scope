@@ -53,6 +53,7 @@ export interface AnalysisRunSummary {
   id: string;
   session: string;
   model: string;
+  effort: string;
   createdAt: string;
   state: "running" | "completed" | "failed" | "cancelled";
   error: string | null;
@@ -77,6 +78,7 @@ export interface AnalysisAPI {
     generation: number,
     session: string,
     model: string,
+    effort: string,
     sourceRunId: string | null,
   ): Promise<AnalysisState>;
   analysisCancel(generation: number): Promise<void>;

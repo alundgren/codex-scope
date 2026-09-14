@@ -1,29 +1,50 @@
+import { emptySelection, validSelection } from "./model-types.ts";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 import { privateText, origin } from "./connection.ts";
 import { connectionInput, validToken } from "./connection-input.ts";
 import type { ConnectionConfig, SettingsEdit } from "./types.ts";
 
-export const defaultModel = "gpt-5.6-luna";
 export function validateSettings(value: SettingsEdit, previous: ConnectionConfig | null) {
+  if (!validSelection(value.diagnosis) || !validSelection(value.review))
+    throw new Error("Check the model and effort settings.");
+  if (value.endpoint === "" && value.token === "" && !previous)
+    return { endpoint: "", token: "", diagnosis: value.diagnosis, review: value.review };
   const parsed = connectionInput(value.endpoint, value.token);
   const token = parsed.token || previous?.token;
-  if (!validToken(token) || !/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,119}$/.test(value.model))
-    throw new Error("Check the token and diagnosis model.");
-  return { endpoint: origin(parsed.endpoint), token, model: value.model };
+  if (!validToken(token)) throw new Error("Check the connection token.");
+  return {
+    endpoint: origin(parsed.endpoint),
+    token,
+    diagnosis: value.diagnosis,
+    review: value.review,
+  };
 }
 export async function loadPreferences(file: string) {
   try {
     const value = JSON.parse(await privateText(file, 4096));
-    if (Object.keys(value).length !== 3) throw new Error("preferences");
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("preferences");
+    if (Object.keys(value).length === 3 && typeof value.model === "string") {
+      // Earlier versions persisted a prefilled model without recording explicit consent.
+      return validateSettings(
+        {
+          endpoint: value.endpoint,
+          token: value.token,
+          diagnosis: emptySelection(),
+          review: emptySelection(),
+        },
+        null,
+      );
+    }
+    if (value.version !== 2 || Object.keys(value).length !== 5) throw new Error("preferences");
     return validateSettings(value, null);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw new Error("Saved settings could not be read. Enter the connection again and save.");
+    throw new Error("Saved settings could not be read. Enter the settings again and save.");
   }
 }
 export async function savePreferences(file: string, value: SettingsEdit) {
-  const text = JSON.stringify(value) + "\n";
+  const text = JSON.stringify({ version: 2, ...value }) + "\n";
   if (Buffer.byteLength(text) > 4096) throw new Error("Settings are too long.");
   const parent = path.dirname(file);
   const stat = await fs.lstat(parent);
