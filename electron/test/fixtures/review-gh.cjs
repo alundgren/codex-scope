@@ -118,7 +118,9 @@ else if (endpoint.includes("/files?")) {
   );
 } else if (endpoint.includes("/git/blobs/")) {
   const name = names.find((name) => blobId(name) === endpoint.split("/").at(-1));
-  if (name === "asset.bin") output(Buffer.from([0, 1, 2, 3]));
+  if (state.mode === "bounded-source")
+    output(Array.from({ length: 1000 }, () => "x".repeat(250)).join("\n"));
+  else if (name === "asset.bin") output(Buffer.from([0, 1, 2, 3]));
   else if (name === "missing.txt") process.exit(1);
   else if (name === "large.ts") output("x".repeat(300000));
   else if (state.longSource)

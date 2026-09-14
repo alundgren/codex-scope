@@ -1,3 +1,5 @@
+import { ReviewSession } from "./review-session.ts";
+import { LENSES, SESSION_LIMITS } from "./review-session-types.ts";
 import { PRReview } from "./review.ts";
 import { CatalogDiscovery } from "./model-catalog.ts";
 import { validEffort, validSelection, selectionError } from "./model-types.ts";
@@ -40,6 +42,9 @@ const owner = app.requestSingleInstanceLock();
 let analysis: SessionAnalysis;
 let catalog: CatalogDiscovery;
 let review: PRReview;
+let conversation: ReviewSession | null = null;
+let conversationPending = false;
+let sentConversationVersion = -1;
 let pickerDiscovery = false;
 let sentAnalysisVersion = -1;
 let history: History,
@@ -73,6 +78,10 @@ function present() {
       presentationDirty = false;
       presentationPending = true;
       window.webContents.send("scope:status", history.snapshot());
+      if (conversation && sentConversationVersion !== conversation.version) {
+        sentConversationVersion = conversation.version;
+        window.webContents.send("scope:conversation");
+      }
       if (analysis && sentAnalysisVersion !== analysis.version) {
         sentAnalysisVersion = analysis.version;
         window.webContents.send("scope:analysis");
@@ -89,7 +98,13 @@ app.on("before-quit", (event) => {
     console.error("Temporary recording cleanup timed out. Startup will retry removal.");
     app.exit(1);
   }, LIMITS.requestMs + 250);
-  Promise.all([history.close(), analysis?.close(), catalog?.close(), review?.close()]).then(
+  Promise.all([
+    history.close(),
+    analysis?.close(),
+    catalog?.close(),
+    conversation?.close(),
+    review?.close(),
+  ]).then(
     ([ok]) => {
       if (!ok) console.error("Temporary recording cleanup failed. Startup will retry removal.");
       clearTimeout(deadline);
@@ -187,6 +202,8 @@ app
         return value;
       },
       async (options) => {
+        if (conversation?.ownsProcess || conversationPending)
+          throw new Error("Codex review is open. End review before running diagnosis.");
         const result = await catalog.read(options.signal);
         const error = selectionError(result, options);
         if (error) throw new Error(error);
@@ -244,7 +261,95 @@ app
         JSON.stringify(request).length > 4096
       )
         return { error: "Invalid PR request." };
+      if (
+        (request.action === "end" || (request.action === "open" && request.replace === true)) &&
+        conversation
+      ) {
+        if (request.action === "end") review.identity(request.id);
+        await conversation.close();
+        const reply = await review.request(request);
+        if (!reply.error) {
+          conversation = null;
+          sentConversationVersion = -1;
+        }
+        return reply;
+      }
       return review.request(request);
+    });
+    ipcMain.handle("scope:conversation", async (event, request) => {
+      if (
+        !trusted(event) ||
+        !request ||
+        typeof request !== "object" ||
+        JSON.stringify(request).length > 20000 ||
+        typeof request.review !== "string"
+      )
+        throw new Error("Invalid conversation request.");
+      review.identity(request.review);
+      if (request.action === "read") {
+        if (
+          !Number.isInteger(request.offset) ||
+          request.offset < 0 ||
+          request.offset > SESSION_LIMITS.entries
+        )
+          throw new Error("Invalid conversation page.");
+        return (
+          conversation?.read(request.offset) ?? {
+            review: request.review,
+            version: 0,
+            status: "idle",
+            selection: null,
+            lens: "Overview",
+            error: null,
+            total: 0,
+            offset: 0,
+            entries: [],
+          }
+        );
+      }
+      if (request.action === "stop") {
+        await conversation?.stop();
+        return conversation?.read(SESSION_LIMITS.entries);
+      }
+      if (request.action === "copy") {
+        if (conversation) await clipboard.writeText(conversation.export());
+        return conversation?.read(SESSION_LIMITS.entries);
+      }
+      if (
+        request.action !== "send" ||
+        typeof request.text !== "string" ||
+        !LENSES.includes(request.lens) ||
+        conversationPending
+      )
+        throw new Error("Conversation request is invalid or busy.");
+      if (analysis.list().activeRunId || analysis.list().handoffRunId || catalog.busy)
+        throw new Error("Codex is busy. Wait for diagnosis or model discovery before reviewing.");
+      conversationPending = true;
+      try {
+        const settings = await history.call("settings");
+        if (!("review" in settings)) throw new Error("Review settings unavailable.");
+        if (!conversation) {
+          const result = await catalog.read();
+          const error = selectionError(result, settings.review);
+          if (error) throw new Error(error);
+          review.identity(request.review);
+          conversation = new ReviewSession(
+            request.review,
+            review,
+            path.join(app.getPath("userData"), "review-session"),
+            testMode
+              ? process.argv
+                  .find((v) => v.startsWith("--review-test-cli="))
+                  ?.slice("--review-test-cli=".length)
+              : undefined,
+          );
+          conversation.on("change", present);
+        }
+        await conversation.send(request.text, request.lens, settings.review);
+        return conversation.read(SESSION_LIMITS.entries);
+      } finally {
+        conversationPending = false;
+      }
     });
     ipcMain.on("scope:review-cancel", (event) => {
       if (trusted(event)) review.cancel();
@@ -253,6 +358,7 @@ app
       if (
         !trusted(event) ||
         catalog.busy ||
+        conversation?.ownsProcess ||
         analysis.list().activeRunId ||
         analysis.list().handoffRunId
       )
@@ -326,6 +432,8 @@ app
       if (!runId(id)) throw new Error("Invalid analysis run.");
       return analysis.get(id);
     });
+    if (testMode)
+      Object.defineProperty(globalThis, "scopeReviewSession", { get: () => conversation });
     ipcMain.handle(
       "scope:analysis-start",
       (
@@ -344,6 +452,8 @@ app
           !(source === null || runId(source))
         )
           throw new Error("Choose a session and a valid Codex model identifier.");
+        if (conversation?.ownsProcess || conversationPending)
+          throw new Error("Codex review is open. End review before running diagnosis.");
         return analysis.start(selectedSession, model, effort, source);
       },
     );

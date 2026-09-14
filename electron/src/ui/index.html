@@ -89,7 +89,25 @@
             <div class="review-chat-bar">
               <span>Conversation</span><button id="review-chat-expand">Expand chat</button>
             </div>
-            <p>No conversation yet. Live PR conversations are not available.</p>
+            <p id="conversation-state" role="status">
+              Choose a review model and effort in Settings, then send a message.
+            </p>
+            <div id="conversation-entries" tabindex="0" aria-label="Conversation messages"></div>
+            <div class="conversation-actions">
+              <button id="conversation-previous">Earlier</button
+              ><button id="conversation-latest">Latest</button
+              ><button id="conversation-copy">Copy transcript</button
+              ><button id="conversation-end" hidden>End review</button>
+            </div>
+            <span id="conversation-notice" role="status"></span>
+            <form id="conversation-form">
+              <label for="conversation-input">Message</label
+              ><textarea id="conversation-input" maxlength="16000" rows="3"></textarea>
+              <div class="conversation-actions">
+                <button id="conversation-send" type="submit">Send</button
+                ><button id="conversation-stop" type="button" disabled>Stop turn</button>
+              </div>
+            </form>
           </section>
         </div>
         <dialog id="review-dialog">

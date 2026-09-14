@@ -415,6 +415,95 @@ export class PRReview {
       true,
     )) as Buffer;
   }
+  identity(id: string): ReviewPR {
+    if (!this.active || this.active.id !== id) throw new Error("This review has ended.");
+    return this.active;
+  }
+  toolImages(id: string) {
+    this.identity(id);
+    return this.images;
+  }
+  async toolImage(id: string, image: string) {
+    this.identity(id);
+    const bytes = await this.readImage(`scope://app/review-image/${id}/${image}`);
+    if (!bytes) throw new Error("Screenshot is unavailable.");
+    return bytes;
+  }
+  async toolList(
+    id: string,
+    directory: string,
+    signal: AbortSignal,
+    side: "head" | "base" = "head",
+  ): Promise<{ path: string; type: string; oid: string }[]> {
+    const pr = this.identity(id);
+    const repository = side === "base" ? pr.baseRepository : pr.headRepository;
+    if (!repository) throw new Error("Fork unavailable.");
+    const [owner, project] = repository.split("/");
+    const query =
+      "query($owner:String!,$project:String!,$expression:String!){repository(owner:$owner,name:$project){object(expression:$expression){__typename ... on Tree{entries{name mode oid type}}}}}";
+    const bytes = await runGh(
+      [
+        "api",
+        "--hostname",
+        "github.com",
+        "graphql",
+        "-f",
+        `query=${query}`,
+        "-f",
+        `owner=${owner}`,
+        "-f",
+        `project=${project}`,
+        "-f",
+        `expression=${side === "base" ? pr.diffBase : pr.head}:${directory}`,
+      ],
+      signal,
+      this.directory,
+      this.executable,
+    );
+    this.identity(id);
+    const tree = JSON.parse(bytes.toString("utf8"))?.data?.repository?.object;
+    if (
+      tree?.__typename !== "Tree" ||
+      !Array.isArray(tree.entries) ||
+      tree.entries.length > L.treeEntries
+    )
+      throw new Error("Source directory unavailable or too large.");
+    return tree.entries.map((e: any) => {
+      const name = directory ? `${directory}/${e.name}` : e.name;
+      if (!filePath(name) || !oid(e.oid)) throw new Error("Invalid source metadata.");
+      return {
+        path: name,
+        oid: e.oid,
+        type:
+          e.type === "tree" && e.mode === 0o40000
+            ? "tree"
+            : e.type === "blob" && [0o100644, 0o100755].includes(e.mode)
+              ? "blob"
+              : "unsupported",
+      };
+    });
+  }
+  async toolSource(
+    id: string,
+    name: string,
+    signal: AbortSignal,
+    side: "head" | "base" = "head",
+  ): Promise<string> {
+    const pr = this.identity(id);
+    const repository = side === "base" ? pr.baseRepository : pr.headRepository;
+    if (!repository || !filePath(name)) throw new Error("Source unavailable.");
+    const bytes = await this.source(
+      repository,
+      side === "base" ? pr.diffBase : pr.head,
+      name,
+      signal,
+    );
+    this.identity(id);
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    if (text.includes("\0") || text.split("\n").length > L.maxLines)
+      throw new Error("Source unsupported or too large.");
+    return text;
+  }
   private async metadata(
     target: { repository: string; number: number },
     signal: AbortSignal,

@@ -111,7 +111,7 @@ work and starts a new recording and connection only after successful cleanup.
 ## Build and validation
 
 `vp run build` compiles TypeScript with Vite+ Pack and bundles the renderer with Vite+.
-The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis starts one bounded transient Codex CLI process group. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
+The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis or PR review starts one bounded Codex CLI process group. They do not run concurrently. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
 Playwright's FFmpeg binary are excluded from the bundle. Production bundles are minified. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and synthetic fixtures enter `dist/app`.
 
 `vp run check` runs Vite+ formatting, lint, and strict TypeScript checks. `vp run dev` builds and starts Electron with synthetic data; rerun it after edits. Unit tests run through Vite+ Vitest on Node, and desktop scenarios use Playwright with actual Electron.
@@ -316,3 +316,11 @@ After building, run `xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node script
 ## PR notebook validation
 
 `vp exec node scripts/measure-review.ts` measures the large-PR working set, on-demand source reads, maximum accepted PNG evidence, cancellation, output pressure and recovery without recording. Run inside the documented fresh Xvfb/Openbox desktop after building. `test/review.spec.ts` records the notebook interaction and failure/recovery walkthrough. The [PR review guide](../docs/pr-review.md) maintains the evidence limits.
+
+Temporary PR conversation checks use `vp test run test/review-session.test.ts test/review-tools.test.ts` and the sandboxed `test/review-conversation.spec.ts` desktop walkthrough. Resource reproduction is separate from visual execution:
+
+```bash
+xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec node scripts/measure-review-session.ts
+```
+
+This exercises 110 fixture turns, twenty-entry presentation, concurrent capture, diagnosis busy handling, a bounded large source result, conversation capacity and quit cleanup. Reports stay under ignored `measurements/`. `scripts/measure-review-live.ts` is an explicit, optional live check that uses installed Codex authentication, `gpt-6-astra` with low effort and public repository source. It starts real model turns and measures their whole-app cost, so it is excluded from routine tests. Neither command proves macOS performance or native lifecycle behavior.

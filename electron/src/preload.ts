@@ -46,7 +46,24 @@ async function settingsInvoke(operation: string, value?: unknown) {
     settingsBusy = false;
   }
 }
+let conversationRequests = 0;
+let conversationCallback: (() => void) | undefined;
 const scope: ScopeAPI = {
+  conversation: async (request) => {
+    if (conversationRequests >= 3 || !request || JSON.stringify(request).length > 20000)
+      throw new Error("Conversation request is busy or invalid.");
+    conversationRequests++;
+    try {
+      return await ipcRenderer.invoke("scope:conversation", request);
+    } finally {
+      conversationRequests--;
+    }
+  },
+  onConversation: (callback) => {
+    if (conversationCallback || typeof callback !== "function") return;
+    conversationCallback = callback;
+    ipcRenderer.on("scope:conversation", () => conversationCallback?.());
+  },
   review: async (request) => {
     if (
       reviewPending ||

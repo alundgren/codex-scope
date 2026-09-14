@@ -1,3 +1,4 @@
+import type { ConversationRequest, ConversationState } from "./review-session-types.ts";
 import type { ReviewRequest, ReviewReply } from "./review-types.ts";
 import type { ModelSelection, ModelCatalog } from "./model-types.ts";
 import type { AnalysisAPI, AnalysisSnapshot } from "./analysis-types.ts";
@@ -200,6 +201,8 @@ export interface SettingsEdit {
   review: ModelSelection;
 }
 export interface ScopeAPI extends AnalysisAPI {
+  conversation(request: ConversationRequest): Promise<ConversationState | undefined>;
+  onConversation(callback: () => void): void;
   review(request: ReviewRequest): Promise<ReviewReply>;
   cancelReview(): void;
   models(): Promise<ModelCatalog>;
