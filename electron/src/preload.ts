@@ -33,6 +33,7 @@ async function analysisInvoke(channel: string, generation: number, ...args: unkn
     analysisRequests--;
   }
 }
+let reviewPending = false;
 let catalogPending: Promise<unknown> | null = null;
 let settingsBusy = false;
 async function settingsInvoke(operation: string, value?: unknown) {
@@ -46,6 +47,24 @@ async function settingsInvoke(operation: string, value?: unknown) {
   }
 }
 const scope: ScopeAPI = {
+  review: async (request) => {
+    if (
+      reviewPending ||
+      !request ||
+      typeof request !== "object" ||
+      JSON.stringify(request).length > 4096
+    )
+      throw new Error("PR request is busy or invalid.");
+    reviewPending = true;
+    try {
+      return await ipcRenderer.invoke("scope:review", request);
+    } finally {
+      reviewPending = false;
+    }
+  },
+  cancelReview: () => {
+    if (reviewPending) ipcRenderer.send("scope:review-cancel");
+  },
   models: () => {
     if (catalogPending) throw new Error("Model discovery is already running.");
     const request = ipcRenderer.invoke("scope:models");

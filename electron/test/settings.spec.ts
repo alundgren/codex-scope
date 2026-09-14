@@ -51,7 +51,7 @@ test("idle, Functions, private pairing settings, stop restart and retained inspe
     await page.locator("#function-search").fill("review");
     await screenshot("02-function-search");
     await page.locator("#function-search").press("Enter");
-    await expect(page.locator("#review-entry")).toContainText("not available yet");
+    await expect(page.locator("#review-address")).toBeVisible();
     await tool("settings");
     await expect(page.locator("#collector-token")).toHaveValue("");
     await expect(page.locator("#settings-override")).toBeVisible();

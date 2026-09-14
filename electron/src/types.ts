@@ -1,3 +1,4 @@
+import type { ReviewRequest, ReviewReply } from "./review-types.ts";
 import type { ModelSelection, ModelCatalog } from "./model-types.ts";
 import type { AnalysisAPI, AnalysisSnapshot } from "./analysis-types.ts";
 export interface EventValue {
@@ -199,6 +200,8 @@ export interface SettingsEdit {
   review: ModelSelection;
 }
 export interface ScopeAPI extends AnalysisAPI {
+  review(request: ReviewRequest): Promise<ReviewReply>;
+  cancelReview(): void;
   models(): Promise<ModelCatalog>;
   cancelModels(): void;
   settings(): Promise<ConnectionSettings>;

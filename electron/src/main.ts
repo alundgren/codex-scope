@@ -1,9 +1,10 @@
+import { PRReview } from "./review.ts";
 import { CatalogDiscovery } from "./model-catalog.ts";
 import { validEffort, validSelection, selectionError } from "./model-types.ts";
 import { runAnalysisCli } from "./analysis-cli.ts";
 import type { IpcMainEvent, IpcMainInvokeEvent } from "electron";
 import type { ChoiceField, Direction, NavigationRequest } from "./types.ts";
-import { app, BrowserWindow, clipboard, ipcMain, Menu, protocol, session } from "electron";
+import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, protocol, session } from "electron";
 import { readFile } from "node:fs/promises";
 import { SessionAnalysis, validSession, validModel } from "./analysis.ts";
 import type { AnalysisDecision } from "./analysis-types.ts";
@@ -19,7 +20,7 @@ const assets = new Map([
   ["scope://app/renderer.js", ["renderer.js", "text/javascript"]],
 ]);
 const csp =
-  "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'";
+  "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'";
 protocol.registerSchemesAsPrivileged([
   { scheme: "scope", privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ]);
@@ -38,6 +39,7 @@ if (testRoot) app.setPath("userData", testRoot);
 const owner = app.requestSingleInstanceLock();
 let analysis: SessionAnalysis;
 let catalog: CatalogDiscovery;
+let review: PRReview;
 let pickerDiscovery = false;
 let sentAnalysisVersion = -1;
 let history: History,
@@ -87,7 +89,7 @@ app.on("before-quit", (event) => {
     console.error("Temporary recording cleanup timed out. Startup will retry removal.");
     app.exit(1);
   }, LIMITS.requestMs + 250);
-  Promise.all([history.close(), analysis?.close(), catalog?.close()]).then(
+  Promise.all([history.close(), analysis?.close(), catalog?.close(), review?.close()]).then(
     ([ok]) => {
       if (!ok) console.error("Temporary recording cleanup failed. Startup will retry removal.");
       clearTimeout(deadline);
@@ -104,10 +106,22 @@ app
     isolated.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
     isolated.setPermissionCheckHandler(() => false);
     isolated.webRequest.onBeforeRequest((details, callback) =>
-      callback({ cancel: !assets.has(details.url) }),
+      callback({ cancel: !assets.has(details.url) && !review?.acceptsImage(details.url) }),
     );
     isolated.on("will-download", (event) => event.preventDefault());
     isolated.protocol.handle("scope", async (request) => {
+      if (request.method === "GET" && review?.acceptsImage(request.url)) {
+        const bytes = await review.readImage(request.url);
+        return bytes
+          ? new Response(new Uint8Array(bytes), {
+              headers: {
+                "content-type": "image/png",
+                "cache-control": "no-store",
+                "x-content-type-options": "nosniff",
+              },
+            })
+          : new Response("", { status: 404 });
+      }
       const asset = assets.get(request.url);
       if (request.method !== "GET" || !asset) return new Response("", { status: 404 });
       return new Response(await readFile(new URL(`./ui/${asset[0]}`, import.meta.url)), {
@@ -135,6 +149,22 @@ app
       settingsFile: path.join(app.getPath("userData"), "preferences.json"),
       testMode,
     });
+    review = new PRReview(
+      path.join(app.getPath("userData"), "review"),
+      async () => {
+        const result = await dialog.showOpenDialog(window, {
+          title: "Add supplied screenshot",
+          properties: ["openFile"],
+          filters: [{ name: "PNG screenshot", extensions: ["png"] }],
+        });
+        return result.canceled ? undefined : result.filePaths[0];
+      },
+      testMode
+        ? process.argv
+            .find((value) => value.startsWith("--review-test-gh="))
+            ?.slice("--review-test-gh=".length)
+        : undefined,
+    );
     catalog = new CatalogDiscovery(
       path.join(app.getPath("userData"), "catalog"),
       testMode
@@ -176,6 +206,7 @@ app
     if (testMode) globalThis.scopeHistory = history;
     history.on("status", present);
     await history.ready;
+    await review.ready;
     window = new BrowserWindow({
       title: "Codex Scope",
       width: 1180,
@@ -205,6 +236,19 @@ app
       event.sender === window.webContents &&
       event.senderFrame === window.webContents.mainFrame &&
       event.senderFrame?.url === PAGE;
+    ipcMain.handle("scope:review", async (event, request) => {
+      if (
+        !trusted(event) ||
+        !request ||
+        typeof request !== "object" ||
+        JSON.stringify(request).length > 4096
+      )
+        return { error: "Invalid PR request." };
+      return review.request(request);
+    });
+    ipcMain.on("scope:review-cancel", (event) => {
+      if (trusted(event)) review.cancel();
+    });
     ipcMain.handle("scope:models", async (event) => {
       if (
         !trusted(event) ||
