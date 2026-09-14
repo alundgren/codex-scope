@@ -1,6 +1,7 @@
+import { PROMPT_IDS, REVIEW_PROMPTS } from "../src/review-prompts.ts";
 import { _electron } from "@playwright/test";
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile, rm, readdir } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { sample, bytes } from "./process-metrics.ts";
 import { fakeCollector, fixtureEvent, wait } from "../test/fake-collector.ts";
@@ -115,6 +116,46 @@ try {
     await page.waitForSelector("#review-address", { state: "visible" });
   };
   await open();
+  await send("slow prompt editing");
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="settings"]').click();
+  await page.locator("#settings-prompts").click();
+  await page.evaluate(() => window.scope.capture(true));
+  let maxEditMs = 0;
+  results.promptEditing = await sample(app, 0, async () => {
+    for (const promptId of PROMPT_IDS) {
+      await page.locator("#prompt-select").click();
+      await page
+        .getByRole("menuitem", { name: REVIEW_PROMPTS[promptId].label, exact: true })
+        .click();
+      const start = performance.now();
+      await page.locator("#prompt-text").fill("é".repeat(4096));
+      await page.locator("#prompt-save").click();
+      await page.waitForFunction(
+        () => document.querySelector("#prompt-modified")?.textContent === "Modified",
+      );
+      maxEditMs = Math.max(maxEditMs, performance.now() - start);
+      await page.locator("#prompt-text").fill("界".repeat(8192));
+      server.event(fixtureEvent);
+    }
+    for (let i = 0; i < 40; i++) {
+      await page.locator("#prompt-text").fill("a" + "\t".repeat(8191));
+      await page.locator("#prompt-cancel").click();
+      server.event(fixtureEvent);
+    }
+  });
+  results.promptIdleWithReview = await sample(app, 5000);
+  results.promptBounds = {
+    maxEditSaveMs: maxEditMs,
+    fileBytes: (await stat(root + "/review-prompts.json")).size,
+    overrides: 7,
+    bytesPerPrompt: 8192,
+    maxDraftBytes: 24576,
+  };
+  await page.evaluate((id) => window.scope.conversation({ action: "stop", review: id }), id);
+  await ready();
+  await page.locator("#functions summary").click();
+  await page.locator('[data-tool="review"]').click();
   results.longConversation = await sample(app, 0, async () => {
     for (let i = 0; i < 110; i++) {
       await send(`Review question ${i}`);

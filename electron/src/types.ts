@@ -1,3 +1,4 @@
+import type { PromptOverrides, PromptEdit } from "./review-prompts.ts";
 import type { ConversationRequest, ConversationState } from "./review-session-types.ts";
 import type { ReviewRequest, ReviewReply } from "./review-types.ts";
 import type { ModelSelection, ModelCatalog } from "./model-types.ts";
@@ -187,6 +188,7 @@ export interface Faults {
   settingsDelay?: number;
 }
 export interface ConnectionSettings {
+  prompts: PromptOverrides;
   endpoint: string;
   hasToken: boolean;
   diagnosis: ModelSelection;
@@ -208,6 +210,7 @@ export interface ScopeAPI extends AnalysisAPI {
   models(): Promise<ModelCatalog>;
   cancelModels(): void;
   settings(): Promise<ConnectionSettings>;
+  savePrompt(value: PromptEdit): Promise<Reply<ConnectionSettings>>;
   saveSettings(value: SettingsEdit): Promise<Reply<ConnectionSettings>>;
   capture(start: boolean): Promise<Reply<{ ok: boolean }>>;
   status(): Promise<HistoryStatus>;
@@ -227,6 +230,7 @@ export interface ScopeAPI extends AnalysisAPI {
 }
 export interface HistoryOperations {
   settings: { data: Record<string, never>; result: ConnectionSettings };
+  savePrompt: { data: { value: PromptEdit }; result: ConnectionSettings };
   saveSettings: { data: { value: SettingsEdit }; result: ConnectionSettings };
   capture: { data: { start: boolean }; result: { ok: boolean } };
   analysis: { data: { session: string }; result: AnalysisSnapshot };

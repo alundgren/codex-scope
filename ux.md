@@ -149,3 +149,17 @@ Add screenshot opens an explicit local PNG picker. Attached files are listed, se
 Refresh PR checks the target base and head without moving the pinned review. A changed revision offers Replace review or Close to retain the old evidence. Opening another PR or ending the review asks before removing screenshots and selections. Copy feedback is explicitly unavailable. Closing Scope ends temporary review state with no restoration.
 
 The conversation streams accepted text and bounded evidence outcomes. Earlier and Latest page the retained messages. Keep the source selection and conversation page across lens changes, pane resizing and Functions navigation. The selected lens applies to the next message. Stop turn stays available during active work. Failure and capacity retain accepted text with Copy transcript and End review; restarting requires an explicit new review. End and replace confirmations offer transcript copy before removal. Structured feedback remains unavailable. A busy diagnosis or review prevents a second model process while capture stays independent.
+
+Settings has Connection and models and Review prompts controls. Review prompts
+uses a compact custom selector for every registered prompt, a plain text editor,
+Save prompt, Cancel and Revert to system. Modified identifies an explicit saved
+override; Unsaved changes identifies a draft. The shipped default is available
+through its disclosure control. Revert stages removal of one override until
+Save prompt, and Cancel restores the saved value. Drafts survive tool and prompt
+navigation, including failed saves. Saved edits apply to the next turn in the
+same conversation; active work and earlier messages retain their instructions.
+The notebook reports pending prompt or lens changes. Model changes still apply
+to the next review session. Feedback prompt editing is available without feedback
+output controls. The authored reference's additional planned prompt categories
+will appear only when their behavior is implemented and registered. Category
+controls keep the editor available without scrolling past connection setup.

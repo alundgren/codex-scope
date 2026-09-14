@@ -1,3 +1,4 @@
+import type { TurnPromptVersions } from "./review-prompts.ts";
 import type { ModelSelection } from "./model-types.ts";
 export const SESSION_LIMITS = {
   frameBytes: 1024 * 1024,
@@ -20,6 +21,7 @@ export interface ConversationEntry {
   role: "user" | "assistant" | "activity";
   text: string;
   lens: ReviewLens;
+  prompts: TurnPromptVersions;
 }
 export interface ConversationState {
   review: string;
@@ -27,6 +29,7 @@ export interface ConversationState {
   status: "idle" | "starting" | "running" | "ready" | "failed" | "capacity";
   selection: ModelSelection | null;
   lens: ReviewLens;
+  prompts: TurnPromptVersions | null;
   error: string | null;
   total: number;
   offset: number;

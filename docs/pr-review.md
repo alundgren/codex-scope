@@ -30,7 +30,7 @@ The limits keep source and screenshot work independent of total PR size and brow
 
 ## Temporary conversation
 
-Send starts one installed `codex app-server` process and one ephemeral thread after an explicit review model and effort have been saved in Settings. The notebook keeps this thread across lenses and tool navigation. Each turn receives the selected lens's maintained instructions from `review-prompts.ts`. Settings changes affect the next review session. Stop turn interrupts work; a failed session retains its accepted transcript for copy and requires End review before another session. Scope never restarts or resumes a failed thread automatically.
+Send starts one installed `codex app-server` process and one ephemeral thread after an explicit review model and effort have been saved in Settings. The notebook keeps this thread across lenses and tool navigation. Each turn receives a snapshot of the effective base and selected lens instructions from `review-prompts.ts`. Saved prompt edits apply to the next submitted turn in the same thread. Model and effort changes affect the next review session. Stop turn interrupts work; a failed session retains its accepted transcript for copy and requires End review before another session. Scope never restarts or resumes a failed thread automatically.
 
 `review-session.ts` owns protocol requests, streamed output and cleanup. `review-tools.ts` issues separate source identifiers for the pinned head and comparison base and serves bounded listing, regular-file reads, literal search and supplied PNG access. The root and root-base listings expose head and base source respectively, including deleted files and original paths before renames. Source tools use the pinned fork or base repository and verify regular Git entry modes before fetching the blob through gh. Source results state pagination and omissions. They do not accept arbitrary filesystem paths, run reviewed code, or write to GitHub. The conversation uses twenty-entry pages and coalesced presentation updates. Earlier keeps the selected page while new output arrives; Latest returns to following.
 
@@ -55,3 +55,57 @@ Diagnosis retains its separate restricted `codex exec` observation packet and ne
 | Time | Two minutes per active turn and one hour per session; capacity ends the process and offers transcript copy |
 
 CLI context-compaction notifications stop the review visibly with transcript copy available. Scope does not claim that shortened model context still contains every prior exchange. CPU and temporary-storage monitoring can stop a long conversation before its text capacity. Monitoring samples do not prevent all transient overshoot. Linux measurements belong in the PR evidence; macOS performance, energy use and native lifecycle remain unverified.
+
+## Review prompts
+
+Settings → Review prompts exposes the complete versioned registry: base review,
+five lenses, and feedback generation. Feedback generation output remains deferred;
+its eventual invocation must consume this registry. Fixed tool schemas and host
+permission instructions remain implementation contracts outside the editor.
+
+The compact selector keeps one draft per registered prompt across navigation.
+Save prompt applies only that draft. Cancel restores the current saved value.
+Revert to system stages removal of the selected override; Cancel can undo it
+before Save prompt. The shipped default and its version remain available beside
+the editor. Invalid input and failed saves preserve both the draft and previous
+effective value. A delayed save retains exclusive ownership until its result
+arrives, with no retry queue.
+
+The worker stores only explicit text overrides and their version identifiers in
+private `review-prompts.json`, independently of collector and model preferences.
+A prompt save neither changes those preferences nor stops capture. Unmodified
+prompts pick up their new shipped default after an application update. Reverting
+removes the override entirely. Source, conversation and credentials are never
+automatically copied into these preferences. The user chooses the prompt text.
+
+Each accepted prompt is nonempty UTF-8 text of at most 8 KiB, excluding control
+characters other than tabs and line endings. The seven-entry registry holds at
+most 56 KiB of effective prompt text; editor drafts have the same finite count
+and a limit of 8,192 UTF-16 units each, at most 24 KiB of UTF-8 text. Invalid
+multibyte drafts remain editable, while Save enforces the 8 KiB byte limit. The private JSON document and its single atomic
+replacement file each have a 128 KiB ceiling, including JSON escaping. A save
+uses a new UUID for the changed override. Shipped prompts have individual
+integer versions, and the registry contract has its own version.
+
+Submission snapshots the base and lens versions and text before asynchronous
+session startup. Turn construction rechecks prompt bytes. Only these two prompt
+texts enter a normal conversation turn, at most 16 KiB plus the existing 16 KiB
+user message. Earlier transcript entries retain their original version metadata;
+the app keeps no growing archive of historical prompt text. Editing during a
+stream never interrupts it. The notebook identifies saved prompt or lens changes
+waiting for the next turn. The thread's fixed permission instructions and host
+tool enforcement cannot be changed through prompt settings.
+
+Prompt editing adds no process or runtime dependency. Persistence remains in the
+existing worker, while bounded plain text editing remains in the renderer.
+`electron/scripts/measure-review-session.ts` includes all seven maximum-sized
+overrides and multibyte drafts, repeated draft/cancel operations, capture during streamed review,
+private settings file size, whole-app process sampling and input timing. Run it
+without video on the documented fresh Xvfb desktop. These measured workloads set
+the maintained editing limits; results belong in the PR rather than this guide.
+
+Run `vp exec node --experimental-transform-types scripts/probe-review-prompts.ts`
+from `electron/` to exercise changed base and lens text
+through two turns of one actual installed-CLI thread using synthetic instructions
+and an explicit model/effort pair. It requests no source reads or reviewed code
+execution and checks temporary cleanup.

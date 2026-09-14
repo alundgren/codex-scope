@@ -116,6 +116,43 @@
         </dialog>
       </section>
       <section id="settings" class="tool-page" hidden>
+        <div class="settings-navigation" aria-label="Settings category">
+          <button type="button" id="settings-general" aria-pressed="true">
+            Connection and models
+          </button>
+          <button type="button" id="settings-prompts" aria-pressed="false">Review prompts</button>
+        </div>
+        <div id="prompt-settings" hidden>
+          <div class="prompt-toolbar">
+            <button id="prompt-select" type="button" aria-haspopup="menu" aria-expanded="false">
+              Base review ▾</button
+            ><span id="prompt-modified"></span>
+          </div>
+          <div
+            id="prompt-options"
+            class="review-menu"
+            role="menu"
+            aria-label="Review prompt"
+            hidden
+          ></div>
+          <label for="prompt-text">Prompt instructions</label>
+          <textarea id="prompt-text" maxlength="8192" spellcheck="false"></textarea>
+          <span id="prompt-bytes"></span>
+          <div class="prompt-actions">
+            <button id="prompt-save" type="button">Save prompt</button
+            ><button id="prompt-cancel" type="button">Cancel</button
+            ><button id="prompt-revert" type="button">Revert to system</button>
+          </div>
+          <p id="prompt-status" role="status"></p>
+          <details id="prompt-system">
+            <summary id="prompt-system-label">Shipped default</summary>
+            <pre id="prompt-system-text"></pre>
+          </details>
+          <p>
+            Saved prompts apply to the next turn in the same conversation. Tool permissions remain
+            fixed. Feedback generation is not available yet.
+          </p>
+        </div>
         <form id="connection-settings">
           <label
             >Collector URL<input
