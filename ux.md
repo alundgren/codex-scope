@@ -2,7 +2,7 @@
 
 The task is to see what Codex emits, find an event, and inspect its input without losing the current reading position. The selected design is the [Event journal prototype](docs/mockups/event-journal-v2.html). Open the HTML file locally in a browser. The [Electron build handoff](docs/mockups/event-journal-v2-notes.md) supplies implementation boundaries and acceptance checks. The prototype is synthetic, not a running Electron application.
 
-The [Electron implementation](electron/README.md) opens a quiet idle view with capture stopped. The compact Functions menu searches Event journal, Analyze session, PR review and Settings. PR review opens a pinned GitHub PR in the compact notebook. Start capture requires valid connection settings; Stop capture retains history and analysis state. The event journal starts its viewing position in Live. With capture active it receives live version 1 events. Synthetic
+The [Electron implementation](electron/README.md) opens a quiet idle view with capture stopped. The compact Functions menu searches Event journal, Analyze session and Settings. Start capture requires valid connection settings; Stop capture retains history and analysis state. The event journal starts its viewing position in Live. With capture active it receives live version 1 events. Synthetic
 development mode uses five seed fixtures and one new event each second. Selecting a row holds that event, its visible neighbors, and payload
 offset while arrivals continue. The Live label resumes following. Three to five
 nearby rows fit the window, with three above the payload at narrow widths.
@@ -132,85 +132,4 @@ new analysis attempt.
 
 Settings accepts a collector origin or a Linux pairing URL, extracts the token into a masked input, and clears it after saving. Existing tokens are never displayed. Invalid links and failed saves preserve the previous connection and provide a retry path. Successful saves stop capture, preserve retained history and require Start capture to resume. Imported command-line files remain untouched, and the form explains their next-launch override. Moving between tools keeps active task state and reading positions. Operational capture state always restarts off.
 
-Settings provides independent diagnosis and PR review model/effort pairs. Both start empty, including migration from an older prefilled model. Opening a model picker or Refresh models reads the local CLI catalog without starting a turn. Show every returned identifier and mark hidden entries; retain a missing saved choice visibly as unavailable. Effort choices come only from the selected model, and choosing a different model clears the effort. Discovery errors, cancellation and stale invocation errors preserve selections and other input. Save settings persists explicit choices without requiring collector credentials. Native select controls follow the existing analyzer controls, with narrow screens stacking each pair to keep full labels and options readable. Current review model and effort stay visible in the notebook; saved changes apply to the next review session.
-
-## PR review
-
-The selected [lens notebook](docs/mockups/lens-notebook-v2.html) sets the compact toolbar and full-window reading layout. The [evidence board](docs/mockups/evidence-board-after-done.html) remains an independent authored reference, outside the current experience. Both references include fictional conversations and actions; the application only presents implemented behavior.
-
-Open a github.com PR URL or owner/repository plus number. Source uses the full workspace initially. Chat reveals the temporary conversation and message composer. Send starts a session only after explicit model and effort selection. On desktop the split starts at 60/40. Drag the divider or use arrows, Home/End; double-click and Reset divider restore 60/40. Either pane can expand and restore. Narrow windows use the same Chat/Review control to switch panes. Functions remains available, and tool navigation preserves the PR, selection and reading position.
-
-Overview, Security, UX, Performance and Architecture select the lens without running an agent. Changes and Visual evidence select the evidence view. Custom dropdowns open below their buttons, fit the viewport, support arrows, Home/End, Enter, Escape with focus return, and dismiss outside. PR details, findings/annotations availability and evidence limits stay under More. Annotations are available during the active review. Feedback remains visible for preparing and copying editable handoffs.
-
-Changed files page ten at a time. Diff rows expose separate base/head line buttons. Source uses the comparison merge base for the left side and the pinned fork head for the right, with renamed paths resolved on the base side. Long accepted content displays 200 lines per page; Previous/Next lines keeps renderer work bounded. The selected line and up to twenty recent file/view reading positions remain while navigating. Scrollbars use the existing warm palette and a thin native track here because these independently paged source and image panes need direct scrolling without the journal's time-navigation behavior.
-
-Add screenshot opens an explicit local PNG picker. Attached files are listed, selected and removable, with their filename, dimensions and revision attribution. They are supplied evidence, never a running app. Unsupported formats, invalid images, missing patches, binary source and limit failures are stated next to the evidence. No remote screenshot is fetched.
-
-Refresh PR checks the target base and head without moving the pinned review. A changed revision opens the stale feedback export offer. Opening another PR or ending the review offers feedback copy before removing conversation, screenshots and selections. Cancel ending retains the old evidence; continuing without copy is explicit. Closing Scope ends temporary review state with no restoration.
-
-The conversation streams accepted text and bounded evidence outcomes. Earlier and Latest page the retained messages. Keep the source selection and conversation page across lens changes, pane resizing and Functions navigation. The selected lens applies to the next message. Stop turn stays available during active work. Failure and capacity retain accepted text with Copy transcript and End review; restarting requires an explicit new review. End and replace confirmations open editable feedback before removal. A busy diagnosis or review prevents a second model process while capture stays independent.
-
-Settings has Connection and models and Review prompts controls. Review prompts
-uses a compact custom selector for every registered prompt, a plain text editor,
-Save prompt, Cancel and Revert to system. Modified identifies an explicit saved
-override; Unsaved changes identifies a draft. The shipped default is available
-through its disclosure control. Revert stages removal of one override until
-Save prompt, and Cancel restores the saved value. Drafts survive tool and prompt
-navigation, including failed saves. Saved edits apply to the next turn in the
-same conversation; active work and earlier messages retain their instructions.
-The notebook reports pending prompt or lens changes. Model changes still apply
-to the next review session. Feedback generation consumes the registered feedback prompt. The authored reference's additional planned prompt categories
-will appear only when their behavior is implemented and registered. Category
-controls keep the editor available without scrolling past connection setup.
-
-During a user-started review, Pause follow stays visible separately from Stop turn.
-Validated agent targets navigate immediately while following. Pause invalidates
-queued and in-flight navigation. Resume accepts future actions only; Show latest
-target is an explicit choice. Manual navigation preserves the follow setting.
-Open menus, dialogs, text editing, Settings and other tools prevent agent
-navigation. A pending target shows Review target available in the global toolbar
-while away. Selecting it returns explicitly; incoming targets never switch tools.
-The feedback popup and controls use `data-review-focus-guard` and prevent agent navigation.
-
-Annotations opens a temporary list with Show, Remove and Clear marks and diagrams.
-Paused items remain listed without changing selection, scrolling or the draft.
-Source highlights use pinned source lines. Screenshot marks use the image's
-original pixel coordinates and scale with its displayed size. Removed screenshots
-leave their annotations visibly unavailable. Sequence diagrams identify their
-agent origin and offer source-reference buttons. Their labels wrap and self
-messages use return arrows. All text is plain text; supplied markup creates no
-active document content. The compact toolbar wraps at narrower widths so Pause
-and annotation controls remain reachable.
-
-Feedback opens a popup with separate author and agent editors. Desktop shows both
-editors together; narrow windows stack them. This differs from the authored tabbed
-preview so both independent editable drafts stay directly accessible. The one
-Feedback title and editor labels keep the existing notebook palette. Findings use
-compact disclosures for correction, selection and removal; original evidence stays
-read-only. Working hypotheses remain separate from included findings. Regeneration
-asks before replacing edited text or findings. Cancel preserves both drafts, and
-pending generation disables mutations while Copy and Cancel stay available.
-
-Generate feedback uses the current thread and offers to wait or stop an active turn.
-Failed sessions permit manual text and copying. Copy author, Copy agent and Copy both
-show confirmed success or failure without posting. Copied text includes the original
-revision even after edits. Stale feedback remains copyable. End and PR replacement
-offer copy, an explicit action without copying, and Cancel ending. OS close retains
-the bounded shutdown behavior.
-
-Post comment opens the exact combined Markdown in one editable dialog with the
-repository, PR and full reviewed head visible. This adds a final explicit posting
-step to the authored preview because edits must be checked together with the actual
-sent revision suffix. The posting editor uses the existing feedback palette and
-plain-text rendering. Copy exact preview remains available for these independent
-edits. Use current handoffs replaces them only when selected. Back to feedback keeps
-the combined draft and restores the previous popup.
-
-Stale feedback keeps its edits and copy path and offers return to refresh/review.
-A definitive preflight failure permits explicit retry. Uncertain delivery replaces
-the posting action with read-only verification, a working GitHub destination link
-and bounded matching candidates. The person must resolve an incomplete or ambiguous
-result before another write. Success shows the verified comment link and a disclosure
-of the exact sent body; subsequent edits remain an unsent draft. Dialogs and editors
-keep the existing agent-navigation focus guard. Candidate lists scroll independently
-and action controls remain reachable at narrow sizes.
+Settings provides the diagnosis model and effort. Both start empty, including migration from an older prefilled model. Opening a model picker or Refresh models reads the local CLI catalog without starting a turn. Show every returned identifier and mark hidden entries; retain a missing saved choice visibly as unavailable. Effort choices come only from the selected model, and choosing a different model clears the effort. Discovery errors, cancellation and stale invocation errors preserve selections and other input. Save settings persists explicit choices without requiring collector credentials. Native select controls follow the existing analyzer controls, with narrow screens stacking the model and effort controls to keep full labels and options readable. Saved changes apply to the next analysis run.

@@ -48,10 +48,10 @@ test("idle, Functions, private pairing settings, stop restart and retained inspe
     await page.locator("#functions summary").click();
     await page.locator("#function-search").fill("missing");
     await expect(page.locator("#function-empty")).toBeVisible();
-    await page.locator("#function-search").fill("review");
+    await page.locator("#function-search").fill("analyze");
     await screenshot("02-function-search");
     await page.locator("#function-search").press("Enter");
-    await expect(page.locator("#review-address")).toBeVisible();
+    await expect(page.locator("#analyzer")).toBeVisible();
     await tool("settings");
     await expect(page.locator("#collector-token")).toHaveValue("");
     await expect(page.locator("#settings-override")).toBeVisible();
@@ -74,7 +74,6 @@ test("idle, Functions, private pairing settings, stop restart and retained inspe
             endpoint: "x".repeat(6000),
             token: "",
             diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-            review: { model: "", effort: "" },
           });
           return false;
         } catch {
@@ -295,7 +294,6 @@ test("slow saves retain ownership, report pending and publish the eventual resul
             endpoint: "http://127.0.0.1:9",
             token: "other",
             diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-            review: { model: "", effort: "" },
           });
           return false;
         } catch {

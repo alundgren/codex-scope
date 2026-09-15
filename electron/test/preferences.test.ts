@@ -10,7 +10,6 @@ test("pairing import keeps strict origins and rejects ambiguous or malformed sec
       endpoint: "https://host:443/?token=secret%2Bvalue",
       token: "",
       diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-      review: { model: "", effort: "" },
     },
     null,
   );
@@ -18,7 +17,6 @@ test("pairing import keeps strict origins and rejects ambiguous or malformed sec
     endpoint: "https://host",
     token: "secret+value",
     diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-    review: { model: "", effort: "" },
   });
   for (const endpoint of [
     "https://host/path?token=a",
@@ -38,7 +36,6 @@ test("pairing import keeps strict origins and rejects ambiguous or malformed sec
           endpoint,
           token: "",
           diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-          review: { model: "", effort: "" },
         },
         null,
       ),
@@ -51,7 +48,6 @@ test("pairing import keeps strict origins and rejects ambiguous or malformed sec
         endpoint: "http://127.0.0.1:8080",
         token: "",
         diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-        review: { model: "", effort: "" },
       },
       saved,
     ).token,
@@ -68,7 +64,6 @@ test("preferences are private atomic bounded writes and failed validation keeps 
         endpoint: "https://host",
         token: "private-test-token",
         diagnosis: { model: "gpt-5.6-luna", effort: "low" },
-        review: { model: "", effort: "" },
       },
       null,
     );
@@ -89,7 +84,7 @@ test("preferences are private atomic bounded writes and failed validation keeps 
   }
 });
 
-test("legacy defaults migrate empty and explicit pairs persist without a collector connection", async () => {
+test("preferences retain an existing connection and persist an explicit diagnosis model", async () => {
   const root = await mkdtemp("/tmp/scope-model-preferences-");
   const file = path.join(root, "preferences.json");
   try {
@@ -102,19 +97,28 @@ test("legacy defaults migrate empty and explicit pairs persist without a collect
       endpoint: "https://host",
       token: "old-token",
       diagnosis: { model: "", effort: "" },
-      review: { model: "", effort: "" },
     });
     const value = validateSettings(
       {
         endpoint: "",
         token: "",
         diagnosis: { model: "explicit-model", effort: "future-effort" },
-        review: { model: "hidden-model", effort: "xhigh" },
       },
       null,
     );
     await savePreferences(file, value);
     expect(await loadPreferences(file)).toEqual(value);
+    await writeFile(file, JSON.stringify({ version: 2, ...value, obsoleteSetting: "unused" }), {
+      mode: 0o600,
+    });
+    expect(await loadPreferences(file)).toEqual(value);
+    await savePreferences(file, { ...value, obsoleteSetting: "unused" } as typeof value);
+    expect(Object.keys(JSON.parse(await readFile(file, "utf8"))).sort()).toEqual([
+      "diagnosis",
+      "endpoint",
+      "token",
+      "version",
+    ]);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

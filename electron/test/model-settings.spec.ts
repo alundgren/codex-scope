@@ -42,7 +42,7 @@ test("empty selectors, hidden catalog, explicit persistence and stale invocation
   let f = await setup(info);
   try {
     await tool(f.page, "settings");
-    for (const id of ["analysis-model", "analysis-effort", "review-model", "review-effort"])
+    for (const id of ["analysis-model", "analysis-effort"])
       await expect(f.page.locator(`#${id}`)).toHaveValue("");
     await expect
       .poll(async () => {
@@ -56,11 +56,10 @@ test("empty selectors, hidden catalog, explicit persistence and stale invocation
     await f.page.screenshot({ path: info.outputPath("01-empty.png") });
     await f.page.locator("#analysis-model").focus();
     await expect(f.page.locator("#model-status")).toContainText("9 models");
-    await expect(f.page.locator('#review-model option[value="hidden-model"]')).toContainText(
+    await expect(f.page.locator('#analysis-model option[value="hidden-model"]')).toContainText(
       "hidden",
     );
-    await pair(f.page, "analysis", "gpt-5.6-luna", "xhigh");
-    await pair(f.page, "review", "hidden-model", "low");
+    await pair(f.page, "analysis", "hidden-model", "low");
     await f.page.locator("#settings-save").click();
     await expect(f.page.locator("#settings-status")).toHaveText("Settings saved.");
     await f.page.screenshot({ path: info.outputPath("02-explicit-hidden.png") });
@@ -68,10 +67,8 @@ test("empty selectors, hidden catalog, explicit persistence and stale invocation
     await f.app.close();
     f = await setup(info, root);
     await tool(f.page, "settings");
-    await expect(f.page.locator("#analysis-model")).toHaveValue("gpt-5.6-luna");
-    await expect(f.page.locator("#analysis-effort")).toHaveValue("xhigh");
-    await expect(f.page.locator("#review-model")).toHaveValue("hidden-model");
-    await expect(f.page.locator("#review-effort")).toHaveValue("low");
+    await expect(f.page.locator("#analysis-model")).toHaveValue("hidden-model");
+    await expect(f.page.locator("#analysis-effort")).toHaveValue("low");
     await refresh(f.page);
     await f.page.screenshot({ path: info.outputPath("03-persisted.png") });
     const event = frame({ index: 130 });
@@ -155,7 +152,7 @@ test("catalog errors and cancellation keep Settings drafts and allow explicit re
     await f.page.setViewportSize({ width: 390, height: 700 });
     await f.page.screenshot({ path: info.outputPath("narrow.png") });
     await f.page.locator("#settings-save").scrollIntoViewIfNeeded();
-    await f.page.screenshot({ path: info.outputPath("narrow-review.png") });
+    await f.page.screenshot({ path: info.outputPath("narrow-settings.png") });
   } finally {
     await f.app.close();
     await rm(f.root, { recursive: true, force: true });
@@ -196,7 +193,7 @@ test("maximum catalog remains usable with long identifiers and supported efforts
     await expect(f.page.locator("#model-refresh")).toBeEnabled();
     await f.page.locator("#analysis-effort").selectOption("effort-0");
     await f.page.setViewportSize({ width: 390, height: 700 });
-    await pair(f.page, "review", `model-254-${"x".repeat(110)}`, "effort-30");
+    await pair(f.page, "analysis", `model-254-${"x".repeat(110)}`, "effort-30");
     await f.page.locator("#settings-save").scrollIntoViewIfNeeded();
     await f.page.screenshot({ path: info.outputPath("maximum-narrow.png") });
   } finally {

@@ -1,5 +1,3 @@
-import { loadPromptPreferences, savePromptPreferences } from "./prompt-preferences.ts";
-import type { PromptOverrides } from "./review-prompts.ts";
 import { emptySelection } from "./model-types.ts";
 import { sessionEvidence } from "./analysis-evidence.ts";
 import { prepare, type Statement } from "./database.ts";
@@ -83,13 +81,7 @@ let state: HistoryStatus & { retainedBytes: number; evicted: number } = {
   evicted: 0,
 };
 let activation = 0;
-let diagnosis = emptySelection(),
-  review = emptySelection();
-let prompts: PromptOverrides = {};
-let promptLoadError: string | undefined;
-const promptFile = workerData.settingsFile
-  ? path.join(path.dirname(workerData.settingsFile), "review-prompts.json")
-  : null;
+let diagnosis = emptySelection();
 let settingsError: string | undefined;
 let settingsSave: HistoryStatus["settingsSave"];
 let commandLineOverride = !workerData.optionalConnection;
@@ -98,8 +90,6 @@ function settings() {
     endpoint: connectionConfig?.endpoint ?? "",
     hasToken: !!connectionConfig?.token,
     diagnosis,
-    review,
-    prompts,
     commandLineOverride,
     error: settingsError,
   };
@@ -535,7 +525,6 @@ port.on("message", async (message: WorkerRequest) => {
           const saved = await loadPreferences(workerData.settingsFile);
           if (saved) {
             diagnosis = saved.diagnosis;
-            review = saved.review;
             if (!commandLineOverride && !workerData.synthetic) {
               connectionConfig = saved.endpoint ? saved : null;
               configError = false;
@@ -543,14 +532,6 @@ port.on("message", async (message: WorkerRequest) => {
           }
         } catch {
           settingsError = "Saved settings could not be read. Enter the connection again and save.";
-        }
-      }
-      if (promptFile) {
-        try {
-          prompts = await loadPromptPreferences(promptFile);
-        } catch (error) {
-          promptLoadError = (error as Error).message;
-          settingsError = promptLoadError;
         }
       }
       state.synthetic = !!workerData.synthetic;
@@ -566,23 +547,6 @@ port.on("message", async (message: WorkerRequest) => {
       result = { ok: true };
     } else if (operation === "settings") {
       result = settings();
-    } else if (operation === "savePrompt") {
-      try {
-        if (!promptFile || promptLoadError)
-          throw Error(promptLoadError ?? "Prompt settings unavailable.");
-        if (faults.settingsDelay)
-          await new Promise((resolve) =>
-            setTimeout(resolve, Math.min(5000, faults.settingsDelay!)),
-          );
-        prompts = await savePromptPreferences(promptFile, prompts, message.value);
-        settingsError = undefined;
-      } catch {
-        settingsError =
-          promptLoadError ??
-          "Prompt was not saved. Check its byte limit and the private settings directory, then try again.";
-      }
-      result = settings();
-      settingsSave = { id: request, result: settings() };
     } else if (operation === "saveSettings") {
       try {
         const value = validateSettings(message.value, connectionConfig);
@@ -595,7 +559,6 @@ port.on("message", async (message: WorkerRequest) => {
         stopInput();
         connectionConfig = value.endpoint ? { endpoint: value.endpoint, token: value.token } : null;
         diagnosis = value.diagnosis;
-        review = value.review;
         configError = false;
         terminalReason = null;
         settingsError = undefined;
