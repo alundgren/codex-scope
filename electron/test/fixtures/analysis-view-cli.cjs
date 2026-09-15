@@ -45,6 +45,29 @@ process.stdin.on("end", () => {
   const snapshot = JSON.parse(input.split("EVIDENCE_JSON\n")[1]);
   const first = snapshot.calls[0];
   const second = snapshot.calls[1];
+  if (model === "test-invalid-reference") {
+    process.stdout.write(
+      JSON.stringify({
+        type: "item.completed",
+        item: {
+          type: "agent_message",
+          text: JSON.stringify({
+            findings: [
+              {
+                id: "invented-reference",
+                title: "Synthetic invalid reference",
+                detail: "Synthetic result for validation.",
+                suggestion: "Use a captured call ID.",
+                callOrders: [999],
+              },
+            ],
+          }),
+        },
+      }) + "\n",
+    );
+    process.stdout.write(JSON.stringify({ type: "turn.completed" }) + "\n");
+    return;
+  }
   const findings = first
     ? [
         {

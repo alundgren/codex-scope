@@ -68,7 +68,7 @@ async function selectModel(page: Page, model: string) {
   await page.locator("#functions summary").click();
   await page.locator('[data-tool="settings"]').click();
   await page.locator("#model-refresh").click();
-  await expect(page.locator("#model-status")).toContainText("9 models");
+  await expect(page.locator("#model-status")).toContainText("10 models");
   await page.locator("#analysis-model").selectOption(model);
   await expect(page.locator("#model-refresh")).toBeEnabled();
   await page.locator("#analysis-effort").selectOption("low");
@@ -256,6 +256,13 @@ test("model comparison preserves the old run and snapshot with failure, cancel a
     await page.locator("#analysis-run").selectOption(failed!);
     await expect(page.locator("#analysis-status")).not.toBeEmpty();
     await capture(page, info, "11-failed");
+    await selectModel(page, "test-invalid-reference");
+    await page.locator("#analysis-start").click();
+    await expect(page.locator("#analysis-run option:checked")).toContainText("failed");
+    await expect(page.locator("#analysis-status")).toHaveText(
+      "Finding 1 cites captured call ID 999, which is not in this snapshot. Try another model.",
+    );
+    await capture(page, info, "11b-invalid-reference");
     await append(app, calls("another-session"));
     await append(app, calls().slice(0, 1));
     await page.locator("#analysis-run").selectOption(firstRun);
