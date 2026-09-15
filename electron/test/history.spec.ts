@@ -179,7 +179,16 @@ test("retained bounds advance while the selected event and reading position surv
     expect(after.first!.id).toBeGreaterThan(before.first!.id);
     expect(after.first!.id).toBeLessThan(id);
     expect(after.first!.receivedAt).not.toBe(before.first!.receivedAt);
-    await expect(page.locator("#retention")).toContainText(after.first!.receivedAt.slice(11, 19));
+    const retainedTime = await page.evaluate(
+      (iso) =>
+        new Intl.DateTimeFormat("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23",
+        }).format(new Date(iso)),
+      after.first!.receivedAt,
+    );
+    await expect(page.locator("#retention")).toContainText(`${retainedTime} local`);
     await expect(page.locator("#payload")).toHaveAttribute("data-event", String(id));
     expect(await page.locator("#entries").textContent()).toBe(rows);
     expect(await page.locator("#json").textContent()).toBe(text);

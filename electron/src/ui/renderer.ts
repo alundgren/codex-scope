@@ -12,6 +12,7 @@ import type {
 import { requiredElement } from "./elements.ts";
 import { attachScrollbar } from "./scrollbar.ts";
 import { attachFilters } from "./filters.ts";
+import { labeledLocalTime, localTime } from "./time.ts";
 
 const entries = requiredElement("#entries"),
   payload = requiredElement("#payload"),
@@ -73,7 +74,6 @@ const filters = attachFilters({
     summary(latest);
   },
 });
-const time = (iso: string) => iso.slice(11, 19);
 const activeView = () => (latest.view?.queryId === queryId ? latest.view : null);
 const byteFormats = [0, 1, 2].map(
   (maximumFractionDigits) => new Intl.NumberFormat("en-US", { maximumFractionDigits }),
@@ -229,7 +229,7 @@ function summary(value: HistoryStatus) {
   setText(
     requiredElement("#retention"),
     value.first
-      ? `Retained from ${time(value.first.receivedAt)} UTC · Deleted when the app closes.`
+      ? `Retained from ${labeledLocalTime(value.first.receivedAt)} · Deleted when the app closes.`
       : "Temporary recording · Waiting for events.",
   );
   const blocked = filterPending || clearPending || !!value.clearing || !!value.error;
@@ -398,7 +398,7 @@ function drawRows() {
       element("td", "tool-name", item.tool ?? "Unknown tool"),
       input,
       element("td", "response-size", formatBytes(item.responseBytes ?? null)),
-      element("td", "received", time(item.receivedAt)),
+      element("td", "received", localTime(item.receivedAt)),
     );
     const open = () => {
       if (filterPending || clearPending || latest.error) return;
@@ -506,7 +506,7 @@ function renderPayload() {
     element(
       "div",
       "detail-identity",
-      `${selected.session ?? "No session"} · ${selected.model ?? "Unknown model"} · ${time(selected.receivedAt)} UTC`,
+      `${selected.session ?? "No session"} · ${selected.model ?? "Unknown model"} · ${labeledLocalTime(selected.receivedAt)}`,
     ),
   );
   for (const button of dialog.querySelectorAll<HTMLButtonElement>("[data-tab]"))
