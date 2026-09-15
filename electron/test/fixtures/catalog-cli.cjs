@@ -23,6 +23,7 @@ const standard = [
   "test-success",
   "test-slow",
   "test-fail",
+  "test-invalid-reference",
   "test-fresh",
   "test-handoff-invalid",
   "test-handoff-slow",

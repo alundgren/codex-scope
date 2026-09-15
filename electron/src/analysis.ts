@@ -27,27 +27,46 @@ export function parseFindings(text: string, snapshot: AnalysisSnapshot): Analysi
     throw new Error("Codex returned invalid findings. Try another model or analyze again.");
   const orders = new Set(snapshot.calls.map((call) => call.order));
   const ids = new Set<string>();
-  const string = (item: unknown, max: number): item is string =>
-    typeof item === "string" && item.trim().length > 0 && item.length <= max;
-  return value.findings.map((item: unknown) => {
-    if (!item || typeof item !== "object") throw new Error("Codex returned an invalid finding.");
+  const stringError = (item: unknown, max: number): string | null => {
+    if (typeof item !== "string") return "is not text";
+    if (!item.trim()) return "is empty";
+    if (item.length > max) return `exceeds ${max} characters`;
+    return null;
+  };
+  return value.findings.map((item: unknown, index: number) => {
+    const label = `Finding ${index + 1}`;
+    if (!item || typeof item !== "object")
+      throw new Error(`${label} is not an object. Try another model.`);
     const f = item as AnalysisFinding;
-    if (
-      !string(f.id, 80) ||
-      !/^[a-zA-Z0-9_-]+$/.test(f.id) ||
-      ids.has(f.id) ||
-      ["__proto__", "constructor", "prototype"].includes(f.id) ||
-      !string(f.title, 160) ||
-      !string(f.detail, 2000) ||
-      !string(f.suggestion, 2000) ||
-      !Array.isArray(f.callOrders) ||
-      f.callOrders.length < 1 ||
-      f.callOrders.length > 8 ||
-      !f.callOrders.every((id) => Number.isSafeInteger(id) && orders.has(id))
-    )
+    const idError = stringError(f.id, 80);
+    if (idError) throw new Error(`${label}'s ID ${idError}. Try another model.`);
+    if (!/^[a-zA-Z0-9_-]+$/.test(f.id) || ["__proto__", "constructor", "prototype"].includes(f.id))
+      throw new Error(`${label} has an invalid ID. Try another model.`);
+    if (ids.has(f.id))
+      throw new Error(`${label} repeats an earlier finding ID. Try another model.`);
+    for (const [field, max] of [
+      ["title", 160],
+      ["detail", 2000],
+      ["suggestion", 2000],
+    ] as const) {
+      const error = stringError(f[field], max);
+      if (error) throw new Error(`${label}'s ${field} ${error}. Try another model.`);
+    }
+    if (!Array.isArray(f.callOrders))
+      throw new Error(`${label} has no captured call ID list. Try another model.`);
+    if (f.callOrders.length < 1)
+      throw new Error(`${label} cites no captured calls. Try another model.`);
+    if (f.callOrders.length > 8)
+      throw new Error(`${label} cites more than 8 captured calls. Try another model.`);
+    if (!f.callOrders.every((id) => Number.isSafeInteger(id) && id > 0))
+      throw new Error(`${label} has a malformed captured call ID. Try another model.`);
+    const unknown = [...new Set(f.callOrders.filter((id) => !orders.has(id)))];
+    if (unknown.length) {
+      const noun = unknown.length === 1 ? "ID" : "IDs";
       throw new Error(
-        "Codex returned a finding without valid captured evidence. Try another model.",
+        `${label} cites captured call ${noun} ${unknown.join(", ")}, which ${unknown.length === 1 ? "is" : "are"} not in this snapshot. Try another model.`,
       );
+    }
     ids.add(f.id);
     return {
       id: f.id,

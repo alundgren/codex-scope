@@ -72,6 +72,8 @@ render as text, without interpreting markup or links.
 The model receives the snapshot as untrusted evidence with fixed analysis
 instructions. Findings must use valid captured event IDs, bounded fields and
 unique identifiers. Unsupported or invented references reject the result.
+The failed run retains a bounded validation reason that identifies the finding
+position and invalid field or call ID. It does not retain the rejected response.
 Recommendations remain hypotheses for human review. The analyzer cannot observe
 what the model used, final context delivery after code-mode filtering, complete
 hosted-tool coverage, or exact per-call cost. Analyst input, cached-input and

@@ -171,15 +171,35 @@ test("snapshot limits do not grow with session history and excerpts expose omiss
 
 test("findings reject invented call references, duplicate IDs, missing evidence and oversized fields", () => {
   assert.equal(parseFindings(result().text, snapshot()).length, 1);
-  for (const findings of [
-    [{ ...finding, callOrders: [100] }],
-    [finding, finding],
-    [{ ...finding, callOrders: [] }],
-    [{ ...finding, detail: "x".repeat(2001) }],
-    [{ ...finding, id: "__proto__", callOrders: [999] }],
-  ]) {
-    assert.throws(() => parseFindings(JSON.stringify({ findings }), snapshot()));
-  }
+  assert.throws(
+    () =>
+      parseFindings(JSON.stringify({ findings: [{ ...finding, callOrders: [100] }] }), snapshot()),
+    /Finding 1 cites captured call ID 100, which is not in this snapshot/,
+  );
+  assert.throws(
+    () => parseFindings(JSON.stringify({ findings: [finding, finding] }), snapshot()),
+    /Finding 2 repeats an earlier finding ID/,
+  );
+  assert.throws(
+    () => parseFindings(JSON.stringify({ findings: [{ ...finding, callOrders: [] }] }), snapshot()),
+    /Finding 1 cites no captured calls/,
+  );
+  assert.throws(
+    () =>
+      parseFindings(
+        JSON.stringify({ findings: [{ ...finding, detail: "x".repeat(2001) }] }),
+        snapshot(),
+      ),
+    /Finding 1's detail exceeds 2000 characters/,
+  );
+  assert.throws(
+    () =>
+      parseFindings(
+        JSON.stringify({ findings: [{ ...finding, id: "__proto__", callOrders: [999] }] }),
+        snapshot(),
+      ),
+    /Finding 1 has an invalid ID/,
+  );
 });
 
 test("model runs reuse evidence without rerunning on reads, with separate decisions and bounded retention", async () => {

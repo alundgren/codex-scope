@@ -26,7 +26,7 @@ test("catalog exhausts hidden pages without threads, exposes exact efforts and r
   try {
     const result = await f.catalog.read();
     expect(result.complete).toBe(true);
-    expect(result.models).toHaveLength(9);
+    expect(result.models).toHaveLength(10);
     expect(result.models.find((model) => model.hidden)?.model).toBe("hidden-model");
     expect(selectionError(result, { model: "hidden-model", effort: "xhigh" })).toBeNull();
     expect(selectionError(result, { model: "hidden-model", effort: "ultra" })).toContain("effort");
