@@ -1,6 +1,9 @@
 import type { ModelSelection, ModelCatalog } from "./model-types.ts";
 import type { AnalysisAPI, AnalysisSnapshot } from "./analysis-types.ts";
 export interface EventValue {
+  model?: string | null;
+  command?: string | null;
+  responseBytes?: number | null;
   context?: string;
   connectionId?: string;
   sequence: number;
@@ -19,6 +22,10 @@ export interface StoredEvent extends EventValue {
   cost?: number;
 }
 export interface EventRow {
+  tool?: string | null;
+  model?: string | null;
+  responseBytes?: number | null;
+  context?: string | null;
   id: number;
   receivedAt: string;
   hook: string;
@@ -33,8 +40,15 @@ export interface Filter {
   text: string;
   session: string | null;
   hooks: string[];
+  sessions?: string[];
+  tools?: string[];
+  models?: (string | null)[];
+  prefix?: string;
+  minimumBytes?: number | null;
+  unknownBytes?: boolean;
+  sort?: "newest" | "largest";
 }
-export type ChoiceField = "session" | "hook";
+export type ChoiceField = "session" | "hook" | "tool" | "model";
 export type Direction = "next" | "previous";
 export interface ChoicePage {
   values: string[];
@@ -50,7 +64,7 @@ export interface NavigationSnapshot {
 }
 export type NavigationTarget = (
   | { kind: "live" }
-  | { kind: "select"; id: number | null }
+  | { kind: "select"; id: number | null; page?: Direction }
   | { kind: "rank"; rank: number }
 ) & { snapshot?: NavigationSnapshot };
 export interface NavigationRequest {
@@ -62,6 +76,8 @@ export interface NavigationRequest {
   rows: number;
 }
 export interface SearchStatus {
+  responseBytes?: number;
+  measuredCalls?: number;
   queryId: number;
   first: EventPosition | null;
   count: number | null;
@@ -213,8 +229,13 @@ export interface ScopeAPI extends AnalysisAPI {
     field: ChoiceField,
     cursor?: string | null,
     direction?: Direction,
+    text?: string,
   ): Promise<Reply<ChoicePage>>;
-  copyPayload(generation: number, id: number): Promise<boolean>;
+  copyPayload(
+    generation: number,
+    id: number,
+    part?: "json" | "response" | "input",
+  ): Promise<boolean>;
   clear(generation: number): Promise<Reply<{ ok: boolean; generation?: number }>>;
 }
 export interface HistoryOperations {
@@ -226,7 +247,7 @@ export interface HistoryOperations {
   inspect: { data: { id: number | null; rows: number }; result: Inspection };
   navigate: { data: { query: NavigationRequest }; result: Navigation };
   choices: {
-    data: { field: ChoiceField; cursor: string | null; direction: Direction };
+    data: { field: ChoiceField; cursor: string | null; direction: Direction; text?: string };
     result: ChoicePage & { generation: number };
   };
   append: { data: { frames: string[]; connectionId?: string }; result: { ok: boolean } };

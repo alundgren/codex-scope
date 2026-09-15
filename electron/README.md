@@ -8,16 +8,20 @@ row holds its neighborhood and payload offset while capture continues. The Live
 label resumes following. Clear requires two separate activations within three
 seconds and starts an empty recording with a new input connection.
 
-Search matches literal text, ignoring case, across full accepted payloads and
-metadata. The session dropdown uses complete IDs; hook choices allow several
-selections. Both controls page their choices without retaining the full list.
-The vertical slider provides one logical stop per match and a separate Live
-endpoint. Pointer, touch, wheel, arrows, Page keys, Home and End navigate history.
-Arrivals preserve held rows, payload and scroll offset, and count only matches.
-A gesture freezes its matching count and retained upper bound until release.
-Eviction ends an unusable gesture with an explanation. Copy JSON preserves the original accepted text, whitespace,
-unknown fields and UTF-8 bytes. No recording is reopened after an application
-restart, and there is no replay or recovery of missed events.
+The journal shows PostToolUse calls in twelve-row pages, sorted newest first or
+largest response first. Search matches literal text, ignoring case, across full
+accepted payloads and metadata. One combined picker filters full session IDs,
+tools, models, command prefixes and response-size thresholds. Choices are
+searchable and paged; selected values remain bounded. Live summaries count all
+retained matches and known response bytes, with unknown responses separate and
+averages divided only by measured calls.
+
+Clicking a row opens a response-first overlay and holds the table. Input and
+original JSON remain available. Closing the overlay keeps the position held;
+Resume live follows arrivals again. Paging holds results, while changing filters
+or sorting rebuilds them without resuming Live. Capture continues independently.
+Copy JSON preserves accepted text, whitespace, unknown fields and UTF-8 bytes.
+No recording is reopened after restart, and no missed events can be recovered.
 
 ## Clean Linux checkout
 
@@ -117,7 +121,7 @@ work and starts a new recording and connection only after successful cleanup.
 
 `vp run build` compiles TypeScript with Vite+ Pack and bundles the renderer with Vite+.
 The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis starts one bounded Codex CLI process group. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
-Playwright's FFmpeg binary are excluded from the bundle. Production bundles are minified. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and synthetic fixtures enter `dist/app`.
+Playwright's FFmpeg binary are excluded from the bundle. Production bundles are minified. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and a gzip-compressed synthetic fixture enter `dist/app`. Fixture decompression uses the existing source-byte limit and runs only for synthetic mode.
 
 `vp run check` runs Vite+ formatting, lint, and strict TypeScript checks. `vp run dev` builds and starts Electron with synthetic data; rerun it after edits. Unit tests run through Vite+ Vitest on Node, and desktop scenarios use Playwright with actual Electron.
 
@@ -162,9 +166,11 @@ The resource command builds the app and runs three empty-window/app trials,
 including bounded capture, search, repeated eviction, hidden/minimized capture,
 bursts, stalled storage and failure/recovery. Append `--runs=1` for a single
 trial. Reports go under ignored `measurements/regression/`. Missing required
-metrics or exceeded checked-in thresholds return failure. Visual artifacts go
+metrics or exceeded checked-in thresholds return failure. The rapid-sort burst
+dispatches 120 change events in one renderer task; ordinary sort, paging and
+inspection timings use individual Playwright controls. Visual artifacts go
 under ignored `../.artifacts/visual/electron-report/`; inspect the screenshots and recordings.
-The acceptance scenarios are described in the [UI reference](../docs/mockups/event-journal-v2-notes.md#electron-build-handoff)
+The acceptance scenarios are described in the [viewer experience](../ux.md#event-journal)
 and implemented in `test/`. Publish run summaries in the PR and attach evidence
 there using GitHub attachments only. Keep generated output out of Git.
 
@@ -188,7 +194,7 @@ the workload, runtime versions and machine configuration needed to assess result
 | PSS           | Aggregate endpoint snapshot that apportions shared pages. It is not a peak measurement.                                                                                                     |
 | CPU           | User and system ticks divided by actual monotonic sample duration. 100% means one full core. Sampling can miss short-lived processes and peaks.                                             |
 | Startup       | Driver launch through readiness, connection readiness for configured input, and two completed animation frames.                                                                             |
-| Input latency | Input start through completed selection, matching payload and slider, and the following animation frame. Search includes the 180 ms debounce.                                               |
+| Input latency | Each input start through its completed table page or overlay and the following animation frame. Search includes the 180 ms debounce; sort includes 60 ms coalescing.                        |
 | Timer delay   | Maximum extra delay beyond a 20 ms diagnostic timer in main and renderer during active workloads.                                                                                           |
 | Disk          | Worker maximum across all recording files inside transactions, including rollback journal and owner marker, corroborated by an endpoint directory scan.                                     |
 | Pending work  | Broker queue count/bytes and requests, transport buffers, and the single processing operation.                                                                                              |
@@ -210,7 +216,7 @@ workloads and exceeded ceilings fail `check:resources`.
 | Accepted data       | 61,440 payload bytes and 393,216 encoded frame bytes. Oversized events are dropped whole.                                                                                  |
 | Synthetic intake    | 32 queued frames / 1 MiB, batches of four frames / 512 KiB, 256 events/s and 2 MiB/s with 32-event / 512 KiB burst credit.                                                 |
 | Worker requests     | Four outstanding requests, with one slot reserved for Clear/close. Timeouts retain their slot until reply or worker exit.                                                  |
-| Presentation        | Five summaries, one selected payload, one unacknowledged status per recipient and at most five updates/s; hidden presentation stops.                                       |
+| Presentation        | Twelve summaries, one selected payload, one unacknowledged status per recipient and at most five updates/s; hidden presentation stops.                                     |
 | Retention           | 10,000 rows and 8 MiB accounted bytes, including payloads, labels, previews and row overhead. Evict at most 64 rows per input batch; drop input if more cleanup is needed. |
 | Disk                | 16 MiB database, 33 MiB total recording files, and 34 MiB free headroom before writes. Account for sidecars and owner files.                                               |
 | Memory              | 2 MiB SQLite cache and 8 MiB SQLite heap. Worker V8 old/young heaps are limited to 32/8 MiB with a 4 MiB stack. These are parts of total app memory.                       |
@@ -226,8 +232,9 @@ These input limits are separate from retained SQLite history.
 `history.ts` is the main-process broker. It caps frame bytes, rate, queue count,
 queue bytes and requests before passing work to `history-worker.ts`. The worker
 owns the authenticated transport, accepted text, metadata, local event order, SQLite statements, bounded
-transactions, oldest-row eviction and file cleanup. It returns at most five
-summaries and one selected payload. No list of every retained ID or payload
+transactions, oldest-row eviction and file cleanup. It returns at most twelve
+summaries per table page. Inspection separately loads one selected payload and
+releases its renderer text when the overlay closes. No list of every retained ID or payload
 enters either UI thread. The renderer replaces only its latest pending request
 and rejects older recording generations, filter identities and requested targets.
 `search.ts` runs literal matching inside SQLite through a JavaScript function,
@@ -235,14 +242,21 @@ using the same predicate for accepted-arrival counts. It checks a shared
 cancellation value and a 250 ms deadline while SQLite visits rows. Rank queries
 scan at most the fixed retained history and return bounded results. There is no
 whole-recording ID index or result array. Summary paging uses stable local IDs;
-coarse slider positions use a measured, deadline-limited SQL offset.
-Session and hook indexes live inside the existing database/page/disk budgets.
-Choice pages have at most 32 values and 128 KiB of combined ID/label text.
+explicit result pages use a deadline-limited SQL offset.
+Session, hook, tool, model and response-size indexes live inside the existing
+database/page/disk budgets. Response bytes and command/model fields are extracted
+once in the worker. Text responses count UTF-8 bytes, structured responses count
+compact JSON bytes, missing responses are unknown, and empty text is zero.
+Known-byte totals and measured-call denominators update during arrivals and eviction
+without rescanning history. The analyzer keeps its own bounded evidence rules.
+Choice pages contain at most 32 values and 128 KiB of combined ID/label text.
 Session labels use the latest retained nonempty context for the exact full ID.
 The context is at most 160 display characters, accounted in retained bytes and
 indexed inside the existing disk budget. There is no separate session cache
-that grows after events are evicted. Filter input allows
-512 search characters, 32 selected hooks and 128 KiB total filter bytes.
+that grows after events are evicted. Filter input allows 512 search characters,
+512 command-prefix characters, 32 selected values per category, and 128 KiB total
+filter bytes. Catalog search uses a 250 ms deadline. Journal pages contain at most
+twelve summaries, and inspection holds one complete accepted payload.
 
 The SQLite file has a physical page limit, a small cache, disabled memory
 mapping, and TRUNCATE rollback journaling. The disk budget includes a full
@@ -279,12 +293,12 @@ until the operation settles.
 The desktop session control allows more room for branch text; the narrow toolbar
 continues to wrap below search.
 
-The session dropdown displays the last observed repository and branch with a
+The session picker displays the last observed repository and branch with a
 short session-ID suffix. The full ID remains the filter value and appears in
 the inspector. Optional collector Git metadata takes precedence over a label
 derived from `cwd`; T3 worktree paths retain the project and worktree directory
 names. Without either source the full session ID remains visible. Labels refresh
-when opening the dropdown, without moving the selected event or payload offset.
+when opening the picker, without moving the selected event or payload offset.
 Metadata is display-only and never changes Copy JSON. An older collector still
 works using `cwd` or ID labels. Working-directory fallback is not verified Git
 metadata. Git labels can lag behind branch changes as described in the

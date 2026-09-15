@@ -335,9 +335,6 @@
   .header-actions .connection {
     white-space: nowrap;
   }
-  .workspace {
-    grid-template-rows: minmax(0, min(234px, 50%)) minmax(0, 1fr);
-  }
   .analysis-controls,
   .analysis-run-controls,
   .analysis-filters,

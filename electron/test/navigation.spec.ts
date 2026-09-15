@@ -1,537 +1,212 @@
-import assert from "node:assert/strict";
 import { test, expect } from "@playwright/test";
-import {
-  source,
-  state,
-  fault,
-  launch,
-  capture,
-  frame,
-  append,
-  selected,
-  expectSelected,
-  search,
-  touchDrag,
-} from "./navigation-helpers.ts";
+import { launch, append, fault, state, capture } from "./navigation-helpers.ts";
+function call(index: number, overrides: Record<string, unknown> = {}) {
+  const payload = JSON.stringify({
+    hook_event_name: "PostToolUse",
+    session_id: `session-${index % 3}`,
+    tool_name: index % 2 ? "Read" : "Bash",
+    model: index % 3 ? "gpt-5.6-sol" : "gpt-6-astra",
+    tool_input: { command: index % 4 ? `rg files-${index}` : `cd project && rg files-${index}` },
+    tool_response: "output\n".repeat(index * 20),
+    ...overrides,
+  });
+  const value = JSON.parse(payload);
+  return {
+    type: "event",
+    hook_type: value.hook_event_name,
+    session_id: value.session_id,
+    tool_name: value.tool_name,
+    received_at: new Date(Date.UTC(2026, 8, 15, 10, 24, index)).toISOString(),
+    payload,
+    payload_bytes: Buffer.byteLength(payload),
+  };
+}
 
-const sessionA = `same-visible-prefix-${"a".repeat(165)}-A`;
-const sessionB = `same-visible-prefix-${"a".repeat(165)}-B`;
-const hooks = ["PreToolUse", "PostToolUse", "Stop"];
-const events = Array.from({ length: 18 }, (_, index) =>
-  frame({
-    index,
-    session: index % 2 ? sessionB : sessionA,
-    hook: hooks[index % 3],
-    message: `Synthetic navigation ${index} ${"plain ".repeat(40)}`,
-    tail: index === 0 ? "CAFÉ [a.*]%_ outside the preview" : `payload tail ${index}`,
-  }),
-);
-
-test("recorded filters: literal full text, full session IDs, several hooks, held offsets, identical counters and reset", async ({}, info) => {
+test("A journal combines filters, sorts responses, and holds rows while totals stay live", async ({}, info) => {
   const { app, page, video } = await launch(info);
   const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (e) => errors.push(e.message));
   try {
-    await page.locator('button[data-event="3"]').click();
-    await expectSelected(page, 3);
-    await capture(page, info, "navigation-desktop");
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
+    await append(
+      app,
+      Array.from({ length: 30 }, (_, i) => call(i + 1)),
     );
-    await capture(page, info, "navigation-narrow");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(1180, 760),
-    );
-    await append(app, events);
-    await search(page, "café [a.*]%_");
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "1");
-    await expectSelected(page, 6);
-    await expect(page.locator("#oldest")).toHaveText("16:00:00");
-    await expect(page.locator("#json")).toContainText("CAFÉ [a.*]%_");
-    await expect(page.locator(".preview")).not.toContainText("[a.*]%_");
-    await capture(page, info, "literal-outside-preview");
-    await search(page, "2026-09-11T15:59:59");
-    await expectSelected(page, 7);
-    await capture(page, info, "metadata-search");
-    await search(page, "^.*$");
-    await expect(page.locator("#entries")).toContainText("No matching events");
-    await expect(page.locator("#json")).toBeEmpty();
-    await capture(page, info, "no-matches");
-    await page.getByRole("button", { name: "Reset filters", exact: true }).click();
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "23");
-    await page.locator("#session").focus();
-    await expect(page.locator("#session option").filter({ hasText: sessionA })).toHaveCount(1);
-    await page.locator("#session").selectOption(JSON.stringify(sessionA));
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "9");
-    await page.locator("#hooks summary").click();
-    await page.getByRole("checkbox", { name: "PreToolUse", exact: true }).check();
-    await page.getByRole("checkbox", { name: "Stop", exact: true }).check();
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "6");
-    await capture(page, info, "multiple-hooks");
-    await page.locator("#hooks summary").click();
-    await page.locator("#session").selectOption(JSON.stringify(sessionB));
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "6");
-    await expect(page.locator("#json")).toContainText(sessionB);
-    await expectSelected(page, 9);
-    await capture(page, info, "full-session-identity");
-    const heldRows = await page.locator("#entries").textContent();
-    await append(app, [events[3], events[5], events[4], events[0]]);
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "2");
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "8");
-    await expectSelected(page, 9);
-    expect(await page.locator("#entries").textContent()).toBe(heldRows);
-    await capture(page, info, "multiple-hook-arrivals");
-    await page.locator("#session").selectOption("");
-    await page.locator("#hooks summary").click();
-    await page.getByRole("button", { name: "All hooks", exact: true }).click();
-    await page.locator("#hooks summary").click();
-    await search(page, "maximum accepted payload");
-    await expectSelected(page, 4);
-    await page.locator("#scrollbar").press("PageDown");
-    const offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
-    expect(offset).toBeGreaterThan(0);
-    await page.locator("#session").selectOption(JSON.stringify(source[4].session_id));
-    await expectSelected(page, 4);
-    await expect(page.locator("#notice")).not.toContainText("Searching…");
-    expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
+    await expect(page.locator("#count")).toHaveAttribute("data-matching", "31");
+    await expect(page.locator("#entries tr")).toHaveCount(12);
+    await expect(page.locator("#scrubber,#hooks,#session")).toHaveCount(0);
+    await page.locator("#sort").selectOption("largest");
+    await expect(page.locator("#entries")).toHaveAttribute("aria-busy", "false");
+    await capture(page, info, "largest-table");
+    await page.locator("#filter-open").click();
+    await page.locator('[data-field="tool"]').click();
+    await page.getByRole("checkbox", { name: "Bash", exact: true }).check();
+    await page.locator('[data-field="model"]').click();
+    await page.getByRole("checkbox", { name: "gpt-5.6-sol", exact: true }).check();
+    await page.locator('[data-field="prefix"]').click();
+    await page.locator("#command-prefix").fill("rg");
+    await page.getByRole("button", { name: "Apply prefix" }).click();
+    await page.locator('[data-field="size"]').click();
+    await page.locator("#response-size").fill("1");
+    await page.getByLabel("Response size unit").selectOption("KB");
+    await page.getByRole("button", { name: "Apply size" }).click();
+    await capture(page, info, "combined-picker");
+    await page.locator("#filter-done").click();
+    await expect(page.locator("#count")).toHaveAttribute("data-matching", "4");
     const rows = await page.locator("#entries").textContent();
-    const text = await page.locator("#json").textContent();
-    await append(app, [source[4], source[1], source[4], source[2], source[4]], 100);
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "3");
-    await expectSelected(page, 4);
+    await page.locator("#entries tr").first().click();
+    await expect(page.locator("#call-detail")).toBeVisible();
+    await expect(page.locator("#json")).toContainText("output");
+    await page.locator("#payload").evaluate((n) => (n.scrollTop = 200));
+    const offset = await page.locator("#payload").evaluate((n) => n.scrollTop);
+    await append(app, [call(38), call(39), call(42)]);
+    await expect(page.locator("#count")).toHaveAttribute("data-matching", "5");
+    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "1");
     expect(await page.locator("#entries").textContent()).toBe(rows);
-    expect(await page.locator("#json").textContent()).toBe(text);
-    expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
-    await capture(page, info, "held-filtered-arrivals");
-    await page.locator("#scrubber").press("ArrowDown");
-    await expect(page.locator("#payload")).not.toHaveAttribute("data-event", "4");
-    await page.locator('.event[aria-pressed="true"]').click();
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "3");
+    expect(await page.locator("#payload").evaluate((n) => n.scrollTop)).toBe(offset);
+    await capture(page, info, "held-overlay-live-totals");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#live")).toHaveText("Resume live");
     await page.locator("#live").click();
     await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "0");
-    await expect(page.locator("#mode")).toHaveText("Live");
+    await page.locator("#filter-reset").click();
+    await append(app, [
+      call(50, { tool_response: undefined }),
+      call(51, { tool_response: "" }),
+      call(52, { tool_response: { ok: true } }),
+    ]);
+    await expect(page.locator("#response-unknown")).toContainText("1 unknown");
+    await expect(page.locator("#response-total")).not.toHaveText("Unknown");
+    await page.locator("#next-page").click();
+    await expect(page.locator("#page-position")).toContainText("13–24");
+    await page.locator("#previous-page").click();
+    await expect(page.locator("#page-position")).toContainText("1–12");
+    await page.locator("#search").fill("no matching response marker");
+    await expect(page.locator("#empty-results")).toContainText("No calls match");
+    await capture(page, info, "no-matches");
+    await page.locator("#filter-reset").click();
     expect(errors).toEqual([]);
   } finally {
     await app.close();
-    await video.saveAs(info.outputPath("filters-walkthrough.webm"));
+    await video.saveAs(info.outputPath("journal-walkthrough.webm"));
   }
 });
 
-test("recorded scrubber: every input, newest history, frozen arrivals, eviction and pressure recovery", async ({}, info) => {
+test("catalog search, unknown-only size, delayed filters, timeout, pressure and Clear recover", async ({}, info) => {
   const { app, page, video } = await launch(info);
   try {
-    await append(app, events);
-    const slider = page.getByRole("slider", { name: /Scrub retained events/ });
-    await expect(slider).toHaveAttribute("aria-valuemax", "23");
-    await slider.press("Home");
-    await expectSelected(page, 1);
-    for (const [key, id] of [
-      ["ArrowDown", 2],
-      ["ArrowRight", 3],
-      ["ArrowUp", 2],
-      ["ArrowLeft", 1],
-      ["PageDown", 6],
-      ["PageUp", 1],
-    ] as const) {
-      await slider.press(key);
-      await expectSelected(page, id);
-    }
-    await slider.press("End");
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await slider.press("ArrowUp");
-    await expectSelected(page, 23);
-    await expect(page.locator("#mode")).toContainText("History");
-    await capture(page, info, "newest-history");
-    await slider.press("ArrowDown");
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await page.locator("#entries").hover();
-    await page.mouse.wheel(0, -120);
-    await expectSelected(page, 23);
-    await page.waitForTimeout(100);
-    await page.mouse.wheel(0, -120);
-    await expectSelected(page, 22);
-    await page.waitForTimeout(100);
-    await page.mouse.wheel(0, 120);
-    await expectSelected(page, 23);
-    let bounds = await slider.boundingBox();
-    assert(bounds);
-    assert(bounds, "The tested control must be visible.");
-    await page.mouse.move(bounds.x + 22, bounds.y + bounds.height * 0.2);
-    await page.mouse.down();
-    await page.mouse.move(bounds.x + 22, bounds.y + bounds.height * 0.6, { steps: 12 });
-    await expectSelected(page, 15);
-    const frozen = await slider.getAttribute("aria-valuemax");
-    await append(app, events.slice(0, 3));
-    await expect(slider).toHaveAttribute("aria-valuemax", frozen!);
-    await page.mouse.move(bounds.x + 22, bounds.y + bounds.height * 0.6);
-    await expectSelected(page, 15);
-    await page.screenshot({ path: info.outputPath("gesture-arrivals.png") });
-    await page.mouse.up();
-    await expect(slider).toHaveAttribute("aria-valuemax", "26");
-    await expectSelected(page, 15);
-    bounds = await slider.boundingBox();
-    assert(bounds);
-    await touchDrag(
-      page,
-      bounds.x + 22,
-      bounds.y + bounds.height * 0.8,
-      bounds.y + bounds.height * 0.1,
-    );
-    await expectSelected(page, 4);
-    await touchDrag(
-      page,
-      bounds.x + 22,
-      bounds.y + bounds.height * 0.1,
-      bounds.y + bounds.height * 0.75,
-    );
-    await expectSelected(page, 21);
-    await capture(page, info, "touch-scrub");
-    await slider.press("End");
     await append(
       app,
-      Array.from({ length: 130 }, () => source[4]),
-      75,
-    );
-    bounds = await slider.boundingBox();
-    assert(bounds);
-    await page.mouse.move(bounds.x + 22, bounds.y + bounds.height * 0.3);
-    await page.mouse.down();
-    await page.waitForTimeout(300);
-    await append(
-      app,
-      Array.from({ length: 16 }, () => source[4]),
-      75,
-    );
-    await expect(page.locator("#notice")).toContainText("drag was evicted");
-    await page.mouse.up();
-    await capture(page, info, "gesture-evicted");
-    expect(await slider.locator(".tick").count()).toBeLessThanOrEqual(64);
-    await slider.press("Home");
-    const first = await selected(page);
-    await append(
-      app,
-      Array.from({ length: 6 }, () => source[4]),
-      75,
-    );
-    await expect(page.locator("#notice")).toContainText("selected event was evicted");
-    await expect(page.locator("#payload")).not.toHaveAttribute("data-event", first!);
-    await capture(page, info, "selection-evicted");
-    await fault(app, { disk: true });
-    await append(app, [source[4]], 80);
-    await expect(page.locator("#notice")).toContainText("Storage pressure");
-    await slider.press("End");
-    await slider.press("ArrowUp");
-    await capture(page, info, "pressure-navigation");
-    await fault(app, { disk: false });
-    await append(app, [source[4]], 80);
-    await expect(page.locator("#notice")).not.toContainText("Storage pressure");
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
-    );
-    await slider.press("Home");
-    await slider.press("PageDown");
-    await slider.press("End");
-    bounds = await slider.boundingBox();
-    assert(bounds);
-    await touchDrag(
-      page,
-      bounds.x + 22,
-      bounds.y + bounds.height * 0.9,
-      bounds.y + bounds.height * 0.4,
-    );
-    await expect(page.locator("#mode")).toContainText("History");
-    await capture(page, info, "narrow-scrub-recovery");
-    expect(await page.locator(".event").count()).toBeLessThanOrEqual(3);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-  } finally {
-    await app.close();
-    await video.saveAs(info.outputPath("scrubber-walkthrough.webm"));
-  }
-});
-
-test("recorded delayed queries, cancellation, timeout, Clear generations and bounded option paging recover", async ({}, info) => {
-  const { app, page, video } = await launch(info);
-  try {
-    await append(app, events);
-    await fault(app, { delay: 600 });
-    await page.locator("#search").fill("retry");
-    await page.waitForTimeout(230);
-    await page.locator("#search").fill("stop");
-    await page.waitForTimeout(230);
-    await page.locator("#search").fill("café [a.*]%_");
-    await expectSelected(page, 6);
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "1");
-    await page.waitForTimeout(700);
-    await expectSelected(page, 6);
-    await capture(page, info, "rapid-final-query");
-    await fault(app, { delay: 0, searchMs: 0 });
-    await page.locator("#search").fill("missing");
-    await expect(page.locator("#notice")).toContainText("Search timed out");
-    await expect(page.locator("#search")).toBeEditable();
-    await capture(page, info, "search-timeout");
-    await fault(app, { searchMs: 250 });
-    await page.locator("#notice").getByRole("button", { name: "Reset filters" }).click();
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "23");
-    await capture(page, info, "search-recovered");
-    await fault(app, { delay: 800 });
-    await page.locator("#search").fill("retry");
-    await page.waitForTimeout(230);
-    await page.locator("#clear").click();
-    await page.locator("#clear").click();
-    await expect(page.locator("#json")).toBeEmpty();
-    await page.waitForTimeout(1200);
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "0");
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "0");
-    await expect(page.locator("#json")).toBeEmpty();
-    await fault(app, { delay: 0 });
-    await page.locator("#search").fill("");
-    await append(
-      app,
-      Array.from({ length: 80 }, (_, index) =>
-        frame({
-          index,
-          session: `paged-session-${String(index).padStart(3, "0")}`,
-          hook: index % 2 ? "Stop" : "PreToolUse",
+      Array.from({ length: 80 }, (_, i) =>
+        call(i, {
+          tool_name: `Tool ${String(i).padStart(3, "0")}`,
+          tool_response: i === 79 ? undefined : "known",
         }),
       ),
     );
-    await page.locator("#session").focus();
-    await expect(page.locator('#session option[value="@next"]')).toHaveCount(1);
-    expect(await page.locator("#session option").count()).toBeLessThanOrEqual(35);
-    await page.locator("#session").selectOption("@next");
-    await expect(
-      page.locator("#session option").filter({ hasText: "paged-session-063" }),
-    ).toHaveCount(1);
-    await page.locator("#session").selectOption("@next");
-    await expect(
-      page.locator("#session option").filter({ hasText: "paged-session-079" }),
-    ).toHaveCount(1);
-    await page.locator("#session").selectOption(JSON.stringify("paged-session-079"));
+    await page.locator("#filter-open").click();
+    await page.locator('[data-field="tool"]').click();
+    await expect(page.locator("#filter-options input")).toHaveCount(32);
+    await page.getByRole("button", { name: "More", exact: true }).click();
+    await expect(page.locator("#filter-options")).toContainText("Tool 062");
+    await page.getByLabel("Search tool choices").fill("Tool 079");
+    await expect(page.locator("#filter-options input")).toHaveCount(1);
+    await page.getByRole("checkbox", { name: "Tool 079" }).check();
+    await page.locator('[data-field="size"]').click();
+    await page.getByRole("checkbox", { name: "Size unknown" }).check();
+    await page.locator("#filter-done").click();
     await expect(page.locator("#count")).toHaveAttribute("data-matching", "1");
-    await expect(page.locator("#json")).toContainText("paged-session-079");
-    await capture(page, info, "paged-session-recovery");
-    await search(page, "future-literal");
-    await expect(page.locator("#entries")).toContainText("No matching events");
-    await append(app, [frame({ session: "paged-session-079", tail: "future-literal" })]);
-    await expect(page.locator("#json")).toContainText("future-literal");
+    await expect(page.locator("#response-total")).toHaveText("0 B");
+    await expect(page.locator("#response-denominator")).toHaveText("Across 0 measured calls");
+    await capture(page, info, "unknown-only");
+    await page.locator("#filter-reset").click();
+    await fault(app, { delay: 600 });
+    await page.locator("#search").fill("not-final");
+    await page.waitForTimeout(230);
+    await page.locator("#search").fill("files-79");
     await expect(page.locator("#count")).toHaveAttribute("data-matching", "1");
-    await capture(page, info, "first-new-match");
-    const current = await state(app);
-    expect(current.peakPending).toBeLessThanOrEqual(4);
-    expect(current.queuedCount).toBe(0);
-  } finally {
-    await app.close();
-    await video.saveAs(info.outputPath("queries-walkthrough.webm"));
-  }
-});
-
-test("recorded narrow failures: bounded long-ID choices, held filter offset, timeout, eviction and recovery", async ({}, info) => {
-  const { app, page, video } = await launch(info);
-  try {
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
-    );
-    const longEvents = Array.from({ length: 24 }, (_, index) =>
-      frame({
-        index,
-        session: `long-session-${String(index).padStart(3, "0")}-${"x".repeat(7000)}`,
-        hook: "Stop",
-        message: "narrow filter and recovery",
-      }),
-    );
-    await append(app, longEvents, 40);
-    await page.locator("#session").focus();
-    await expect(page.locator('#session option[value="@next"]')).toHaveCount(1);
-    const choices = await page.locator("#session option").evaluateAll((nodes) =>
-      nodes
-        .map((node) => node as HTMLOptionElement)
-        .filter((node) => node.value && !node.value.startsWith("@"))
-        .map((node) => JSON.parse(node.value)),
-    );
-    expect(choices.length).toBeLessThan(24);
-    expect(Buffer.byteLength(choices.join(""))).toBeLessThanOrEqual(128 * 1024);
-    await page.locator("#session").selectOption("@next");
-    await expect(
-      page.locator("#session option").filter({ hasText: "long-session-023-" }),
-    ).toHaveCount(1);
-    await page.locator("#session").selectOption(JSON.stringify(longEvents[23].session_id));
-    await expect(page.locator("#count")).toHaveAttribute("data-matching", "1");
-    await page.locator("#hooks summary").click();
-    await page.getByRole("checkbox", { name: "Stop", exact: true }).check();
-    await capture(page, info, "narrow-hook-filter");
-    await page.locator("#hooks summary").click();
-    await search(page, "narrow filter");
-    await page.locator('.event[aria-pressed="true"]').click();
-    await page.locator("#scrollbar").press("PageDown");
-    const offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
-    const held = await selected(page);
-    const rows = await page.locator("#entries").textContent();
-    expect(offset).toBeGreaterThan(0);
-    await append(app, [longEvents[23], longEvents[0], longEvents[23]], 40);
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "2");
-    await expectSelected(page, Number(held));
-    expect(await page.locator("#entries").textContent()).toBe(rows);
-    expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
-    await capture(page, info, "narrow-held-filter");
-    await fault(app, { searchMs: 0 });
+    await expect(page.locator("#entries")).toContainText("files-79");
+    await fault(app, { delay: 0, searchMs: 0 });
     await page.locator("#search").fill("missing");
     await expect(page.locator("#notice")).toContainText("Search timed out");
-    await capture(page, info, "narrow-timeout");
+    await capture(page, info, "timeout");
     await fault(app, { searchMs: 250 });
-    await page.locator("#notice").getByRole("button", { name: "Reset filters" }).click();
-    await expect(page.locator("#notice")).not.toContainText("Search timed out");
-    await append(
-      app,
-      Array.from({ length: 150 }, () => source[4]),
-      75,
-    );
-    await expect(page.locator("#notice")).toContainText("selected event was evicted");
-    await capture(page, info, "narrow-eviction");
+    await page.locator("#filter-reset").click();
+    await expect(page.locator("#count")).toHaveAttribute("data-matching", "81");
     await fault(app, { disk: true });
-    await append(app, [source[4]], 80);
+    await append(app, [call(100)]);
     await expect(page.locator("#notice")).toContainText("Storage pressure");
-    await capture(page, info, "narrow-pressure");
+    await capture(page, info, "pressure");
     await fault(app, { disk: false });
-    await append(app, [source[4]], 80);
-    await page.locator("#scrubber").press("End");
-    await page.locator("#scrubber").press("ArrowUp");
+    await append(app, [call(101)]);
     await expect(page.locator("#notice")).not.toContainText("Storage pressure");
-    await capture(page, info, "narrow-recovered");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
+    await fault(app, { delay: 600 });
+    await page.locator("#search").fill("pending");
+    await page.waitForTimeout(230);
+    await page.locator("#clear").click();
+    await page.locator("#clear").click();
+    await expect(page.locator("#count")).toHaveAttribute("data-matching", "0");
+    await expect(page.locator("#entries tr")).toHaveCount(0);
+    await capture(page, info, "clear-generation");
+    expect((await state(app)).peakPending).toBeLessThanOrEqual(4);
   } finally {
     await app.close();
-    await video.saveAs(info.outputPath("narrow-walkthrough.webm"));
+    await video.saveAs(info.outputPath("journal-recovery.webm"));
   }
 });
 
-test("a late navigation reply cannot display a target evicted after its database query", async ({}, info) => {
+test("inspection cancels a delayed live reply and empty held results only update totals", async ({}, info) => {
   const { app, page, video } = await launch(info);
   try {
     await append(
       app,
-      Array.from({ length: 135 }, () => source[4]),
-      75,
+      Array.from({ length: 20 }, (_, i) => call(i + 1)),
     );
-    await page.locator("#scrubber").press("End");
-    await page.locator("#scrubber").press("ArrowUp");
+    await expect(page.locator("#count")).toHaveText("21");
     await expect(page.locator("#entries")).toHaveAttribute("aria-busy", "false");
-    const held = await selected(page);
+    const table = page.locator(".tablewrap");
+    await table.evaluate((node) => (node.scrollTop = 90));
+    const rows = await page
+      .locator("#entries tr")
+      .evaluateAll((nodes) => nodes.map((node) => (node as HTMLElement).dataset.event));
+    const id = rows[2]!;
     await app.evaluate(() => {
       const history = globalThis.scopeHistory;
-      const navigate = history.navigate.bind(history);
+      const original = history.navigate.bind(history);
       history.navigate = async (...args) => {
-        history.navigate = navigate;
-        const result = await navigate(...args);
-        globalThis.lateTargetReady = true;
-        await new Promise<void>((resolve) => {
-          globalThis.releaseLateTarget = resolve;
-        });
+        const result = await original(...args);
+        await new Promise((resolve) => setTimeout(resolve, 700));
         return result;
       };
     });
-    await page.locator("#scrubber").press("Home");
-    await expect.poll(() => app.evaluate(() => globalThis.lateTargetReady)).toBe(true);
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(900, 760),
-    );
-    await append(
-      app,
-      Array.from({ length: 6 }, () => source[4]),
-      75,
-    );
-    const retained = await state(app);
-    await app.evaluate(() => globalThis.releaseLateTarget());
-    expect(Number(held)).toBeGreaterThan(retained.first!.id);
-    await expect(page.locator("#notice")).toContainText("event was evicted");
-    await expectSelected(page, retained.first!.id);
-    await capture(page, info, "late-evicted-target");
-    const shown = await page
-      .locator(".event")
-      .evaluateAll((nodes) => nodes.map((node) => Number(node.dataset.event)));
-    expect(shown.every((id) => id >= retained.first!.id)).toBe(true);
-  } finally {
-    await app.close();
-    await video.saveAs(info.outputPath("late-target-walkthrough.webm"));
-  }
-});
-
-test("recorded failed moves restore displayed rank and viewing mode before arrow and Live recovery", async ({}, info) => {
-  const { app, page, video } = await launch(info);
-  const slider = page.locator("#scrubber");
-  const settled = () => expect(page.locator("#entries")).toHaveAttribute("aria-busy", "false");
-  try {
-    await page.locator('button[data-event="5"]').click();
-    await settled();
-    await expectSelected(page, 5);
-    await fault(app, { searchMs: 0 });
-    await slider.press("Home");
-    await settled();
-    await expect(page.locator("#notice")).toContainText("Previous selection is still shown.");
-    await expect(slider).toHaveAttribute("aria-valuenow", "4");
-    await expectSelected(page, 5);
-    await expect(page.locator("#mode")).toContainText("History");
-    await capture(page, info, "failed-home-history");
-
-    await fault(app, { searchMs: 250 });
-    await slider.press("ArrowDown");
-    await settled();
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await expect(slider).toHaveAttribute("aria-valuenow", "5");
-    await expectSelected(page, 5);
-    await expect(page.locator("#notice")).not.toContainText("timed out");
-    await fault(app, { searchMs: 0 });
-    await slider.press("Home");
-    await settled();
-    await expect(page.locator("#notice")).toContainText("Search timed out");
-    await expect(slider).toHaveAttribute("aria-valuenow", "5");
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await expectSelected(page, 5);
-    await capture(page, info, "failed-home-live");
-
-    await fault(app, { searchMs: 250 });
-    await slider.press("ArrowUp");
-    await settled();
-    await expectSelected(page, 5);
-    await expect(slider).toHaveAttribute("aria-valuenow", "4");
-    await expect(page.locator("#mode")).toContainText("History");
-    await slider.press("Home");
-    await settled();
-    await expectSelected(page, 1);
-    await append(app, [frame({ index: 1 }), frame({ index: 2 })]);
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "2");
-    await fault(app, { searchMs: 0 });
-    await slider.press("End");
-    await settled();
-    await expect(page.locator("#notice")).toContainText("Previous selection is still shown.");
-    await expectSelected(page, 1);
-    await expect(slider).toHaveAttribute("aria-valuenow", "0");
-    await expect(page.locator("#mode")).toContainText("History");
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "2");
-    await capture(page, info, "failed-live-history");
-    await fault(app, { searchMs: 250 });
-    await slider.press("ArrowDown");
-    await settled();
-    await expectSelected(page, 2);
-
-    await fault(app, { delay: 600 });
-    await slider.press("End");
+    await append(app, [call(25)]);
     await expect(page.locator("#entries")).toHaveAttribute("aria-busy", "true");
-    await page.waitForTimeout(100);
-    await expectSelected(page, 2);
-    await settled();
-    await expectSelected(page, 7);
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "0");
-    await capture(page, info, "delayed-live-complete");
+    await page.locator(`tr[data-event="${id}"]`).click();
+    const offset = await table.evaluate((node) => node.scrollTop);
+    await expect(page.locator("#call-detail")).toBeVisible();
+    expect(
+      await page
+        .locator("#entries tr")
+        .evaluateAll((nodes) => nodes.map((node) => (node as HTMLElement).dataset.event)),
+    ).toEqual(rows);
+    expect(await table.evaluate((node) => node.scrollTop)).toBe(offset);
+    await page.keyboard.press("Escape");
+    await expect(page.locator(`tr[data-event="${id}"]`)).toBeFocused();
+    await capture(page, info, "delayed-reply-held");
+    await page.locator("#search").fill("futureunique");
+    await expect(page.locator("#count")).toHaveText("0");
+    await expect(page.locator("#entries tr")).toHaveCount(0);
+    await append(app, [call(26, { tool_response: "futureunique" })]);
+    await expect(page.locator("#count")).toHaveText("1");
+    await expect(page.locator("#response-total")).toHaveText("12 B");
+    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "1");
+    await page.waitForTimeout(900);
+    await expect(page.locator("#entries tr")).toHaveCount(0);
+    await capture(page, info, "empty-held-live-totals");
+    await page.locator("#live").click();
+    await expect(page.locator("#entries tr")).toHaveCount(1);
+    await capture(page, info, "explicit-resume");
   } finally {
     await app.close();
-    await video.saveAs(info.outputPath("failed-navigation-walkthrough.webm"));
+    await video.saveAs(info.outputPath("held-races-walkthrough.webm"));
   }
 });

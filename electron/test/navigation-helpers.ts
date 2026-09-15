@@ -31,7 +31,7 @@ export async function launch(info: TestInfo) {
   });
   const page = await app.firstWindow();
   await page.waitForSelector('html[data-ready="true"]');
-  await expect(page.locator("#count")).toHaveText("5 retained");
+  await expect(page.locator("#count")).toHaveText("1");
   return { app, page, video: page.video()!, root };
 }
 export const capture = async (page: Page, info: TestInfo, name: string) => {
@@ -40,7 +40,7 @@ export const capture = async (page: Page, info: TestInfo, name: string) => {
   await page.screenshot({ path: info.outputPath(`${name}.png`) });
 };
 export function frame({
-  hook = "PreToolUse",
+  hook = "PostToolUse",
   session = "navigation-session",
   message = "Synthetic event",
   tail = "",

@@ -1,3 +1,4 @@
+import { gzipSync, gunzipSync } from "node:zlib";
 import type { MeasurementReport } from "./measurement-types.ts";
 import { electronDirectory, dependencyVersions } from "./tools.ts";
 import { _electron } from "@playwright/test";
@@ -47,8 +48,8 @@ try {
     })),
   ];
   await writeFile(
-    path.join(capacity, "fixtures/journal.jsonl"),
-    capacityMessages.map((value) => JSON.stringify(value)).join("\n") + "\n",
+    path.join(capacity, "fixtures/journal.jsonl.gz"),
+    gzipSync(capacityMessages.map((value) => JSON.stringify(value)).join("\n") + "\n"),
   );
   const targets = {
     baseline: path.resolve("dist/baseline/main.mjs"),
@@ -85,13 +86,8 @@ try {
         report.workloads[`${name}Idle`] = await sample(app, 6000);
         console.log(`Measured ${name} idle.`);
         if (name === "baseline") continue;
-        for (
-          let step = 0;
-          step < 16 && !(await page.locator('button[data-event="4"]').count());
-          step++
-        )
-          await page.locator("button[data-event]").first().click();
-        await page.locator('button[data-event="4"]').click();
+        await page.locator('tr[data-event="4"]').click();
+        await page.locator('[data-tab="json"]').click();
         await page.waitForFunction(
           () => document.querySelector<HTMLElement>("#payload")!.dataset.event === "4",
         );
@@ -100,16 +96,10 @@ try {
         const latencies: number[] = [];
         report.workloads[`${name}Interactions`] = await sample(app, 0, async () => {
           for (let index = 0; index < 60; index++) {
-            const id = index % 2 ? 4 : 3;
             const start = performance.now();
-            await page.evaluate(
-              (id) => document.querySelector<HTMLElement>(`button[data-event="${id}"]`)!.click(),
-              id,
-            );
-            await page.waitForFunction(
-              (id) => document.querySelector<HTMLElement>("#payload")!.dataset.event === String(id),
-              id,
-            );
+            await page.locator("#detail-close").click();
+            await page.locator('tr[data-event="4"]').click();
+            await page.locator('[data-tab="json"]').click();
             await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
             latencies.push(performance.now() - start);
             await page.locator("#scrollbar").press(index % 2 ? "End" : "Home");
@@ -142,7 +132,9 @@ try {
   report.runtimeBytes = await bytes(electronDirectory);
   report.inventory = dependencyVersions();
   const fixtureBytes = await readFile("fixtures/journal.jsonl");
-  const capacityBytes = await readFile(path.join(capacity, "fixtures/journal.jsonl"));
+  const capacityBytes = gunzipSync(
+    await readFile(path.join(capacity, "fixtures/journal.jsonl.gz")),
+  );
   report.recordings = {};
   for (const [name, buffer] of [
     ["default", fixtureBytes],

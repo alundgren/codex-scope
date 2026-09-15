@@ -8,7 +8,20 @@ import { fakeCollector, wait, until } from "./fake-collector.ts";
 const source = (await readFile("fixtures/journal.jsonl", "utf8"))
   .trim()
   .split("\n")
-  .map((line) => JSON.parse(line));
+  .map((line) => JSON.parse(line))
+  .map((event) => {
+    if (event.type !== "event" || event.hook_type === "PostToolUse") return event;
+    const payload = JSON.stringify({
+      ...JSON.parse(event.payload),
+      hook_event_name: "PostToolUse",
+    });
+    return {
+      ...event,
+      hook_type: "PostToolUse",
+      payload,
+      payload_bytes: Buffer.byteLength(payload),
+    };
+  });
 const status = (app: ElectronApplication) => app.evaluate(() => globalThis.scopeHistory.snapshot());
 const fault = (app: ElectronApplication, faults: Faults) =>
   app.evaluate(async (_electron, faults) => {
@@ -66,11 +79,11 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
   try {
     await expect(page.locator(".connection")).toHaveText("Connected");
     await expect(page.locator("#notice")).toContainText("Coverage before connection");
-    await expect(page.locator("#entries")).toHaveText("No events have arrived.");
+    await expect(page.locator("#empty-results")).toHaveText("No tool calls have arrived.");
     await capture(page, info, "connected-empty");
     await seed(server);
-    await expect(page.locator("#count")).toHaveText("5 retained");
-    await page.locator('button[data-event="3"]').click();
+    await expect(page.locator("#count")).toHaveText("5");
+
     await capture(page, info, "transport-desktop");
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
@@ -79,7 +92,8 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].setContentSize(1180, 760),
     );
-    await page.locator('button[data-event="4"]').click();
+    await page.locator('tr[data-event="4"]').click();
+    await page.locator('[data-tab="json"]').click();
     await page.locator("#scrollbar").press("PageDown");
     const offset = await page.locator("#payload").evaluate((node) => node.scrollTop),
       rows = await page.locator("#entries").innerText();
@@ -100,7 +114,7 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     await expect(page.locator(".connection")).toHaveText("Connected");
     expect((await status(app)).connectionId).not.toBe(oldConnection);
     server.event(source[1]);
-    await expect(page.locator("#count")).toContainText("1 new");
+    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "1");
     expect(await page.locator("#payload").getAttribute("data-event")).toBe("4");
     expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
     await capture(page, info, "reconnected-held");
@@ -139,6 +153,7 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     await expect(page.locator("#notice")).not.toContainText("Collector lifetime drops");
     await expect(page.locator("#notice")).toContainText("Known local drops: 1 storage");
     await capture(page, info, "counter-reset");
+    await page.locator("#detail-close").click();
     await page.locator("#clear").click();
     await fault(app, { transportDelay: 1200, delay: 1200 });
     const connection = server.state.connectionId;
@@ -161,7 +176,7 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
       .toBe(true);
     expect(inspectionSettled).toBe(false);
     await page.locator("#clear").click();
-    await expect(page.locator("#count")).toHaveText("0 retained");
+    await expect(page.locator("#count")).toHaveText("0");
     await expect(page.locator("#json")).toBeEmpty();
     await expect.poll(async () => (await status(app)).generation).toBe(2);
     expect(await pending).toHaveProperty("stale", true);
@@ -171,8 +186,11 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     await capture(page, info, "clear-reconnected");
     await fault(app, { transportDelay: 0, delay: 0 });
     server.event(source[3]);
-    await expect(page.locator("#count")).toHaveText("1 retained");
+    await expect(page.locator("#count")).toHaveText("1");
+    await page.locator("#entries tr").first().click();
+    await page.locator('[data-tab="json"]').click();
     await expect(page.locator("#json")).toHaveText(source[3].payload);
+    await page.locator("#detail-close").click();
     await capture(page, info, "clear-recovered");
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].hide());
     for (let index = 0; index < 8; index++) {
@@ -181,7 +199,7 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     }
     expect((await status(app)).total).toBe(9);
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].show());
-    await expect(page.locator("#count")).toHaveText("9 retained");
+    await expect(page.locator("#count")).toHaveText("9");
     await capture(page, info, "hidden-recovered");
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].minimize());
     await expect
@@ -200,7 +218,7 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
       BrowserWindow.getAllWindows()[0].restore();
       BrowserWindow.getAllWindows()[0].show();
     });
-    await expect(page.locator("#count")).toHaveText("15 retained");
+    await expect(page.locator("#count")).toHaveText("15");
     await capture(page, info, "minimized-recovered");
     expect(errors).toEqual([]);
     expect(
@@ -209,14 +227,18 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
           value.authorization && ["/v1/stream", "/v1/heartbeat"].includes(value.path ?? ""),
       ),
     ).toBe(true);
+    await page.locator("#live").click();
+    await page.locator("#entries tr").first().click();
+    await page.locator('[data-tab="json"]').click();
     await page.locator("#copy").click();
     expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(source[1].payload);
+    await page.locator("#detail-close").click();
     await fault(app, { cleanup: true });
     await page.locator("#clear").click();
     await page.locator("#clear").click();
     await expect(page.locator("#notice")).toContainText("Temporary recording files remain");
     await expect(page.locator(".connection")).toHaveText("Stopped");
-    await expect(page.locator("#entries")).toHaveText("Temporary history is unavailable.");
+    await expect(page.locator("#empty-results")).toHaveText("Temporary history is unavailable.");
     await expect(page.getByRole("button", { name: "Reset filters" })).toHaveCount(0);
     expect((await page.locator("#notice").innerText()).match(/Clear failed/g)).toHaveLength(1);
     await until(() => server.state.stream!.destroyed);
@@ -255,7 +277,7 @@ test("recorded authentication and second-viewer failures recover on configuratio
     server.state.status = 200;
     await expect(run.page.locator(".connection")).toHaveText("Connected");
     server.event(source[1]);
-    await expect(run.page.locator("#count")).toHaveText("1 retained");
+    await expect(run.page.locator("#count")).toHaveText("1");
     await capture(run.page, info, "second-viewer-recovered");
     server.state.status = 401;
     server.disconnect();
@@ -263,7 +285,7 @@ test("recorded authentication and second-viewer failures recover on configuratio
     const beforeClear = server.state.requestCount;
     await run.page.locator("#clear").click();
     await run.page.locator("#clear").click();
-    await expect(run.page.locator("#count")).toHaveText("0 retained");
+    await expect(run.page.locator("#count")).toHaveText("0");
     await expect(run.page.locator("#notice")).toContainText("Authentication failed");
     await wait(1200);
     expect(server.state.requestCount).toBe(beforeClear);
@@ -283,8 +305,9 @@ test("recorded stalled storage releases lease and drops old transport work befor
   try {
     await expect(page.locator(".connection")).toHaveText("Connected");
     await seed(server);
-    await expect(page.locator("#count")).toHaveText("5 retained");
-    await page.locator('button[data-event="4"]').click();
+    await expect(page.locator("#count")).toHaveText("5");
+    await page.locator('tr[data-event="4"]').click();
+    await page.locator('[data-tab="json"]').click();
     await page.locator("#scrollbar").press("PageDown");
     const offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
     await fault(app, { transportDelay: 6500 });
@@ -297,7 +320,7 @@ test("recorded stalled storage releases lease and drops old transport work befor
     await fault(app, { transportDelay: 0 });
     await expect(page.locator(".connection")).toHaveText("Connected");
     server.event(source[1]);
-    await expect(page.locator("#count")).toContainText("1 new");
+    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "1");
     expect((await status(app)).total).toBe(6);
     expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
     await capture(page, info, "stalled-recovered");
@@ -315,16 +338,16 @@ test("recorded worker exit disconnects capture and restart opens a fresh recordi
   try {
     await expect(run.page.locator(".connection")).toHaveText("Connected");
     await seed(server);
-    await expect(run.page.locator("#count")).toHaveText("5 retained");
-    await run.page.locator('button[data-event="4"]').click();
+    await expect(run.page.locator("#count")).toHaveText("5");
+    await run.page.locator('tr[data-event="4"]').click();
+    await run.page.locator('[data-tab="json"]').click();
     await expect(run.page.locator("#payload")).toHaveAttribute("data-event", "4");
     await run.page.locator("#scrollbar").press("PageDown");
     const offset = await run.page.locator("#payload").evaluate((node) => node.scrollTop);
     const rows = await run.page.locator("#entries").textContent();
-    const rank = await run.page.locator("#scrubber").getAttribute("aria-valuenow");
+    const rank = await run.page.locator("#page-position").textContent();
     expect(offset).toBeGreaterThan(0);
-    await run.page.locator("#hook-label").click();
-    await run.page.locator("#clear").click();
+    await run.page.locator("#clear").evaluate((n: HTMLButtonElement) => n.click());
     await run.app.evaluate(() => globalThis.scopeHistory.worker.terminate());
     await expect(run.page.locator(".connection")).toHaveText("Disconnected");
     await expect(run.page.locator("#notice")).toContainText(
@@ -346,26 +369,20 @@ test("recorded worker exit disconnects capture and restart opens a fresh recordi
     expect(server.state.requestCount).toBe(requests);
     await expect(run.page.locator("#json")).toHaveText(source[4].payload);
     await expect(run.page.locator("#entries")).toHaveAttribute("aria-busy", "false");
-    for (const id of ["clear", "live", "copy", "search", "session"])
+    for (const id of ["clear", "live", "copy", "search", "filter-open"])
       await expect(run.page.locator(`#${id}`)).toBeDisabled();
-    await expect(run.page.locator("#hook-label")).toHaveAttribute("aria-disabled", "true");
-    await expect(run.page.locator("#hooks")).not.toHaveAttribute("open", "");
-    await expect(run.page.locator("#scrubber")).toHaveAttribute("aria-disabled", "true");
+    await expect(run.page.locator("#filter-picker")).toBeHidden();
     await expect(run.page.locator("#clear")).toHaveAccessibleName("Unlock Clear history");
-    for (const row of await run.page.locator(".event").all()) await expect(row).toBeDisabled();
-    await run.page.locator("#scrubber").press("ArrowUp");
-    await run.page
-      .locator("#scrubber")
-      .dispatchEvent("pointerdown", { button: 0, pointerId: 71, clientY: 200 });
-    await run.page.locator("#hook-label").dispatchEvent("click");
+    for (const row of await run.page.locator(".event").all())
+      await expect(row).toHaveAttribute("aria-disabled", "true");
+    await run.page.locator("#filter-open").dispatchEvent("click");
     await run.page.locator("#search").dispatchEvent("input");
-    await run.page.waitForTimeout(350);
-    expect(await run.page.locator("#scrubber").getAttribute("aria-valuenow")).toBe(rank);
+    expect(await run.page.locator("#page-position").textContent()).toBe(rank);
     expect(await run.page.locator("#entries").textContent()).toBe(rows);
     expect(await run.page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
-    await expect(run.page.locator("#count")).toHaveText("5 retained");
+    await expect(run.page.locator("#count")).toHaveText("5");
     await expect(run.page.locator("#notice")).not.toContainText("Searching");
-    await expect(run.page.locator("#hooks")).not.toHaveAttribute("open", "");
+    await expect(run.page.locator("#filter-picker")).toBeHidden();
     const rejectedClear = await run.app.evaluate(() =>
       globalThis.scopeHistory.clear(globalThis.scopeHistory.generation),
     );
@@ -395,12 +412,14 @@ test("recorded worker exit disconnects capture and restart opens a fresh recordi
     await run.video.saveAs(info.outputPath("worker-exit-walkthrough.webm"));
     run = await launch(info, server, "synthetic-test-token", root);
     await expect(run.page.locator(".connection")).toHaveText("Connected");
-    await expect(run.page.locator("#count")).toHaveText("0 retained");
+    await expect(run.page.locator("#count")).toHaveText("0");
     await expect(run.page.locator("#json")).toBeEmpty();
     server.event(source[1]);
+    await run.page.locator("#entries tr").first().click();
+    await run.page.locator('[data-tab="json"]').click();
     await expect(run.page.locator("#json")).toHaveText(source[1].payload);
     await expect(run.page.locator("#notice")).not.toContainText("unavailable");
-    for (const id of ["clear", "live", "copy", "search", "session"])
+    for (const id of ["clear", "live", "copy", "search", "filter-open"])
       await expect(run.page.locator(`#${id}`)).toBeEnabled();
     await capture(run.page, info, "worker-restart-recovered");
     await run.app.close();

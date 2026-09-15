@@ -1,7 +1,8 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { gzipSync } from "node:zlib";
 
 const root = import.meta.dirname;
 const require = createRequire(import.meta.url);
@@ -12,7 +13,11 @@ await mkdir(target, { recursive: true });
 for (const command of ["pack", "build"]) {
   execFileSync(process.execPath, [vp, command], { cwd: root, stdio: "inherit" });
 }
-await cp(path.join(root, "fixtures"), path.join(target, "fixtures"), { recursive: true });
+await mkdir(path.join(target, "fixtures"));
+await writeFile(
+  path.join(target, "fixtures/journal.jsonl.gz"),
+  gzipSync(await readFile(path.join(root, "fixtures/journal.jsonl"))),
+);
 const { name, version, description, license } = JSON.parse(
   await readFile(path.join(root, "package.json"), "utf8"),
 ) as {

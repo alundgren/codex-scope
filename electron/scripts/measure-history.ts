@@ -102,7 +102,7 @@ try {
     console.log(`Measured ${name}.`);
   }
   report.workloads.idle = await sample(app, 4000);
-  await page.locator('[data-event="4"]').click();
+  await page.locator('tr[data-event="4"]').click();
   await page.locator("#scrollbar").press("PageDown");
   await workload("sustainedSmall", 16000, 1, 16, 50);
   await workload("sustainedMaximum", 1200, 4, 4, 40);

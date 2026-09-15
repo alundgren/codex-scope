@@ -1,5 +1,6 @@
 import type { StoredEvent } from "./types.ts";
 import { open } from "node:fs/promises";
+import { gunzipSync } from "node:zlib";
 
 import { MAX_PAYLOAD_BYTES, MAX_FRAME_BYTES, eventValue } from "./stream.ts";
 const MAX_EVENTS = 16;
@@ -93,7 +94,10 @@ async function loadRecording(path: string) {
       length += bytesRead;
     }
     if (length !== stat.size) throw new Error("Fixture recording changed while loading.");
-    return parseRecording(buffer.subarray(0, length));
+    const bytes = buffer.subarray(0, length);
+    return parseRecording(
+      path.endsWith(".gz") ? gunzipSync(bytes, { maxOutputLength: MAX_SOURCE_BYTES }) : bytes,
+    );
   } finally {
     await file.close();
   }

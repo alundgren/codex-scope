@@ -88,9 +88,14 @@ function eventValue(
       ? (payload.tool_input as Record<string, unknown>)
       : undefined;
   const preview =
-    [payload.message, input?.command, input?.patch, payload.demo_note].find(
-      (value) => typeof value === "string",
-    ) ?? "Inspect the complete accepted payload";
+    [
+      input?.command,
+      input?.cmd,
+      input?.patch,
+      typeof payload.tool_input === "string" ? payload.tool_input : undefined,
+      payload.message,
+      payload.demo_note,
+    ].find((value) => typeof value === "string") ?? "Inspect the complete accepted payload";
   return {
     context: eventContext(payload.cwd, message.git),
     connectionId: connection,

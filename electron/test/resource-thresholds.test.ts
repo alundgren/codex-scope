@@ -5,62 +5,34 @@ import assert from "node:assert/strict";
 import { evaluateReport, requiredWorkloads, thresholds } from "../scripts/resource-thresholds.ts";
 import { completed } from "../scripts/interaction-metrics.ts";
 
-test("interaction completion requires a matching selected row or a cleared empty result", async () => {
+test("interaction completion requires a committed table page and requested first row", async () => {
   const originalDocument = globalThis.document;
   try {
-    for (const [payload, selected, busy, expected, position, ready] of [
-      ["null", "7", "false", null, 0, false],
-      ["", "7", "false", null, 0, false],
-      ["null", null, "false", null, 0, true],
-      ["", null, "false", null, 0, true],
-      ["7", null, "false", null, 0, false],
-      ["7", "8", "false", null, 0, false],
-      ["7", "7", "true", null, 0, false],
-      ["7", "7", "false", { id: 7, position: 2 }, 1, false],
-      ["7", "7", "false", { id: 7, position: 2 }, 2, true],
-    ] as [
-      string,
-      string | null,
-      string,
-      { id: number; position: number } | null,
-      number,
-      boolean,
-    ][]) {
-      const elements: Record<
-        string,
-        { getAttribute?: () => string; dataset?: { event: string } } | null
-      > = {
-        "#entries": { getAttribute: () => busy },
-        "#payload": { dataset: { event: payload } },
-        '.event[aria-pressed="true"]': selected === null ? null : { dataset: { event: selected } },
-        "#scrubber": { getAttribute: () => String(position) },
+    for (const [busy, id, position, expected, ready] of [
+      ["true", "7", 2, null, false],
+      ["false", "7", 2, null, true],
+      ["false", "7", 2, { id: 7, position: 2 }, true],
+      ["false", "8", 2, { id: 7, position: 2 }, false],
+      ["false", "7", 1, { id: 7, position: 2 }, false],
+    ] as [string, string, number, { id: number; position: number } | null, boolean][]) {
+      const elements: Record<string, unknown> = {
+        "#entries": { getAttribute: () => busy, dataset: { position: String(position) } },
+        "#entries [data-event]": { dataset: { event: id } },
       };
-      // This double supplies only the DOM reads made by the completion predicate.
       Object.defineProperty(globalThis, "document", {
         configurable: true,
         writable: true,
         value: { querySelector: (selector: string) => elements[selector] },
       });
-      let frames = 0;
       const page = {
-        waitForFunction: async (
-          predicate: (argument: { id: number; position: number } | null) => boolean,
-          argument: { id: number; position: number } | null,
-        ) => {
-          if (!predicate(argument)) throw new Error("Result is not complete");
+        waitForFunction: async (fn: (arg: typeof expected) => boolean, arg: typeof expected) => {
+          if (!fn(arg)) throw new Error("Pending result");
         },
         locator: () => ({ textContent: async () => "" }),
-        evaluate: async () => {
-          frames++;
-        },
+        evaluate: async () => {},
       };
       if (ready) await completed(page as unknown as Page, expected);
-      else
-        await assert.rejects(
-          completed(page as unknown as Page, expected),
-          /Result is not complete/,
-        );
-      assert.equal(frames, Number(ready));
+      else await assert.rejects(completed(page as unknown as Page, expected), /Pending result/);
     }
   } finally {
     if (originalDocument === undefined) Reflect.deleteProperty(globalThis, "document");

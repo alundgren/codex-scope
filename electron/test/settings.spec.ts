@@ -1,7 +1,18 @@
 import { test, expect, _electron } from "@playwright/test";
 import { mkdtemp, writeFile, readFile, stat, mkdir, rm, chmod } from "node:fs/promises";
 import path from "node:path";
-import { fakeCollector, fixtureEvent } from "./fake-collector.ts";
+import { fakeCollector, fixtureEvent as rawFixture } from "./fake-collector.ts";
+
+const fixturePayload = JSON.stringify({
+  ...JSON.parse(rawFixture.payload),
+  hook_event_name: "PostToolUse",
+});
+const fixtureEvent = {
+  ...rawFixture,
+  hook_type: "PostToolUse",
+  payload: fixturePayload,
+  payload_bytes: Buffer.byteLength(fixturePayload),
+};
 
 test("idle, Functions, private pairing settings, stop restart and retained inspection", async ({}, info) => {
   const root = await mkdtemp("/tmp/scope-settings-");
@@ -127,8 +138,9 @@ test("idle, Functions, private pairing settings, stop restart and retained inspe
     await expect(page.locator(".connection")).toHaveText("Connected");
     await tool("journal");
     server.event(fixtureEvent);
-    await expect(page.locator("#count")).toHaveText("1 retained");
+    await expect(page.locator("#count")).toHaveText("1");
     await page.locator(".event").first().click();
+    await page.locator("#detail-close").click();
     const held = await page.locator("#payload").getAttribute("data-event");
     await tool("settings");
     await page.locator("#collector-url").fill("http://non-loopback.invalid");
@@ -245,7 +257,7 @@ test("unavailable imported credentials and failed saves recover, saved launch st
     const fixtures = await app.firstWindow();
     await fixtures.waitForSelector('html[data-ready="true"]');
     await expect(fixtures.locator(".connection")).toHaveText("Synthetic data");
-    await expect(fixtures.locator("#count")).toHaveText("5 retained");
+    await expect(fixtures.locator("#count")).toHaveText("1");
     expect(server.state.streamCount).toBe(streams);
   } finally {
     await app.close();
@@ -275,7 +287,7 @@ test("slow saves retain ownership, report pending and publish the eventual resul
     await page.locator("#capture").click();
     await expect(page.locator(".connection")).toHaveText("Connected");
     first.event(fixtureEvent);
-    await expect(page.locator("#count")).toHaveText("1 retained");
+    await expect(page.locator("#count")).toHaveText("1");
     await page.locator("#functions summary").click();
     await page.locator('[data-tool="settings"]').click();
     await page.locator("#collector-url").fill(second.endpoint);

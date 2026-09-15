@@ -18,9 +18,8 @@ export interface Distribution {
 export interface InteractionMetrics {
   searchMs: Distribution;
   keyboardMs: Distribution;
-  pointerMoves: number;
+  sortChanges: number;
   summaryRows: number;
-  tickNodes: number;
 }
 export interface Workload {
   [key: string]: unknown;

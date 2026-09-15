@@ -1,3 +1,4 @@
+import { callMetadata } from "./call-metadata.ts";
 import { emptySelection } from "./model-types.ts";
 import { sessionEvidence } from "./analysis-evidence.ts";
 import { prepare, type Statement } from "./database.ts";
@@ -201,13 +202,16 @@ function openDatabase() {
     PRAGMA hard_heap_limit=${limits.sqliteHeapBytes}; PRAGMA trusted_schema=OFF;
     CREATE TABLE events(id INTEGER PRIMARY KEY, generation INTEGER NOT NULL, connectionId TEXT NOT NULL,
       sequence INTEGER NOT NULL, localReceivedAt TEXT NOT NULL, receivedAt TEXT NOT NULL, hook TEXT NOT NULL,
-      session TEXT, tool TEXT, bytes INTEGER NOT NULL, cost INTEGER NOT NULL, preview TEXT NOT NULL, text TEXT NOT NULL, context TEXT) STRICT;
-    CREATE INDEX event_sessions ON events(session); CREATE INDEX event_context ON events(session, id DESC) WHERE context IS NOT NULL; CREATE INDEX event_hooks ON events(hook);`);
+      session TEXT, tool TEXT, bytes INTEGER NOT NULL, cost INTEGER NOT NULL, preview TEXT NOT NULL, text TEXT NOT NULL, context TEXT, model TEXT, command TEXT, responseBytes INTEGER) STRICT;
+    CREATE INDEX event_sessions ON events(session); CREATE INDEX event_context ON events(session, id DESC) WHERE context IS NOT NULL; CREATE INDEX event_hooks ON events(hook); CREATE INDEX event_tools ON events(tool); CREATE INDEX event_models ON events(model); CREATE INDEX event_response ON events(COALESCE(responseBytes,-1) DESC, id DESC);`);
   search = new Search(database, shared);
   const summary =
     "id, receivedAt, substr(hook,1,160) AS hook, substr(session,1,160) AS session, preview";
   statements = {
-    insert: prepare<never>(database, "INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"),
+    insert: prepare<never>(
+      database,
+      "INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    ),
     selected: prepare<StoredEvent>(
       database,
       "SELECT * FROM events WHERE id >= ? ORDER BY id LIMIT 1",
@@ -266,7 +270,8 @@ function hasRoom() {
 function appendEvents(events: readonly EventValue[]) {
   if (!database || !statements || !search || !current(state.generation)) return;
   let budget = limits.evictionCount;
-  for (const event of events) {
+  for (const original of events) {
+    const event = { ...original, ...callMetadata(original.text) };
     if (!current(state.generation)) break;
     const started = performance.now();
     try {
@@ -280,6 +285,8 @@ function appendEvents(events: readonly EventValue[]) {
             event.tool,
             event.preview,
             event.context,
+            event.model,
+            event.command,
             event.connectionId ?? state.connectionId,
           ].join(""),
         ) +
@@ -292,7 +299,9 @@ function appendEvents(events: readonly EventValue[]) {
         let removedBytes = 0,
           count = 0,
           last = 0,
-          matching = 0;
+          matching = 0,
+          removedResponseBytes = 0,
+          removedMeasuredCalls = 0;
         for (const row of old) {
           if (
             state.total - count < limits.retainedCount &&
@@ -302,7 +311,13 @@ function appendEvents(events: readonly EventValue[]) {
           removedBytes += row.cost;
           count++;
           last = row.id;
-          matching += search.removing(row);
+          if (search.removing(row)) {
+            matching++;
+            if (row.responseBytes != null) {
+              removedResponseBytes += row.responseBytes;
+              removedMeasuredCalls++;
+            }
+          }
         }
         if (count) {
           database.exec("BEGIN IMMEDIATE");
@@ -313,7 +328,7 @@ function appendEvents(events: readonly EventValue[]) {
           state.retainedBytes -= removedBytes;
           state.evicted += count;
           budget -= count;
-          search.removedEvents(matching, last);
+          search.removedEvents(matching, last, removedResponseBytes, removedMeasuredCalls);
         }
         if (
           state.total >= limits.retainedCount ||
@@ -340,6 +355,9 @@ function appendEvents(events: readonly EventValue[]) {
         event.preview,
         event.text,
         event.context ?? null,
+        event.model,
+        event.command,
+        event.responseBytes,
       );
       diskBytes();
       database.exec("COMMIT");
@@ -635,7 +653,7 @@ port.on("message", async (message: WorkerRequest) => {
       else if (operation === "choices")
         result = {
           generation,
-          ...search!.choices(message.field, message.cursor, message.direction),
+          ...search!.choices(message.field, message.cursor, message.direction, message.text),
         };
       else if (operation === "append") {
         ingest(message.frames, message.connectionId);
