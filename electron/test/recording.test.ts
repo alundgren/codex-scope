@@ -1,6 +1,9 @@
 import { test } from "vite-plus/test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, mkdtemp, writeFile, rm } from "node:fs/promises";
+import { gzipSync } from "node:zlib";
+import os from "node:os";
+import path from "node:path";
 import * as recording from "../src/recording.ts";
 
 const fixtures = await readFile(new URL("../fixtures/journal.jsonl", import.meta.url));
@@ -145,4 +148,17 @@ test("long protocol metadata does not discard an otherwise accepted payload", ()
   assert.equal(result.selected!.session, session);
   assert.equal(result.rows[0].session!.length, 160);
   assert.ok(result.rows[0].session!.endsWith("…"));
+});
+
+test("compressed synthetic fixtures retain bytes and reject excessive decompression", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "scope-compressed-fixture-"));
+  const file = path.join(root, "journal.jsonl.gz");
+  try {
+    await writeFile(file, gzipSync(fixtures));
+    assert.deepEqual(await recording.loadRecording(file), recording.parseRecording(fixtures));
+    await writeFile(file, gzipSync(Buffer.alloc(2 * 1024 * 1024, 32)));
+    await assert.rejects(recording.loadRecording(file));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });

@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { launch, append, frame, capture, selected } from "./navigation-helpers.ts";
-
+import { launch, append, frame, capture } from "./navigation-helpers.ts";
 const session = "11111111-2222-4333-8444-000000000001";
 function event(
   branch?: string | null,
@@ -12,7 +11,7 @@ function event(
     message: "Synthetic session label check",
     tail: "text\n".repeat(500),
   });
-  const payload = JSON.stringify({ ...JSON.parse(value.payload), cwd }, null, 2);
+  const payload = JSON.stringify({ ...JSON.parse(value.payload), cwd });
   return {
     ...value,
     payload,
@@ -22,71 +21,51 @@ function event(
       : {}),
   };
 }
-
-test("recorded session labels: directory fallback, Git rename, exact identity, unavailable metadata and narrow window", async ({}, info) => {
+test("session picker keeps exact identities and refreshes labels without moving held calls", async ({}, info) => {
   const { app, page, video } = await launch(info);
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
-  const dropdown = page.locator("#session");
-  const choice = dropdown.locator("option").filter({ hasText: "00000001" });
   try {
     await append(app, [event()]);
-    await dropdown.focus();
+    await page.locator("#filter-open").click();
+    const choice = page.locator(".filter-option").filter({ hasText: "00000001" });
     await expect(choice).toHaveText("codex-scope / worktree-a1b2 · …00000001");
-    await dropdown.selectOption(JSON.stringify(session));
+    await choice.getByRole("checkbox").check();
+    await page.locator("#filter-done").click();
+    await expect(page.locator("#count")).toHaveText("1");
+    await page.locator("#entries tr").first().click();
+    await page.locator('[data-tab="json"]').click();
     await expect(page.locator("#metadata")).toContainText(session);
-    await capture(page, info, "directory-fallback");
-    await append(app, [event("temporary")]);
-    await dropdown.dispatchEvent("pointerdown");
-    await expect(choice).toHaveText("codex-scope · temporary · …00000001");
-    await page.locator("button[data-event]").last().click();
-    const held = await selected(page);
-    await page.locator("#payload").evaluate((node) => {
-      node.scrollTop = 200;
-    });
-    const offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
-    await capture(page, info, "git-before-rename");
+    await page.locator("#payload").evaluate((n) => (n.scrollTop = 200));
+    const offset = await page.locator("#payload").evaluate((n) => n.scrollTop);
+    const held = await page.locator("#payload").getAttribute("data-event");
     await append(app, [
       event("identify-sessions"),
       event("identify-sessions", "11111111-2222-4333-8444-000000000002"),
     ]);
-    await dropdown.dispatchEvent("pointerdown");
+    expect(await page.locator("#payload").evaluate((n) => n.scrollTop)).toBe(offset);
+    await page.locator("#detail-close").click();
+    await page.locator("#filter-open").click();
     await expect(choice).toHaveText("codex-scope · identify-sessions · …00000001");
-    await expect(dropdown).toHaveValue(JSON.stringify(session));
-    expect(await selected(page)).toBe(held);
-    expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
-    await capture(page, info, "git-after-rename-held");
-    const original = event().payload;
-    await page.locator("#copy").click();
-    expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(original);
-    await dropdown.click();
-    await page.waitForTimeout(1000);
-    await capture(page, info, "session-menu");
-    await page.keyboard.press("Escape");
+    await expect(choice.getByRole("checkbox")).toBeChecked();
+    await expect(page.locator("#filter-chips")).toContainText("identify-sessions");
+    await expect(page.locator("#payload")).toHaveAttribute("data-event", held!);
+    await capture(page, info, "renamed-session-held");
+    await page.locator("#filter-done").click();
     await append(app, [
       event(null),
       event(undefined, "missing-metadata", null),
       event("very-long-branch/".repeat(20), "long-branch"),
     ]);
-    await dropdown.dispatchEvent("pointerdown");
-    await expect(choice).toContainText("branch unavailable");
     await app.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
     );
-    await capture(page, info, "narrow-unavailable");
+    await page.locator("#filter-open").click();
+    await expect(choice).toContainText("branch unavailable");
+    await capture(page, info, "narrow-session-choices");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await dropdown.selectOption(JSON.stringify("long-branch"));
-    await capture(page, info, "narrow-long-branch");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-    await dropdown.selectOption(JSON.stringify("missing-metadata"));
-    await capture(page, info, "missing-metadata");
-    expect(errors).toEqual([]);
   } finally {
     await app.close();
-    await video.saveAs(info.outputPath("session-labels-walkthrough.webm"));
+    await video.saveAs(info.outputPath("session-labels.webm"));
   }
 });

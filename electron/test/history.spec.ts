@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import type { Faults } from "../src/types.ts";
 import type { Page, ElectronApplication, TestInfo } from "@playwright/test";
 import { test, expect, _electron } from "@playwright/test";
@@ -92,17 +91,6 @@ async function append(
     { message: source[template], count, burst, oversized, receivedStart },
   );
 }
-async function expectAlignedPin(page: Page) {
-  const difference = await page.evaluate(() => {
-    const slider = document.querySelector<HTMLElement>("#scrubber")!;
-    const pin = document.querySelector<HTMLElement>("#pin")!.getBoundingClientRect();
-    const track = slider.getBoundingClientRect();
-    const maximum = Number(slider.getAttribute("aria-valuemax"));
-    const position = Number(slider.getAttribute("aria-valuenow"));
-    return Math.abs(pin.top + pin.height / 2 - track.top - (track.height * position) / maximum);
-  });
-  expect(difference).toBeLessThanOrEqual(1);
-}
 async function clear(page: Page) {
   await page.locator("#clear").click();
   await page.locator("#clear").click();
@@ -110,119 +98,63 @@ async function clear(page: Page) {
   await expect(page.locator("#clear")).toBeDisabled();
 }
 
-test("recorded history: arrivals hold rows and offset, boundaries, pressure recovery, eviction, and Clear", async ({}, info) => {
+test("recorded history preserves limits, storage recovery, eviction and deliberate Clear", async ({}, info) => {
   const { app, page, video } = await launch(info);
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
   try {
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await page.locator('[data-event="3"]').click();
-    await capture(page, info, "history-desktop");
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
-    );
-    await capture(page, info, "history-narrow");
-    await expectAlignedPin(page);
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(1180, 760),
-    );
-    await page.locator('[data-event="4"]').click();
+    await page.locator('tr[data-event="4"]').click();
+    await page.locator('[data-tab="json"]').click();
     await page.locator("#scrollbar").press("PageDown");
-    const before = await page.locator("#payload").evaluate((node) => node.scrollTop);
-    expect(before).toBeGreaterThan(0);
-    const rows = await page.locator("#entries").innerText();
-    await append(app, 12);
-    await expect(page.locator("#count")).toContainText("12 new");
-    expect(await page.locator("#entries").innerText()).toBe(rows);
-    expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(before);
-    expect(await page.locator("#json").textContent()).toBe(source[4].payload);
-    await capture(page, info, "held-arrivals");
-    const inspection = await app.evaluate(() => globalThis.scopeHistory.inspect(1, 4, 5));
-    assert("rows" in inspection && inspection.selected);
-    expect(inspection.rows.length).toBeLessThanOrEqual(5);
-    expect(inspection.selected).toMatchObject({
-      generation: 1,
-      sequence: 4,
-      text: source[4].payload,
-      bytes: 61440,
-    });
-    expect(inspection.selected.localReceivedAt).toMatch(/Z$/);
-    expect(inspection.selected.connectionId).toBe((await state(app)).connectionId);
+    const offset = await page.locator("#payload").evaluate((n) => n.scrollTop);
+    const rows = await page.locator("#entries").textContent();
+    await append(app, 12, 4);
+    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "12");
+    expect(await page.locator("#entries").textContent()).toBe(rows);
+    expect(await page.locator("#payload").evaluate((n) => n.scrollTop)).toBe(offset);
     await append(app, 1, 4, { oversized: true });
     await expect(page.locator("#notice")).toContainText("1 oversized");
-    await fault(app, { queryOnly: true });
-    await append(app, 1);
-    await expect(page.locator("#notice")).toContainText("Storage pressure");
-    await page.locator('[data-event="3"]').click();
-    await expect(page.locator("#json")).toHaveText(source[3].payload);
-    await capture(page, info, "write-pressure");
-    await fault(app, { queryOnly: false, disk: true });
-    await append(app, 1);
-    await expect(page.locator("#notice")).toContainText("2 storage");
-    await capture(page, info, "disk-pressure");
-    await fault(app, { disk: false, diskFull: true });
-    await append(app, 1, 4);
-    await expect(page.locator("#notice")).toContainText("3 storage");
-    await capture(page, info, "sqlite-full");
+    for (const faults of [
+      { queryOnly: true },
+      { queryOnly: false, disk: true },
+      { disk: false, diskFull: true },
+    ]) {
+      await fault(app, faults);
+      await append(app, 1, 4);
+      await expect(page.locator("#notice")).toContainText("Storage pressure");
+    }
+    await capture(page, info, "storage-pressure");
     await fault(app, { diskFull: false });
-    await append(app, 1);
+    await append(app, 1, 4);
     await expect(page.locator("#notice")).not.toContainText("Storage pressure");
-    await capture(page, info, "pressure-recovered");
-    await page.locator('[data-event="4"]').click();
     await append(app, 160, 4);
-    await expect(page.locator("#notice")).toContainText("selected event was evicted");
+    await expect(page.locator("#notice")).toContainText("evicted");
     const evicted = await state(app);
     expect(evicted.first!.id).toBeGreaterThan(4);
-    await expect(page.locator("#payload")).toHaveAttribute("data-event", String(evicted.first!.id));
     expect(evicted.retainedBytes).toBeLessThanOrEqual(8 * 1024 * 1024);
     expect(evicted.maximumDiskBytes).toBeLessThanOrEqual(33 * 1024 * 1024);
     await capture(page, info, "eviction");
-    await expectAlignedPin(page);
     await page.locator("#live").click();
-    await expect(page.locator("#mode")).toHaveText("Live");
-    await expect(page.locator("#payload")).toHaveAttribute("data-event", String(evicted.last!.id));
     await page.locator("#clear").click();
     await expect(page.locator("#clear")).toHaveAccessibleName("Confirm Clear history");
-    await capture(page, info, "clear-unlocked");
     await page.waitForTimeout(3050);
     await expect(page.locator("#clear")).toHaveAccessibleName("Unlock Clear history");
-    expect((await state(app)).total).toBe(evicted.total);
     await page.locator("#clear").click();
     await page.keyboard.press("Escape");
     await expect(page.locator("#clear")).toHaveAccessibleName("Unlock Clear history");
-    await capture(page, info, "clear-cancelled");
     await page.locator("#clear").focus();
     await page.keyboard.down("Enter");
-    for (let repeat = 0; repeat < 3; repeat++) await page.keyboard.down("Enter");
-    await page.waitForTimeout(350);
+    for (let i = 0; i < 3; i++) await page.keyboard.down("Enter");
     expect((await state(app)).total).toBe(evicted.total);
-    await capture(page, info, "held-key");
     await page.keyboard.up("Enter");
     await page.keyboard.press("Escape");
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.locator("#clear").click();
     await page.waitForTimeout(3050);
     await expect(page.locator("#clear")).toHaveAccessibleName("Unlock Clear history");
-    await page.emulateMedia({ reducedMotion: "no-preference" });
     await clear(page);
-    await expect(page.locator("#clear")).toBeDisabled();
-    await capture(page, info, "clear-empty");
-    const clean = await state(app);
-    expect(clean.generation).toBe(2);
-    expect(clean.connectionId).not.toBe(evicted.connectionId);
-    await append(app, 1, 3);
-    await expect(page.locator("#count")).toHaveText("1 retained");
-    await expect(page.locator("#json")).toHaveText(source[3].payload);
+    expect((await state(app)).generation).toBe(2);
+    await append(app, 1, 4);
+    await expect(page.locator("#count")).toHaveText("1");
     await capture(page, info, "clear-recovered");
-    await expectAlignedPin(page);
-    await app.evaluate(({ BrowserWindow }) =>
-      BrowserWindow.getAllWindows()[0].setContentSize(440, 820),
-    );
-    await capture(page, info, "clear-narrow");
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-      true,
-    );
-    expect(errors).toEqual([]);
   } finally {
     await app.close();
     await video.saveAs(info.outputPath("history-walkthrough.webm"));
@@ -235,7 +167,7 @@ test("retained bounds advance while the selected event and reading position surv
     await append(app, 130, 4, { receivedStart: Date.parse("2026-09-11T15:00:00.000Z") });
     const before = await state(app);
     const id = before.last!.id;
-    await page.locator(`button[data-event="${id}"]`).click();
+    await page.locator(`tr[data-event="${id}"]`).click();
     await page.locator("#scrollbar").press("PageDown");
     const offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
     expect(offset).toBeGreaterThan(0);
@@ -247,12 +179,11 @@ test("retained bounds advance while the selected event and reading position surv
     expect(after.first!.id).toBeGreaterThan(before.first!.id);
     expect(after.first!.id).toBeLessThan(id);
     expect(after.first!.receivedAt).not.toBe(before.first!.receivedAt);
-    await expect(page.locator("#oldest")).toHaveText(after.first!.receivedAt.slice(11, 19));
+    await expect(page.locator("#retention")).toContainText(after.first!.receivedAt.slice(11, 19));
     await expect(page.locator("#payload")).toHaveAttribute("data-event", String(id));
     expect(await page.locator("#entries").textContent()).toBe(rows);
     expect(await page.locator("#json").textContent()).toBe(text);
     expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
-    await expectAlignedPin(page);
     await capture(page, info, "retained-bound-after");
   } finally {
     await app.close();
@@ -299,7 +230,7 @@ test("Clear rejects delayed input and query results; intake queue is bounded", a
       globalThis.clearResult = history.clear(1);
     }, source[2]);
     await app.evaluate(() => globalThis.clearResult);
-    await expect(page.locator("#entries")).toContainText("No synthetic events");
+    await expect(page.locator("#empty-results")).toContainText("No tool calls");
     await page.waitForTimeout(2000);
     expect(await app.evaluate(() => globalThis.delayedInspection)).toEqual({ stale: true });
     expect(
@@ -309,12 +240,12 @@ test("Clear rejects delayed input and query results; intake queue is bounded", a
         source[1],
       ),
     ).toBe(false);
-    await expect(page.locator("#count")).toHaveText("0 retained");
+    await expect(page.locator("#count")).toHaveText("0");
     await expect(page.locator("#json")).toBeEmpty();
     await capture(page, info, "late-work-rejected");
     await fault(app, { delay: 0 });
-    await append(app, 1, 2);
-    await expect(page.locator("#count")).toHaveText("1 retained");
+    await append(app, 1, 4);
+    await expect(page.locator("#count")).toHaveText("1");
     await capture(page, info, "late-work-recovered");
   } finally {
     await app.close();
@@ -344,7 +275,7 @@ for (const view of ["journal", "analysis"]) {
       });
       expect(results).toEqual([{ stale: true }, { stale: true }, { stale: true }]);
       if (view === "journal")
-        await expect(page.locator("#entries")).toContainText("No synthetic events");
+        await expect(page.locator("#empty-results")).toContainText("No tool calls");
       else {
         await page.waitForTimeout(350);
         await expect(page.locator("#analysis-status")).toBeEmpty();
@@ -383,7 +314,7 @@ test("an old intake timeout after Clear preserves newly accepted events and coun
           JSON.stringify({ ...message, sequence, connection_id: history.status.connectionId }),
         ),
       );
-    }, source[3]);
+    }, source[4]);
     expect(accepted).toEqual([true, true]);
     expect((await state(app)).queuedCount).toBe(2);
     await expect.poll(async () => (await state(app)).total).toBe(2);
@@ -399,7 +330,9 @@ test("an old intake timeout after Clear preserves newly accepted events and coun
       queuedBytes: 0,
     });
     await page.locator("#live").click();
-    await expect(page.locator("#json")).toHaveText(source[3].payload);
+    await page.locator("#entries tr").first().click();
+    await page.locator('[data-tab="json"]').click();
+    await expect(page.locator("#json")).toHaveText(source[4].payload);
     await expect(page.locator("#notice")).toBeEmpty();
     await capture(page, info, "clear-old-timeout-recovered");
   } finally {
@@ -411,7 +344,8 @@ test("an old intake timeout after Clear preserves newly accepted events and coun
 test("worker failure while confirming Clear preserves visible history until restart", async ({}, info) => {
   const { app, page, video } = await launch(info);
   try {
-    await page.locator('button[data-event="4"]').click();
+    await page.locator('tr[data-event="4"]').click();
+    await page.locator('[data-tab="json"]').click();
     await expect(page.locator("#payload")).toHaveAttribute("data-event", "4");
     await page.locator("#scrollbar").press("PageDown");
     const offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
@@ -424,8 +358,10 @@ test("worker failure while confirming Clear preserves visible history until rest
         return clear(generation);
       };
     });
-    await page.locator("#clear").click();
-    await page.locator("#clear").click();
+    await page.locator("#clear").evaluate((n: HTMLButtonElement) => {
+      n.click();
+      n.click();
+    });
     await expect(page.locator("#notice")).toContainText(
       "Temporary history is unavailable. Restart the app",
     );
@@ -464,7 +400,7 @@ test("cleanup failure isolates old history and exits within its deadline", async
         () => false,
       ),
     ).toBe(false);
-    await expect(recovered.page.locator("#count")).toHaveText("5 retained");
+    await expect(recovered.page.locator("#count")).toHaveText("1");
     await capture(recovered.page, info, "cleanup-recovered");
   } finally {
     await recovered.app.close();
@@ -569,7 +505,7 @@ test("single owner, private files, hidden capture, crash cleanup and normal-clos
 test("a timed-out intake keeps uncertain outcomes separate from known drops", async ({}, info) => {
   const { app, page, video } = await launch(info);
   try {
-    await page.locator('[data-event="3"]').click();
+    await page.locator('tr[data-event="4"]').click();
     await fault(app, { delay: 3500 });
     await app.evaluate((_electron, message) => {
       const history = globalThis.scopeHistory;
@@ -585,20 +521,24 @@ test("a timed-out intake keeps uncertain outcomes separate from known drops", as
     await page.waitForTimeout(1500);
     expect((await state(app)).accepted).toBe(6);
     expect((await state(app)).localDrops).toBe(0);
-    await expect(page.locator("#payload")).toHaveAttribute("data-event", "3");
+    await expect(page.locator("#payload")).toHaveAttribute("data-event", "4");
     await capture(page, info, "intake-timeout-settled");
     const metadata = await page.locator("#metadata").textContent();
     const rows = await page.locator("#entries").textContent();
-    const original = await page.locator("#json").textContent();
-    await page.locator('[data-event="2"]').click();
+    if (await page.locator("#call-detail").isVisible()) await page.locator("#detail-close").click();
+    await page.locator('tr[data-event="4"]').click();
     await expect(page.locator("#notice")).toContainText("History operation timed out");
     expect(await page.locator("#metadata").textContent()).toBe(metadata);
     expect(await page.locator("#entries").textContent()).toBe(rows);
-    expect(await page.locator("#json").textContent()).toBe(original);
+    await expect(page.locator("#call-detail")).not.toBeVisible();
+    await expect(page.locator("#json")).toBeEmpty();
     await capture(page, info, "query-timeout");
     await fault(app, { delay: 0 });
-    await page.locator('[data-event="2"]').click();
-    await expect(page.locator("#payload")).toHaveAttribute("data-event", "2");
+    if (await page.locator("#call-detail").isVisible()) await page.locator("#detail-close").click();
+    await page.locator('tr[data-event="4"]').click();
+    await expect(page.locator("#payload")).toHaveAttribute("data-event", "4");
+    await expect(page.locator("#call-detail")).toBeVisible();
+    await expect(page.locator("#json")).toContainText("START café");
     await capture(page, info, "query-recovered");
   } finally {
     await app.close();

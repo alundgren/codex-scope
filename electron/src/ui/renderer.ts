@@ -7,34 +7,49 @@ import type {
   NavigationSnapshot,
   Navigation,
   Reply,
-  Filter,
-  EventPosition,
+  StoredEvent,
 } from "../types.ts";
 import { requiredElement } from "./elements.ts";
 import { attachScrollbar } from "./scrollbar.ts";
 import { attachFilters } from "./filters.ts";
 
-const entries = requiredElement("#entries");
-const payload = requiredElement("#payload");
-const json = requiredElement("#json");
-const copy = requiredElement<HTMLButtonElement>("#copy");
-const status = requiredElement("#copy-status");
-const scrubber = requiredElement("#scrubber");
+const entries = requiredElement("#entries"),
+  payload = requiredElement("#payload"),
+  json = requiredElement("#json");
+const dialog = requiredElement<HTMLDialogElement>("#call-detail");
+const copy = requiredElement<HTMLButtonElement>("#copy"),
+  status = requiredElement("#copy-status");
+const clear = requiredElement<HTMLButtonElement>("#clear"),
+  liveButton = requiredElement<HTMLButtonElement>("#live");
+const lock = requiredElement(".clear svg path"),
+  clearLabel = requiredElement("#clear-label");
 const updateScroll = attachScrollbar(
   payload,
   requiredElement("#scrollbar"),
   requiredElement("#thumb"),
 );
+const previousPage = requiredElement<HTMLButtonElement>("#previous-page"),
+  nextPage = requiredElement<HTMLButtonElement>("#next-page");
+const sort = requiredElement<HTMLSelectElement>("#sort");
 let selectedId: number | null = null,
-  selectedText = "",
-  selectedValue = "";
-let wanted: (NavigationRequest & { generation: number }) | null = null,
-  loading = false,
-  copyPending = false;
-let lastRows = 0,
-  generation = 1,
+  selected: StoredEvent | null = null,
+  selectedText = "";
+let tab: "response" | "input" | "json" = "response";
+let generation = 1,
   queryId = 1,
-  targetId = 0;
+  targetId = 0,
+  position = 0,
+  heldAt = 0;
+let live = true,
+  loading = false,
+  copyPending = false,
+  clearPending = false,
+  filterPending = false,
+  queryFailed = false;
+let wanted: (NavigationRequest & { generation: number }) | null = null;
+let snapshot: NavigationSnapshot | undefined;
+let pageChanged = false;
+let currentRows: Navigation["rows"] = [];
 let latest: HistoryStatus = {
   generation: 1,
   total: 0,
@@ -43,39 +58,13 @@ let latest: HistoryStatus = {
   first: null,
   last: null,
 };
-let live = true,
-  heldAt = 0,
-  position = 0;
-let displayed: {
-  queryId: number;
-  position: number;
-  live: boolean;
-  heldAt: number;
-  removed: number;
-} | null = null;
-let clearPending = false,
-  clearDeadline = 0,
-  clearTimer: ReturnType<typeof setTimeout> | undefined,
-  activationKey: string | null = null;
-let queryFailed = false;
 let evictionNotice = "",
-  queryNotice = "",
-  filterPending = false,
+  queryNotice = "";
+let clearDeadline = 0,
+  activationKey: string | null = null;
+let clearTimer: ReturnType<typeof setTimeout> | undefined,
   filterTimer: ReturnType<typeof setTimeout> | undefined;
-let gesture: {
-  snapshot: NavigationSnapshot;
-  first?: EventPosition | null;
-  pointerId: number;
-  top: number;
-  height: number;
-} | null = null;
-let pointerPosition: number | null = null,
-  pointerFrame: number | null = null,
-  reconcileTarget = 0;
-const clear = requiredElement<HTMLButtonElement>("#clear");
-const liveButton = requiredElement<HTMLButtonElement>("#live");
-const lock = requiredElement(".clear svg path");
-const clearLabel = requiredElement("#clear-label");
+const PAGE_ROWS = 12;
 const filters = attachFilters({
   getGeneration: () => generation,
   changed: changeFilter,
@@ -86,10 +75,19 @@ const filters = attachFilters({
 });
 const time = (iso: string) => iso.slice(11, 19);
 const activeView = () => (latest.view?.queryId === queryId ? latest.view : null);
-const hasFilters = () => {
-  const value = filters.value();
-  return !!value.text || value.session !== null || !!value.hooks.length;
-};
+const byteFormats = [0, 1, 2].map(
+  (maximumFractionDigits) => new Intl.NumberFormat("en-US", { maximumFractionDigits }),
+);
+export function formatBytes(value: number | null) {
+  if (value === null) return "Unknown";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let index = 0;
+  while (value >= 1000 && index < units.length - 1) {
+    value /= 1000;
+    index++;
+  }
+  return `${byteFormats[index ? (value >= 10 ? 1 : 2) : 0].format(value)} ${units[index]}`;
+}
 function element<Tag extends keyof HTMLElementTagNameMap>(
   tag: Tag,
   className: string,
@@ -108,43 +106,10 @@ function relock() {
   clear.setAttribute("aria-label", "Unlock Clear history");
   lock.setAttribute("d", "M6 9V6a4 4 0 0 1 8 0v3");
 }
-function navigationSnapshot() {
-  const view = activeView();
-  return view?.count != null
-    ? { queryId, upper: latest.last?.id ?? 0, count: view.count, removed: view.removed }
-    : null;
-}
-function positionMarkers() {
-  if (document.hidden || document.body.classList.contains("tool-open")) return;
-  const snapshot = gesture?.snapshot ?? navigationSnapshot();
-  const count = snapshot?.count ?? 0;
-  const value = live ? count : Math.max(0, Math.min(count - 1, position));
-  scrubber.setAttribute("aria-valuemax", String(count));
-  scrubber.setAttribute("aria-valuenow", String(Math.max(0, value)));
-  scrubber.setAttribute(
-    "aria-valuetext",
-    live && count ? "Live, following new matching events" : selectedValue || "No matching events",
-  );
-  scrubber.setAttribute(
-    "aria-disabled",
-    String(!count || filterPending || clearPending || !!latest.error),
-  );
-  scrubber.tabIndex = count && !filterPending && !clearPending && !latest.error ? 0 : -1;
-  const ticks = requiredElement("#ticks");
-  const tickCount = Math.min(count, 64);
-  if (ticks.children.length !== tickCount)
-    ticks.replaceChildren(...Array.from({ length: tickCount }, () => element("i", "tick", "")));
-  for (let index = 0; index < tickCount; index++)
-    (ticks.children[index] as HTMLElement).style.top =
-      `${((tickCount === 1 ? 0 : (index / (tickCount - 1)) * (count - 1)) / count) * 100}%`;
-  const pin = requiredElement("#pin");
-  pin.hidden = !count || selectedId === null;
-  pin.style.top = `${count ? (value / count) * 100 : 0}%`;
+function setText(node: HTMLElement, text: string) {
+  if (node.textContent !== text) node.textContent = text;
 }
 function summary(value: HistoryStatus) {
-  const oldView = activeView();
-  if (!gesture && oldView && value.view?.queryId === queryId)
-    position = Math.max(0, position - Math.max(0, value.view.removed - oldView.removed));
   latest = value;
   const parts = [];
   const transport = value.transport;
@@ -219,133 +184,140 @@ function summary(value: HistoryStatus) {
     }
     notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;
   }
-  const mode = requiredElement("#mode"),
-    modeText = live ? "Live" : "History · position held";
-  if (mode.textContent !== modeText) mode.textContent = modeText;
-  liveButton.setAttribute("aria-pressed", String(live));
-  const view = activeView();
-  const count = view?.count ?? (hasFilters() ? null : value.total);
+  const view = activeView(),
+    count = view?.count ?? null;
   const arrivals = live || !view ? 0 : Math.max(0, view.arrivals - heldAt);
+  setText(requiredElement("#mode"), live ? "List holds when you inspect a call" : "Position held");
+  setText(liveButton, live ? "Live ↓" : "Resume live");
+  liveButton.setAttribute("aria-pressed", String(live));
+  setText(
+    requiredElement("#new-matches"),
+    !live ? `${arrivals.toLocaleString()} new matching` : "",
+  );
   const countNode = requiredElement("#count");
-  countNode.textContent =
+  setText(
+    countNode,
     count === null
       ? value.error
-        ? "History unavailable"
+        ? "Unavailable"
         : queryFailed
           ? "Search stopped"
           : "Searching…"
-      : `${count} ${hasFilters() ? "matching" : "retained"}${arrivals ? ` · ${arrivals} new` : ""}`;
+      : count.toLocaleString(),
+  );
   countNode.dataset.matching = String(count ?? 0);
   countNode.dataset.arrivals = String(arrivals);
-  const oldestMatch = gesture?.first ?? view?.first;
-  requiredElement("#oldest").textContent = hasFilters()
-    ? oldestMatch
-      ? time(oldestMatch.receivedAt)
-      : count
-        ? "Oldest match"
-        : ""
-    : value.first
-      ? time(value.first.receivedAt)
-      : "";
-  requiredElement("#retention").textContent = value.first
-    ? `Retained from ${time(value.first.receivedAt)} UTC · Deleted when the app closes.`
-    : transport || value.starting
-      ? "Temporary recording · Waiting for events."
-      : "Temporary synthetic recording · Waiting for events.";
+  const measured = view?.measuredCalls ?? 0,
+    total = view?.responseBytes ?? 0;
+  setText(requiredElement("#response-total"), count === null ? "Unavailable" : formatBytes(total));
+  setText(
+    requiredElement("#response-unknown"),
+    count === null
+      ? ""
+      : count > measured
+        ? `+ ${(count - measured).toLocaleString()} unknown responses`
+        : "All matching responses measured",
+  );
+  setText(
+    requiredElement("#response-average"),
+    measured ? formatBytes(total / measured) : "Unavailable",
+  );
+  setText(
+    requiredElement("#response-denominator"),
+    `Across ${measured.toLocaleString()} measured calls`,
+  );
+  setText(
+    requiredElement("#retention"),
+    value.first
+      ? `Retained from ${time(value.first.receivedAt)} UTC · Deleted when the app closes.`
+      : "Temporary recording · Waiting for events.",
+  );
+  const blocked = filterPending || clearPending || !!value.clearing || !!value.error;
   clear.disabled = !value.total || clearPending || !!value.clearing || !!value.error;
-  liveButton.disabled =
-    !count || filterPending || clearPending || !!value.clearing || !!value.error;
+  liveButton.disabled = blocked || !count;
+  sort.disabled = !!value.error || clearPending;
   copy.disabled = selectedId === null || copyPending || !!value.error;
   filters.disable(!!value.error || !!value.clearing);
-  for (const button of entries.querySelectorAll("button"))
-    button.disabled = clearPending || !!value.clearing || !!value.error;
-  positionMarkers();
+  previousPage.disabled = blocked || (pageChanged ? !currentRows.length : !position);
+  nextPage.disabled =
+    blocked ||
+    (pageChanged ? !currentRows.length : position + currentRows.length >= (snapshot?.count ?? 0));
+  requiredElement("#page-position").textContent = pageChanged
+    ? `${currentRows.length} held calls`
+    : currentRows.length
+      ? `${position + 1}–${position + currentRows.length} of ${(snapshot?.count ?? 0).toLocaleString()}`
+      : "";
+  for (const row of entries.querySelectorAll<HTMLElement>("[data-event]")) {
+    row.setAttribute("aria-disabled", String(blocked));
+    row.tabIndex = blocked ? -1 : 0;
+  }
 }
-function empty(
-  message = latest.transport ? "No events have arrived." : "No synthetic events have arrived.",
-  reset = false,
-) {
+function empty(message = "No tool calls have arrived.", reset = false) {
+  pageChanged = false;
+  currentRows = [];
   selectedId = null;
+  selected = null;
   selectedText = "";
-  selectedValue = "";
-  displayed = null;
   position = 0;
+  entries.replaceChildren();
   json.textContent = "";
-  payload.scrollTop = 0;
   payload.dataset.event = "null";
-  const contents = element("div", "empty", message);
+  if (dialog.open) dialog.close();
+  const host = requiredElement("#empty-results");
+  host.hidden = false;
+  host.textContent = message;
   if (reset) {
     const button = element("button", "", "Reset filters");
     button.addEventListener("click", filters.reset);
-    contents.append(button);
+    host.append(button);
   }
-  entries.replaceChildren(contents);
-  requiredElement("#metadata").textContent = "No payload selected";
-  requiredElement("#pin").hidden = true;
   status.textContent = "";
   copy.disabled = true;
-  copy.textContent = "Copy JSON";
   updateScroll();
-  positionMarkers();
-  busy();
-}
-function busy() {
-  entries.setAttribute("aria-busy", String(!latest.error && (loading || filterPending)));
 }
 function cancelWork() {
   wanted = null;
   targetId++;
   window.scope.cancel(generation, targetId);
 }
-function stopGesture() {
-  if (gesture && scrubber.hasPointerCapture(gesture.pointerId))
-    scrubber.releasePointerCapture(gesture.pointerId);
-  gesture = null;
-  pointerPosition = null;
-  if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
-  pointerFrame = null;
+function hold() {
+  if (live) heldAt = activeView()?.arrivals ?? 0;
+  live = false;
 }
 function receive(value: HistoryStatus) {
   if (value.generation < generation) return;
-  const cleared = !!latest.clearing && !value.clearing;
-  const newGeneration = value.generation !== generation;
+  const changed = value.accepted !== latest.accepted || value.total !== latest.total;
+  const reset = value.generation !== generation || (!!latest.clearing && !value.clearing);
   analyzer.receive(value);
-  if (newGeneration) {
+  if (value.generation !== generation) {
     generation = value.generation;
     queryId++;
     targetId = 0;
     live = true;
     heldAt = 0;
+    snapshot = undefined;
     evictionNotice = "";
     queryNotice = "";
-    clearTimeout(filterTimer);
     filterPending = false;
-    stopGesture();
+    clearTimeout(filterTimer);
     cancelWork();
     relock();
     empty();
   }
-  const changed = cleared || value.accepted !== latest.accepted || value.total !== latest.total;
   if (value.error) {
+    if (!currentRows.length) empty("Temporary history is unavailable.");
     queryNotice = "";
     queryFailed = false;
-    clearTimeout(filterTimer);
     filterPending = false;
-    stopGesture();
+    clearTimeout(filterTimer);
     cancelWork();
     relock();
   }
   summary(value);
-  if ((newGeneration || cleared) && !value.clearing && !value.error) filters.refresh();
   tools.receive(value);
   if (!value.starting) document.documentElement.dataset.ready = "true";
-  if (value.error) {
-    busy();
-    if (selectedId === null) empty("Temporary history is unavailable.");
-    document.documentElement.dataset.ready = "true";
-    return;
-  }
   if (
+    value.error ||
     document.hidden ||
     document.body.classList.contains("tool-open") ||
     clearPending ||
@@ -353,161 +325,230 @@ function receive(value: HistoryStatus) {
     filterPending
   )
     return;
+  if (reset) filters.refresh();
   if (
-    gesture &&
+    !live &&
+    snapshot &&
     value.view?.queryId === queryId &&
-    value.view.removed !== gesture.snapshot.removed
+    value.view.removed !== snapshot.removed
   ) {
-    stopGesture();
-    cancelWork();
-    evictionNotice =
-      "History used by the drag was evicted. Drag ended; showing the nearest retained match.";
-    requestInspection(selectedId);
-  } else if (!gesture && selectedId !== null && value.first && selectedId < value.first.id) {
-    evictionNotice = "The selected event was evicted. Showing the nearest retained matching event.";
-    requestInspection(selectedId);
-  } else if (
-    !gesture &&
-    ((live && changed) || (selectedId === null && (activeView()?.count ?? 0) > 0))
-  )
-    requestInspection(null);
+    const missing = currentRows.some((row) => value.first && row.id < value.first.id);
+    if (missing) {
+      snapshot = undefined;
+      evictionNotice = "Held calls were evicted. Showing the nearest retained matching calls.";
+      if (selectedId !== null && value.first && selectedId < value.first.id) {
+        evictionNotice =
+          "The selected event was evicted. Showing the nearest retained matching call.";
+        if (dialog.open) {
+          detailTarget++;
+          dialog.close();
+        }
+        selectedId = null;
+        selected = null;
+      }
+      void requestNavigation({ kind: "select", id: currentRows[0]?.id ?? null });
+    } else {
+      pageChanged = true;
+      snapshot = {
+        ...snapshot,
+        count: Math.max(0, snapshot.count - (value.view.removed - snapshot.removed)),
+        removed: value.view.removed,
+      };
+      summary(value);
+    }
+  } else if ((live && changed) || reset || (!currentRows.length && (activeView()?.count ?? 0) > 0))
+    void requestNavigation({ kind: "live" });
 }
-function rowCount() {
-  return Math.max(
-    3,
-    Math.min(
-      5,
-      Math.floor(
-        (entries.clientHeight - 20) / (innerWidth <= 720 ? 70 : innerWidth <= 1050 ? 128 : 124),
+function drawRows() {
+  const focused = (document.activeElement as HTMLElement | null)?.dataset.event;
+  entries.dataset.position = String(position);
+  const existing = new Map(
+    [...entries.querySelectorAll<HTMLTableRowElement>("tr[data-event]")].map((row) => [
+      Number(row.dataset.event),
+      row,
+    ]),
+  );
+  const rows = currentRows.map((item) => {
+    const retained = existing.get(item.id);
+    if (retained) {
+      retained.setAttribute("aria-selected", String(item.id === selectedId));
+      return retained;
+    }
+    const row = element("tr", "event", "");
+    row.dataset.event = String(item.id);
+    row.tabIndex = 0;
+    row.setAttribute("aria-label", `Inspect ${item.tool ?? "Unknown tool"} ${item.preview}`);
+    row.setAttribute("aria-selected", String(item.id === selectedId));
+    const input = element("td", "", "");
+    const preview = element("div", "preview", item.preview);
+    preview.title = item.preview;
+    input.append(
+      preview,
+      element(
+        "div",
+        "eventsession",
+        `${item.context ?? item.session ?? "No session"} · ${item.model ?? "Unknown model"}`,
       ),
+    );
+    row.append(
+      element("td", "tool-name", item.tool ?? "Unknown tool"),
+      input,
+      element("td", "response-size", formatBytes(item.responseBytes ?? null)),
+      element("td", "received", time(item.receivedAt)),
+    );
+    const open = () => {
+      if (filterPending || clearPending || latest.error) return;
+      hold();
+      summary(latest);
+      void openDetail(item.id);
+    };
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        open();
+      }
+    });
+    return row;
+  });
+  for (const row of existing.values()) if (!rows.includes(row)) row.remove();
+  rows.forEach((row, index) => {
+    if (entries.children[index] !== row) entries.insertBefore(row, entries.children[index] ?? null);
+  });
+  if (focused)
+    entries.querySelector<HTMLElement>(`[data-event="${focused}"]`)?.focus({ preventScroll: true });
+}
+let detailTarget = 0,
+  detailLoading = false,
+  detailWanted: number | null = null;
+async function openDetail(id: number) {
+  detailWanted = id;
+  detailTarget++;
+  if (detailLoading) return;
+  detailLoading = true;
+  try {
+    while (detailWanted !== null) {
+      const id = detailWanted;
+      detailWanted = null;
+      const request = detailTarget,
+        recording = generation;
+      // Navigation and inspection share one bounded broker slot.
+      while (loading) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 20));
+        if (request !== detailTarget || recording !== generation) break;
+      }
+      if (request !== detailTarget || recording !== generation) continue;
+      const result = await window.scope.inspect(recording, id, 1);
+      if (request !== detailTarget || recording !== generation) continue;
+      if (result.error) {
+        queryNotice = result.error;
+        summary(latest);
+        continue;
+      }
+      if (!("selected" in result) || !result.selected || result.selected.id !== id) {
+        evictionNotice = "That call is no longer retained.";
+        summary(latest);
+        return;
+      }
+      selected = result.selected;
+      selectedId = id;
+      selectedText = selected.text;
+      tab = "response";
+      renderPayload();
+      drawRows();
+      if (!dialog.open) dialog.showModal();
+      requiredElement("#detail-close").focus();
+      updateScroll();
+    }
+  } catch {
+    queryNotice = "The call could not be opened. Select it to try again.";
+    summary(latest);
+  } finally {
+    detailLoading = false;
+    if (wanted) void requestNavigation(wanted.target);
+  }
+}
+function renderPayload() {
+  if (!selected) return;
+  const value = JSON.parse(selectedText) as Record<string, unknown>;
+  const content = tab === "response" ? value.tool_response : value.tool_input;
+  json.textContent =
+    tab === "json"
+      ? selectedText
+      : content === undefined
+        ? tab === "response"
+          ? "Response unavailable."
+          : "Input unavailable."
+        : typeof content === "string"
+          ? content
+          : JSON.stringify(content);
+  payload.scrollTop = 0;
+  payload.dataset.event = String(selectedId);
+  payload.setAttribute(
+    "aria-label",
+    tab === "json"
+      ? "Complete original JSON payload"
+      : tab === "response"
+        ? "Tool response"
+        : "Tool input",
+  );
+  const metadata = requiredElement("#metadata");
+  metadata.replaceChildren(
+    element(
+      "div",
+      "detail-title",
+      `${selected.tool ?? "Unknown tool"} · ${formatBytes(selected.responseBytes ?? null)}`,
+    ),
+    element(
+      "div",
+      "detail-identity",
+      `${selected.session ?? "No session"} · ${selected.model ?? "Unknown model"} · ${time(selected.receivedAt)} UTC`,
     ),
   );
-}
-function hold() {
-  if (live) heldAt = activeView()?.arrivals ?? 0;
-  live = false;
+  for (const button of dialog.querySelectorAll<HTMLButtonElement>("[data-tab]"))
+    button.setAttribute("aria-pressed", String(button.dataset.tab === tab));
+  copy.textContent = `Copy ${tab === "json" ? "JSON" : tab}`;
+  copy.disabled = false;
+  status.textContent = "List held while you inspect.";
+  updateScroll();
 }
 function render(result: Reply<Navigation>) {
   if (!("rows" in result)) {
-    if (!result.error) return;
-    stopGesture();
-    reconcileTarget = 0;
-    if (displayed?.queryId === queryId) {
-      position = Math.max(
-        0,
-        displayed.position - Math.max(0, (activeView()?.removed ?? 0) - displayed.removed),
-      );
-      live = displayed.live;
-      heldAt = displayed.heldAt;
+    if (result.error) {
+      queryFailed = true;
+      queryNotice = result.error + (currentRows.length ? " Previous results are still shown." : "");
+      if (!currentRows.length) empty("Search stopped.", true);
+      summary(latest);
     }
-    queryFailed = true;
-    queryNotice = result.error + (selectedId !== null ? " Previous selection is still shown." : "");
-    if (selectedId === null)
-      empty(result.timedOut ? "Search timed out." : "History could not be searched.", true);
-    summary(latest);
-    document.documentElement.dataset.ready = "true";
     return;
   }
-  queryNotice = "";
   queryFailed = false;
-  if (result.selectionEvicted)
-    evictionNotice = "The selected event was evicted. Showing the nearest retained matching event.";
-  const focusedId = (document.activeElement as HTMLElement | null)?.dataset.event;
-  const current = result.accepted >= latest.accepted || !activeView() ? result : latest;
-  summary(current);
-  position = Math.max(
-    0,
-    result.position - Math.max(0, (activeView()?.removed ?? 0) - result.snapshot.removed),
-  );
-  const selectedIndex = result.rows.findIndex((item) => item.id === result.selected?.id);
-  if (!result.selected)
+  queryNotice = "";
+  pageChanged = false;
+  snapshot = result.snapshot;
+  position = result.position;
+  currentRows = result.rows;
+  if (result.accepted >= latest.accepted || !activeView()) latest = result;
+  if (!currentRows.length)
     empty(
-      result.total
-        ? "No matching events."
-        : latest.transport
-          ? "No events have arrived."
-          : "No synthetic events have arrived.",
+      result.total ? "No calls match these filters." : "No tool calls have arrived.",
       !!result.total,
     );
-  else
-    entries.replaceChildren(
-      ...result.rows.map((item, index) => {
-        const button = element("button", "event", "");
-        button.dataset.event = String(item.id);
-        button.setAttribute("aria-pressed", String(item.id === result.selected!.id));
-        const line = element("span", "eventline", "");
-        const stamp = element("time", "", time(item.receivedAt));
-        stamp.dateTime = item.receivedAt;
-        stamp.title = `${item.receivedAt} UTC`;
-        line.append(element("span", "hook", item.hook), stamp);
-        button.append(
-          line,
-          element("span", "preview", item.preview),
-          element("span", "eventsession mono", item.session ?? "No session"),
-        );
-        button.addEventListener("click", () => {
-          if (filterPending || clearPending || latest.error) return;
-          stopGesture();
-          hold();
-          position = result.position + index - selectedIndex;
-          evictionNotice = "";
-          summary(latest);
-          requestInspection(item.id);
-        });
-        return button;
-      }),
-    );
-  if (focusedId)
-    entries
-      .querySelector<HTMLButtonElement>(`[data-event="${focusedId}"]`)
-      ?.focus({ preventScroll: true });
-  const event = result.selected;
-  if ((event?.id ?? null) !== selectedId || (event?.text ?? "") !== selectedText) {
-    selectedId = event?.id ?? null;
-    selectedText = event?.text ?? "";
-    json.textContent = selectedText;
-    payload.scrollTop = 0;
-    payload.dataset.event = String(selectedId);
-    status.textContent = "";
-    copy.textContent = "Copy JSON";
+  else {
+    requiredElement("#empty-results").hidden = true;
+    drawRows();
   }
-  selectedValue = event ? `${time(event.receivedAt)} UTC, ${event.hook}` : "";
-  const metadata = requiredElement("#metadata");
-  metadata.replaceChildren();
-  if (event) {
-    const identity = element("span", "identity", "");
-    identity.append(
-      element("span", "stamp", `${time(event.receivedAt)} UTC · `),
-      element("span", "session", event.session ?? "No session"),
-    );
-    const details = element("span", "mono details", "");
-    details.append(
-      element("span", "tool", event.tool ?? event.hook),
-      element("span", "bytes", ` · ${event.bytes} bytes`),
-    );
-    metadata.append(identity, details);
-    metadata.title = event.receivedAt;
-  } else metadata.textContent = "No payload selected";
-  copy.disabled = !event || copyPending;
-  displayed = event
-    ? { queryId, position, live, heldAt, removed: activeView()?.removed ?? 0 }
-    : null;
-  positionMarkers();
-  updateScroll();
+  summary(latest);
   document.documentElement.dataset.ready = "true";
-}
-function requestInspection(id: number | null = selectedId) {
-  return requestNavigation(id === null && live ? { kind: "live" } : { kind: "select", id });
 }
 async function requestNavigation(target: NavigationTarget) {
   if (filterPending || clearPending || latest.clearing || latest.error) return;
   targetId++;
-  wanted = { generation, queryId, targetId, filter: filters.value(), target, rows: rowCount() };
-  lastRows = wanted.rows;
+  wanted = { generation, queryId, targetId, filter: filters.value(), target, rows: PAGE_ROWS };
   window.scope.cancel(generation, targetId);
-  if (loading) return;
+  if (loading || detailLoading) return;
   loading = true;
-  busy();
+  entries.setAttribute("aria-busy", "true");
   try {
     while (wanted) {
       const request = wanted;
@@ -516,7 +557,7 @@ async function requestNavigation(target: NavigationTarget) {
       try {
         result = await window.scope.navigate(request.generation, request);
       } catch {
-        result = { error: "The event could not be opened. Select an event to try again." };
+        result = { error: "History could not be searched. Try again." };
       }
       if (
         wanted ||
@@ -528,162 +569,98 @@ async function requestNavigation(target: NavigationTarget) {
       )
         continue;
       if (result.snapshotLost) {
-        stopGesture();
-        evictionNotice =
-          "History used by the drag was evicted. Drag ended; showing the nearest retained match.";
-        requestInspection(selectedId);
+        snapshot = undefined;
+        evictionNotice = "Held history was evicted. Showing retained calls.";
+        void requestNavigation({ kind: "rank", rank: position });
         continue;
       }
       if (
         "rows" in result &&
-        result.selected &&
         latest.first &&
         result.rows.some((row) => row.id < latest.first!.id)
       ) {
-        if (result.selected!.id < latest.first.id)
-          evictionNotice =
-            "The requested event was evicted. Showing the nearest retained matching event.";
-        requestInspection(result.selected!.id);
+        snapshot = undefined;
+        evictionNotice = "Requested calls were evicted. Showing retained calls.";
+        void requestNavigation({ kind: "select", id: latest.first.id });
         continue;
       }
       render(result);
-      if ("rows" in result && !result.error && !result.selected && (activeView()?.count ?? 0) > 0)
-        requestInspection(null);
-      if (request.targetId === reconcileTarget && !result.error) {
-        reconcileTarget = 0;
-        requestInspection(live ? null : selectedId);
-      }
     }
   } finally {
     loading = false;
-    busy();
-    if (rowCount() !== lastRows && !queryFailed && !clearPending && !gesture && !filterPending)
-      requestInspection(live ? null : selectedId);
+    entries.setAttribute("aria-busy", String(filterPending));
   }
 }
-function changeFilter(_value: Filter, delay: number) {
+function changeFilter(_value: unknown, delay: number) {
   if (latest.error) return;
   queryId++;
   heldAt = 0;
+  snapshot = undefined;
+  position = 0;
+  detailTarget++;
+  if (dialog.open) dialog.close();
   evictionNotice = "";
   queryNotice = "Searching…";
   queryFailed = false;
-  stopGesture();
   cancelWork();
   clearTimeout(filterTimer);
   filterPending = true;
-  busy();
+  entries.setAttribute("aria-busy", "true");
   summary(latest);
   filterTimer = setTimeout(() => {
     filterPending = false;
-    requestInspection(live ? null : selectedId);
+    void requestNavigation({ kind: "live" });
   }, delay);
 }
-function seek(rank: number, snapshot = navigationSnapshot()) {
-  if (!snapshot?.count || filterPending || clearPending || latest.error) return;
-  const next = Math.max(0, Math.min(snapshot.count, Math.round(rank)));
-  if (next === snapshot.count) {
-    live = true;
-    heldAt = 0;
-  } else hold();
-  position = next;
-  evictionNotice = "";
-  summary(latest);
-  requestNavigation(live ? { kind: "live", snapshot } : { kind: "rank", rank: next, snapshot });
-}
-function movePointer() {
-  pointerFrame = null;
-  if (!gesture || pointerPosition === null) return;
-  seek(
-    ((pointerPosition - gesture.top) / gesture.height) * gesture.snapshot.count,
-    gesture.snapshot,
-  );
-}
-scrubber.addEventListener("pointerdown", (event) => {
-  const snapshot = navigationSnapshot();
-  if (!snapshot?.count || filterPending || clearPending || latest.error || event.button !== 0)
-    return;
-  const rect = scrubber.getBoundingClientRect();
-  gesture = {
+previousPage.addEventListener("click", () => {
+  hold();
+  void requestNavigation({
+    kind: "select",
+    id: currentRows[0]?.id ?? null,
+    page: "previous",
     snapshot,
-    first: activeView()?.first,
-    pointerId: event.pointerId,
-    top: rect.top,
-    height: rect.height,
-  };
-  scrubber.setPointerCapture(event.pointerId);
-  scrubber.focus();
-  pointerPosition = event.clientY;
-  movePointer();
+  });
+  summary(latest);
 });
-scrubber.addEventListener("pointermove", (event) => {
-  if (!gesture || event.pointerId !== gesture.pointerId) return;
-  pointerPosition = event.clientY;
-  if (pointerFrame === null) pointerFrame = requestAnimationFrame(movePointer);
+nextPage.addEventListener("click", () => {
+  hold();
+  void requestNavigation({
+    kind: "select",
+    id: currentRows[0]?.id ?? null,
+    page: "next",
+    snapshot,
+  });
+  summary(latest);
 });
-function releasePointer(event: PointerEvent) {
-  if (!gesture || event.pointerId !== gesture.pointerId) return;
-  pointerPosition = event.clientY;
-  if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
-  movePointer();
-  const finalTarget = targetId;
-  stopGesture();
-  if (loading) reconcileTarget = finalTarget;
-  else requestInspection(live ? null : selectedId);
-}
-scrubber.addEventListener("pointerup", releasePointer);
-scrubber.addEventListener("pointercancel", (event) => {
-  if (gesture?.pointerId === event.pointerId) {
-    stopGesture();
-    cancelWork();
-    requestInspection(live ? null : selectedId);
-  }
+sort.addEventListener("change", () => filters.sort(sort.value as "newest" | "largest"));
+requiredElement("#detail-close").addEventListener("click", () => dialog.close());
+dialog.addEventListener("close", () => {
+  detailTarget++;
+  selected = null;
+  selectedText = "";
+  json.textContent = "";
+  entries
+    .querySelector<HTMLElement>(`[data-event="${selectedId}"]`)
+    ?.focus({ preventScroll: true });
 });
-scrubber.addEventListener("keydown", (event) => {
-  const snapshot = navigationSnapshot();
-  const current = live ? (snapshot?.count ?? 0) : position;
-  const moves: Record<string, number> = {
-    ArrowUp: current - 1,
-    ArrowLeft: current - 1,
-    ArrowDown: current + 1,
-    ArrowRight: current + 1,
-    PageUp: current - 5,
-    PageDown: current + 5,
-    Home: 0,
-    End: snapshot?.count ?? 0,
-  };
-  if (event.key in moves) {
-    event.preventDefault();
-    seek(moves[event.key], snapshot);
-  }
-});
-let wheelAt = -Infinity;
-requiredElement(".journal").addEventListener(
-  "wheel",
-  (event) => {
-    event.preventDefault();
-    if (!event.deltaY || performance.now() - wheelAt < 80) return;
-    wheelAt = performance.now();
-    const snapshot = navigationSnapshot();
-    seek((live ? (snapshot?.count ?? 0) : position) + Math.sign(event.deltaY), snapshot);
-  },
-  { passive: false },
-);
+for (const button of dialog.querySelectorAll<HTMLButtonElement>("[data-tab]"))
+  button.addEventListener("click", () => {
+    tab = button.dataset.tab as typeof tab;
+    renderPayload();
+  });
 copy.addEventListener("click", async () => {
   if (selectedId === null || copyPending || latest.error) return;
-  const id = selectedId;
-  const copyGeneration = generation;
+  const id = selectedId,
+    recording = generation,
+    part = tab;
   copyPending = true;
   copy.disabled = true;
-  status.textContent = "";
-  const success = await window.scope.copyPayload(copyGeneration, id);
+  const success = await window.scope.copyPayload(recording, id, part);
   copyPending = false;
   copy.disabled = selectedId === null || !!latest.error;
-  if (selectedId !== id || generation !== copyGeneration) return;
-  copy.textContent = success ? "Copied" : "Copy JSON";
-  status.textContent = success
-    ? ""
-    : "Copy failed. Try Copy JSON again, or select and copy the original text.";
+  if (id !== selectedId || recording !== generation || part !== tab) return;
+  copy.textContent = success ? "Copied" : `Copy ${part === "json" ? "JSON" : part}`;
+  status.textContent = success ? "" : "Copy failed. Select and copy the visible text.";
 });
 async function activateClear() {
   if (clear.disabled || clearPending) return;
@@ -704,7 +681,6 @@ async function activateClear() {
   const oldGeneration = generation;
   clearTimeout(filterTimer);
   filterPending = false;
-  stopGesture();
   cancelWork();
   summary(latest);
   try {
@@ -713,7 +689,7 @@ async function activateClear() {
     const value = await window.scope.status();
     clearPending = false;
     receive(value);
-    if (!value.error) requestInspection(null);
+    if (!value.error) void requestNavigation({ kind: "live" });
   } catch {
     clearPending = false;
     requiredElement("#notice").textContent = "Clear failed. Restart the app to retry cleanup.";
@@ -739,54 +715,34 @@ document.addEventListener("visibilitychange", () => {
 });
 window.scope.onHidden(() => {
   relock();
-  stopGesture();
 });
 liveButton.addEventListener("click", () => {
   if (liveButton.disabled) return;
-  stopGesture();
   live = true;
   heldAt = 0;
+  snapshot = undefined;
   evictionNotice = "";
   summary(latest);
-  requestInspection(null);
+  void requestNavigation({ kind: "live" });
 });
-new ResizeObserver(() => {
-  if (document.body.classList.contains("tool-open")) return;
-  const notice = requiredElement("#notice");
-  notice.tabIndex = notice.scrollHeight > notice.clientHeight ? 0 : -1;
-  positionMarkers();
-  if (
-    rowCount() !== lastRows &&
-    !loading &&
-    !queryFailed &&
-    !clearPending &&
-    !gesture &&
-    !filterPending
-  )
-    requestInspection(live ? null : selectedId);
-}).observe(entries);
 window.scope.onStatus(receive);
 void window.scope.status().then((value) => {
   receive(value);
-  requestInspection(null);
-  filters.refresh();
+  void requestNavigation({ kind: "live" });
 });
-
 const analyzer = attachAnalysis(
-  () => filters.value().session,
+  () => (filters.value().sessions?.length === 1 ? filters.value().sessions![0] : null),
   (visible) => {
     if (!visible) {
-      stopGesture();
       cancelWork();
       relock();
     } else {
       summary(latest);
-      requestInspection(live ? null : selectedId);
+      if (live) void requestNavigation({ kind: "live" });
     }
   },
 );
-
 const tools = attachTools(analyzer, () => {
   summary(latest);
-  requestInspection(live ? null : selectedId);
+  if (live) void requestNavigation({ kind: "live" });
 });

@@ -109,7 +109,7 @@ const scope: ScopeAPI = {
       !(id === null || Number.isSafeInteger(id)) ||
       !Number.isInteger(rows) ||
       rows < 1 ||
-      rows > 5
+      rows > 12
     )
       throw new Error("Invalid inspection request.");
     inspecting = true;
@@ -143,26 +143,28 @@ const scope: ScopeAPI = {
       inspecting = false;
     }
   },
-  choices: async (generation, field, cursor = null, direction = "next") => {
+  choices: async (generation, field, cursor = null, direction = "next", text = "") => {
     if (
       readingChoices ||
       !Number.isSafeInteger(generation) ||
-      !["session", "hook"].includes(field) ||
+      !["session", "hook", "tool", "model"].includes(field) ||
+      typeof text !== "string" ||
+      text.length > 512 ||
       !(cursor === null || (typeof cursor === "string" && cursor.length <= 61440))
     )
       throw new Error("Filter choices unavailable.");
     readingChoices = true;
     try {
-      return await ipcRenderer.invoke("scope:choices", generation, field, cursor, direction);
+      return await ipcRenderer.invoke("scope:choices", generation, field, cursor, direction, text);
     } finally {
       readingChoices = false;
     }
   },
-  copyPayload: async (generation, id) => {
+  copyPayload: async (generation, id, part = "json") => {
     if (copying || !Number.isSafeInteger(generation) || !Number.isSafeInteger(id)) return false;
     copying = true;
     try {
-      return await ipcRenderer.invoke("scope:copy", generation, id);
+      return await ipcRenderer.invoke("scope:copy", generation, id, part);
     } catch {
       return false;
     } finally {

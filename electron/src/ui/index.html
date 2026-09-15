@@ -92,52 +92,91 @@
           aria-label="Search retained payloads and metadata"
           placeholder="Search payloads…"
           maxlength="512"
+          type="search"
         />
-        <select id="session" aria-label="Filter by session">
-          <option value="">All sessions</option>
-        </select>
-        <details class="hooks" id="hooks">
-          <summary id="hook-label">All hooks</summary>
-          <div class="hookmenu" id="hookmenu"></div>
-        </details>
+        <div class="filterbar">
+          <button id="filter-open" aria-expanded="false" aria-controls="filter-picker">
+            ＋ Filter calls</button
+          ><span id="filter-chips"></span><button id="filter-reset">Reset</button>
+        </div>
+        <div id="filter-picker" hidden>
+          <div class="filter-picker-body">
+            <div class="filter-fields">
+              <button data-field="session">Session</button><button data-field="tool">Tool</button
+              ><button data-field="model">Model</button
+              ><button data-field="prefix">Command prefix</button
+              ><button data-field="size">Response size</button>
+            </div>
+            <div id="filter-choices"></div>
+          </div>
+          <div class="filter-picker-footer">
+            <span>Match any choice in each field</span><button id="filter-done">Done</button>
+          </div>
+        </div>
       </div>
-      <div class="mode"><span id="mode" role="status">Live</span><span id="count"></span></div>
       <div id="notice" role="status"></div>
       <div class="workspace">
         <div class="journal">
-          <div class="rail">
-            <time id="oldest"></time>
-            <div
-              class="railtrack"
-              id="scrubber"
-              role="slider"
-              tabindex="-1"
-              aria-label="Scrub retained events, oldest at top, Live at bottom"
-              aria-orientation="vertical"
-              aria-valuemin="0"
-              aria-valuemax="0"
-              aria-valuenow="0"
-              aria-disabled="true"
-            >
-              <div id="ticks"></div>
-              <div id="pin"></div>
+          <div class="tabletools">
+            <div class="follow">
+              <button class="live" id="live" aria-label="Follow live arrivals">Live ↓</button
+              ><span id="mode" role="status">List holds when you inspect a call</span
+              ><span id="new-matches"></span>
             </div>
-            <button class="live" id="live" aria-label="Follow live arrivals">Live</button>
+            <select id="sort" aria-label="Sort results">
+              <option value="newest">Newest first</option>
+              <option value="largest">Largest response</option>
+            </select>
           </div>
-          <div id="entries" aria-label="Journal events"></div>
+          <div class="tablewrap" tabindex="0" aria-label="Matching tool calls">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tool</th>
+                  <th>Command / input</th>
+                  <th>Response bytes</th>
+                  <th>Received</th>
+                </tr>
+              </thead>
+              <tbody id="entries"></tbody>
+            </table>
+            <div id="empty-results" class="empty" hidden></div>
+          </div>
+          <div class="result-pages">
+            <button id="previous-page">Previous</button><span id="page-position"></span
+            ><button id="next-page">Next</button>
+          </div>
         </div>
-        <section class="inspector" aria-label="Accepted payload">
+        <aside class="call-summary" aria-label="Matching call summaries" tabindex="0">
+          <div class="metric">
+            <div class="metric-label">Matching calls · live</div>
+            <div class="metric-number" id="count">0</div>
+            <div class="metric-note">Across retained history</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Response bytes</div>
+            <div class="metric-number" id="response-total">0 B</div>
+            <div class="metric-note" id="response-unknown"></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Average response</div>
+            <div class="metric-number" id="response-average">Unavailable</div>
+            <div class="metric-note" id="response-denominator">Across 0 measured calls</div>
+          </div>
+        </aside>
+      </div>
+      <dialog id="call-detail" aria-label="Call details">
+        <div class="detail-content">
           <div class="payloadmeta">
-            <div id="metadata">Opening temporary recording…</div>
-            <button id="copy" disabled>Copy JSON</button>
+            <div id="metadata"></div>
+            <button id="detail-close">Close ×</button>
+          </div>
+          <div class="detail-tabs">
+            <button data-tab="response">Response</button><button data-tab="input">Input</button
+            ><button data-tab="json">Original JSON</button>
           </div>
           <div class="payloadbody">
-            <div
-              id="payload"
-              tabindex="0"
-              role="region"
-              aria-label="Complete original JSON payload"
-            >
+            <div id="payload" tabindex="0" role="region" aria-label="Tool response">
               <pre id="json"></pre>
             </div>
             <div
@@ -155,9 +194,12 @@
               <div id="thumb"></div>
             </div>
           </div>
-          <div id="copy-status" role="status"></div>
-        </section>
-      </div>
+          <div class="detail-footer">
+            <span id="copy-status" role="status">List held while you inspect.</span
+            ><button id="copy" disabled>Copy JSON</button>
+          </div>
+        </div>
+      </dialog>
       <section id="analyzer" aria-label="Session analyzer" hidden>
         <div
           id="analysis-controls-region"

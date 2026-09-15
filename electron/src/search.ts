@@ -33,9 +33,21 @@ const metadata = [
   "connectionId",
   "sequence",
   "bytes",
+  "model",
+  "command",
+  "responseBytes",
 ] as const;
 const positive = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value > 0 && value <= 2147483647;
+const strings = (value: unknown, nullable = false): boolean =>
+  value === undefined ||
+  (Array.isArray(value) &&
+    value.length <= 32 &&
+    value.every(
+      (v) =>
+        (nullable && v === null) ||
+        (typeof v === "string" && v.length <= MAX_PAYLOAD_BYTES && v.isWellFormed()),
+    ));
 function validFilter(value: unknown): value is Filter {
   const filter = value as Filter | null;
   return !!(
@@ -53,12 +65,38 @@ function validFilter(value: unknown): value is Filter {
       (value) =>
         typeof value === "string" && value.length <= MAX_PAYLOAD_BYTES && value.isWellFormed(),
     ) &&
+    strings(filter.sessions) &&
+    strings(filter.tools) &&
+    strings(filter.models, true) &&
+    (filter.prefix === undefined ||
+      (typeof filter.prefix === "string" &&
+        filter.prefix.length <= QUERY_LIMITS.text &&
+        filter.prefix.isWellFormed())) &&
+    (filter.minimumBytes == null ||
+      (typeof filter.minimumBytes === "number" &&
+        Number.isFinite(filter.minimumBytes) &&
+        filter.minimumBytes >= 0 &&
+        filter.minimumBytes <= Number.MAX_SAFE_INTEGER)) &&
+    (filter.unknownBytes === undefined || typeof filter.unknownBytes === "boolean") &&
+    (filter.sort === undefined || filter.sort === "newest" || filter.sort === "largest") &&
     Buffer.byteLength(JSON.stringify(filter)) <= QUERY_LIMITS.filterBytes
   );
 }
 function matches(event: Partial<StoredEvent>, filter: Filter) {
   if (filter.session !== null && event.session !== filter.session) return false;
   if (filter.hooks.length && !filter.hooks.includes(event.hook ?? "")) return false;
+  if (filter.sessions?.length && !filter.sessions.includes(event.session ?? "")) return false;
+  if (filter.tools?.length && !filter.tools.includes(event.tool ?? "")) return false;
+  if (filter.models?.length && !filter.models.includes(event.model ?? null)) return false;
+  if (filter.prefix && !event.command?.startsWith(filter.prefix)) return false;
+  if (filter.minimumBytes != null || filter.unknownBytes) {
+    if (
+      event.responseBytes == null
+        ? !filter.unknownBytes
+        : filter.minimumBytes == null || event.responseBytes <= filter.minimumBytes
+    )
+      return false;
+  }
   if (!filter.text) return true;
   return [event.text, ...metadata.map((key) => event[key])].some(
     (value) => value != null && String(value).toLowerCase().includes(filter.text),
@@ -73,11 +111,11 @@ class QueryStopped extends Error {
 }
 
 interface Queries {
-  count: Statement<{ count: number }>;
+  count: Statement<{ count: number; responseBytes: number; measuredCalls: number }>;
   rank: Statement<{ count: number }>;
-  at: Statement<StoredEvent>;
-  previous: Statement<StoredEvent>;
-  next: Statement<StoredEvent>;
+  at: Statement<StoredEvent | (EventPosition & { text?: never })>;
+  previous: Statement<StoredEvent | (EventPosition & { text?: never })>;
+  next: Statement<StoredEvent | (EventPosition & { text?: never })>;
   before: Statement<EventRow>;
   after: Statement<EventRow>;
 }
@@ -96,10 +134,14 @@ class Search {
   firstMatch: EventPosition | null = null;
   count: number | null = null;
   arrivals = 0;
+  responseBytes = 0;
+  measuredCalls = 0;
   removed = 0;
   queries: Queries[];
   sql!: Queries;
   choiceQueries: Record<ChoiceField, Record<"first" | Direction, Statement<{ value: string }>>>;
+  choiceText = "";
+  choiceDeadline = Infinity;
   sessionContext: Statement<{ context: string }>;
   constructor(database: DatabaseSync, shared: Int32Array) {
     this.database = database;
@@ -125,6 +167,9 @@ class Search {
         connectionId,
         sequence,
         bytes,
+        model,
+        command,
+        responseBytes,
       ) => {
         this.check();
         const event = {
@@ -137,6 +182,9 @@ class Search {
           connectionId,
           sequence,
           bytes,
+          model,
+          command,
+          responseBytes,
         } as Partial<StoredEvent>;
         const matched = matches(event, this.filter);
         if (matched && this.recordingFirst && (!this.firstMatch || Number(id) < this.firstMatch.id))
@@ -144,56 +192,81 @@ class Search {
         return Number(matched);
       },
     );
-    this.queries = [false, true].map((text) => {
-      const match = `scope_matches(id,${text ? "text" : "NULL"},${metadata.join(",")})`;
-      const columns =
-        "id, receivedAt, substr(hook,1,160) AS hook, substr(session,1,160) AS session, preview";
-      return {
-        count: prepare<{ count: number }>(
-          database,
-          `SELECT count(*) AS count FROM events WHERE id <= ? AND ${match}`,
-        ),
-        rank: prepare<{ count: number }>(
-          database,
-          `SELECT count(*) AS count FROM events WHERE id < ? AND ${match}`,
-        ),
-        at: prepare<StoredEvent>(
-          database,
-          `SELECT * FROM events WHERE id <= ? AND ${match} ORDER BY id LIMIT 1 OFFSET ?`,
-        ),
-        before: prepare<EventRow>(
-          database,
-          `SELECT ${columns} FROM events WHERE id < ? AND id <= ? AND ${match} ORDER BY id DESC LIMIT ?`,
-        ),
-        after: prepare<EventRow>(
-          database,
-          `SELECT ${columns} FROM events WHERE id >= ? AND id <= ? AND ${match} ORDER BY id LIMIT ?`,
-        ),
-        previous: prepare<StoredEvent>(
-          database,
-          `SELECT * FROM events WHERE id <= ? AND id <= ? AND ${match} ORDER BY id DESC LIMIT 1`,
-        ),
-        next: prepare<StoredEvent>(
-          database,
-          `SELECT * FROM events WHERE id >= ? AND id <= ? AND ${match} ORDER BY id LIMIT 1`,
-        ),
-      };
+    this.queries = [undefined, "newest", "largest"].flatMap((sort) =>
+      [false, true].map((text) => {
+        const match = `scope_matches(id,${text ? "text" : "NULL"},${metadata.join(",")})`;
+        const columns =
+          "id, receivedAt, substr(hook,1,160) AS hook, substr(session,1,160) AS session, substr(tool,1,160) AS tool, substr(model,1,160) AS model, responseBytes, context, preview";
+        const order =
+          sort === "largest"
+            ? "COALESCE(responseBytes,-1) DESC, id DESC"
+            : sort === "newest"
+              ? "id DESC"
+              : "id";
+        const reverse =
+          sort === "largest"
+            ? "COALESCE(responseBytes,-1), id"
+            : sort === "newest"
+              ? "id"
+              : "id DESC";
+        const comparison = sort === "largest" ? "(COALESCE(responseBytes,-1),id)" : "id";
+        const bound =
+          sort === "largest"
+            ? "(COALESCE((SELECT responseBytes FROM events WHERE id=?),-1),?)"
+            : "?";
+        const before = `${comparison} ${sort ? ">" : "<"} ${bound}`;
+        const after = `${comparison} ${sort ? "<=" : ">="} ${bound}`;
+        return {
+          count: prepare(
+            database,
+            `SELECT count(*) AS count, COALESCE(sum(responseBytes),0) AS responseBytes, count(responseBytes) AS measuredCalls FROM events WHERE id <= ? AND ${match}`,
+          ),
+          rank: prepare(
+            database,
+            `SELECT count(*) AS count FROM events WHERE ${before} AND id <= ? AND ${match}`,
+          ),
+          at: prepare(
+            database,
+            `SELECT ${sort ? "id,receivedAt" : "*"} FROM events WHERE id = (SELECT id FROM events WHERE id <= ? AND ${match} ORDER BY ${order} LIMIT 1 OFFSET ?)`,
+          ),
+          before: prepare(
+            database,
+            `SELECT ${columns} FROM events WHERE ${before} AND id <= ? AND ${match} ORDER BY ${reverse} LIMIT ?`,
+          ),
+          after: prepare(
+            database,
+            `SELECT ${columns} FROM events WHERE ${after} AND id <= ? AND ${match} ORDER BY ${order} LIMIT ?`,
+          ),
+          previous: prepare(
+            database,
+            `SELECT ${sort ? "id,receivedAt" : "*"} FROM events WHERE id <= ? AND id <= ? AND ${match} ORDER BY id DESC LIMIT 1`,
+          ),
+          next: prepare(
+            database,
+            `SELECT ${sort ? "id,receivedAt" : "*"} FROM events WHERE id >= ? AND id <= ? AND ${match} ORDER BY id LIMIT 1`,
+          ),
+        } as Queries;
+      }),
+    );
+    database.function("scope_choice", (value) => {
+      if (performance.now() >= this.choiceDeadline) throw new QueryStopped();
+      return Number(String(value).toLowerCase().includes(this.choiceText));
     });
     this.choiceQueries = Object.fromEntries(
-      (["session", "hook"] as const).map((field) => [
+      (["session", "hook", "tool", "model"] as const).map((field) => [
         field,
         {
           first: prepare<{ value: string }>(
             database,
-            `SELECT DISTINCT ${field} AS value FROM events WHERE ${field} IS NOT NULL ORDER BY ${field} LIMIT ?`,
+            `SELECT DISTINCT ${field} AS value FROM events WHERE ${field} IS NOT NULL AND scope_choice(${field}) ORDER BY ${field} LIMIT ?`,
           ),
           next: prepare<{ value: string }>(
             database,
-            `SELECT DISTINCT ${field} AS value FROM events WHERE ${field} > ? ORDER BY ${field} LIMIT ?`,
+            `SELECT DISTINCT ${field} AS value FROM events WHERE ${field} > ? AND scope_choice(${field}) ORDER BY ${field} LIMIT ?`,
           ),
           previous: prepare<{ value: string }>(
             database,
-            `SELECT DISTINCT ${field} AS value FROM events WHERE ${field} < ? ORDER BY ${field} DESC LIMIT ?`,
+            `SELECT DISTINCT ${field} AS value FROM events WHERE ${field} < ? AND scope_choice(${field}) ORDER BY ${field} DESC LIMIT ?`,
           ),
         },
       ]),
@@ -209,6 +282,8 @@ class Search {
   }
   status() {
     return {
+      responseBytes: this.responseBytes,
+      measuredCalls: this.measuredCalls,
       queryId: this.queryId,
       first: this.firstMatch ?? null,
       count: this.count ?? null,
@@ -223,14 +298,20 @@ class Search {
     if (this.count == null || !matches(event, this.filter)) return;
     if (!this.count) this.firstMatch = { id: event.id, receivedAt: event.receivedAt };
     this.count++;
+    if (event.responseBytes != null) {
+      this.responseBytes += event.responseBytes;
+      this.measuredCalls++;
+    }
     this.arrivals = Math.min(Number.MAX_SAFE_INTEGER, this.arrivals + 1);
   }
   removing(event: StoredEvent) {
     return this.count != null && matches(event, this.filter) ? 1 : 0;
   }
-  removedEvents(count: number, through = 0) {
+  removedEvents(count: number, through = 0, responseBytes = 0, measuredCalls = 0) {
     if (this.count != null) {
       this.count -= count;
+      this.responseBytes -= responseBytes;
+      this.measuredCalls -= measuredCalls;
       this.removed = Math.min(Number.MAX_SAFE_INTEGER, this.removed + count);
       if (this.firstMatch && this.firstMatch.id <= through) this.firstMatch = null;
     }
@@ -250,6 +331,7 @@ class Search {
       if (queryId !== this.queryId || this.count == null) {
         this.queryId = queryId;
         this.filter = {
+          ...filter,
           text: filter.text.toLowerCase(),
           session: filter.session,
           hooks: [...filter.hooks],
@@ -257,17 +339,23 @@ class Search {
         this.count = null;
         this.arrivals = 0;
         this.removed = 0;
-        this.sql = this.queries[Number(!!filter.text)];
+        this.sql =
+          this.queries[
+            [undefined, "newest", "largest"].indexOf(filter.sort) * 2 + Number(!!filter.text)
+          ];
         this.firstMatch = null;
         this.recordingFirst = true;
         try {
-          this.count = this.sql.count.get(state.last?.id ?? 0)!.count;
+          const totals = this.sql.count.get(state.last?.id ?? 0)!;
+          this.count = totals.count;
+          this.responseBytes = totals.responseBytes;
+          this.measuredCalls = totals.measuredCalls;
         } finally {
           this.recordingFirst = false;
         }
       }
       if (this.count && !this.firstMatch) {
-        const first = this.sql.after.get(0, state.last?.id ?? 0, 1);
+        const first = this.sql.next.get(0, state.last?.id ?? 0);
         this.firstMatch = first ? { id: first.id, receivedAt: first.receivedAt } : null;
       }
       const frozen = target.snapshot;
@@ -288,7 +376,9 @@ class Search {
       let selected;
       if (snapshot.count) {
         if (target.kind === "live")
-          selected = this.sql.previous.get(snapshot.upper, snapshot.upper);
+          selected = filter.sort
+            ? this.sql.at.get(snapshot.upper, 0)
+            : this.sql.previous.get(snapshot.upper, snapshot.upper);
         else if (target.kind === "rank")
           selected = this.sql.at.get(snapshot.upper, Math.min(snapshot.count - 1, target.rank));
         else {
@@ -303,20 +393,34 @@ class Search {
                 : next;
         }
       }
+      const key = (id: number) => (filter.sort === "largest" ? [id, id] : [id]);
+      if (selected && target.kind === "select" && target.page) {
+        const rank = this.sql.rank.get(...key(selected.id), snapshot.upper)!.count;
+        selected = this.sql.at.get(
+          snapshot.upper,
+          Math.max(0, Math.min(snapshot.count - 1, rank + (target.page === "next" ? rows : -rows))),
+        );
+      }
       const before = selected
-        ? this.sql.before.all(selected.id, snapshot.upper, Math.floor(rows / 2)).reverse()
+        ? this.sql.before
+            .all(...key(selected.id), snapshot.upper, filter.sort ? 0 : Math.floor(rows / 2))
+            .reverse()
         : [];
       const after = selected
-        ? this.sql.after.all(selected.id, snapshot.upper, rows - before.length)
+        ? this.sql.after.all(...key(selected.id), snapshot.upper, rows - before.length)
         : [];
-      if (selected && before.length + after.length < rows) {
+      if (selected && !filter.sort && before.length + after.length < rows) {
         before.unshift(
           ...this.sql.before
-            .all(before[0]?.id ?? selected.id, snapshot.upper, rows - before.length - after.length)
+            .all(
+              ...key(before[0]?.id ?? selected.id),
+              snapshot.upper,
+              rows - before.length - after.length,
+            )
             .reverse(),
         );
       }
-      const position = selected ? this.sql.rank.get(selected.id)!.count : 0;
+      const position = selected ? this.sql.rank.get(...key(selected.id), snapshot.upper)!.count : 0;
       this.check();
       return {
         ...state,
@@ -324,7 +428,7 @@ class Search {
         snapshot,
         position,
         rows: [...before, ...after],
-        selected: selected ?? null,
+        selected: selected && selected.text !== undefined ? selected : null,
         queryId,
         targetId,
         selectionEvicted:
@@ -347,7 +451,9 @@ class Search {
       this.maximumMs = Math.max(this.maximumMs, performance.now() - started);
     }
   }
-  choices(field: ChoiceField, cursor: string | null, direction: Direction) {
+  choices(field: ChoiceField, cursor: string | null, direction: Direction, text = "") {
+    this.choiceText = text.toLowerCase();
+    this.choiceDeadline = performance.now() + QUERY_LIMITS.deadlineMs;
     const descending = direction === "previous";
     const query = this.choiceQueries[field][cursor === null ? "first" : direction];
     const values: string[] = [];
@@ -411,6 +517,12 @@ function validNavigation(value: unknown, rowsLimit: number): value is Navigation
   if (
     target.kind === "rank" &&
     !(Number.isInteger(target.rank) && target.rank >= 0 && target.rank <= 10000)
+  )
+    return false;
+  if (
+    target.kind === "select" &&
+    target.page !== undefined &&
+    !["next", "previous"].includes(target.page)
   )
     return false;
   const snapshot = target.snapshot;

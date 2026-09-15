@@ -9,15 +9,11 @@ export async function completed(
   await page.waitForFunction((expected) => {
     if (document.querySelector<HTMLElement>("#entries")!.getAttribute("aria-busy") !== "false")
       return false;
-    const payload = document.querySelector<HTMLElement>("#payload")!.dataset.event;
-    const selected = document.querySelector<HTMLElement>('.event[aria-pressed="true"]');
-    if (payload && payload !== "null") {
-      if (payload !== selected?.dataset.event) return false;
-    } else if (selected) return false;
+    const first = document.querySelector<HTMLElement>("#entries [data-event]");
     return (
       !expected ||
-      (payload === String(expected.id) &&
-        document.querySelector<HTMLElement>("#scrubber")!.getAttribute("aria-valuenow") ===
+      (first?.dataset.event === String(expected.id) &&
+        document.querySelector<HTMLElement>("#entries")!.dataset.position ===
           String(expected.position))
     );
   }, expected);
@@ -41,8 +37,9 @@ export function distribution(values: number[]) {
 }
 
 export async function interactions(page: Page, state: () => Promise<HistoryStatus>) {
-  const queries = [],
-    keys = [];
+  if (await page.locator("#call-detail").isVisible()) await page.locator("#detail-close").click();
+  const queries: number[] = [],
+    keys: number[] = [];
   for (const text of [
     "population",
     "odd",
@@ -66,59 +63,44 @@ export async function interactions(page: Page, state: () => Promise<HistoryStatu
     }
     queries.push(performance.now() - started);
   }
-  const history = await state();
-  assert.equal(history.last!.id - history.first!.id + 1, history.total);
-  let position = 0;
-  await page.locator("#scrubber").press("Home");
-  await completed(page, { id: history.first!.id, position });
-  for (const key of [
-    "End",
-    "ArrowUp",
-    "PageUp",
-    "PageDown",
-    "Home",
-    "ArrowDown",
-    "ArrowRight",
-    "ArrowLeft",
-    "End",
-    "ArrowUp",
-  ]) {
-    const moves: Record<string, number> = {
-      End: history.total,
-      Home: 0,
-      ArrowUp: position - 1,
-      ArrowLeft: position - 1,
-      ArrowDown: position + 1,
-      ArrowRight: position + 1,
-      PageUp: position - 5,
-      PageDown: position + 5,
+  await state();
+  if (await page.locator("#call-detail").isVisible()) await page.locator("#detail-close").click();
+  for (const order of ["largest", "newest", "largest", "newest"]) {
+    const measure = async (action: () => Promise<unknown>) => {
+      const started = performance.now();
+      await action();
+      await completed(page);
+      keys.push(performance.now() - started);
     };
-    position = Math.max(0, Math.min(history.total, moves[key]));
-    const started = performance.now();
-    await page.locator("#scrubber").press(key);
-    await completed(page, {
-      id: history.first!.id + Math.min(history.total - 1, position),
-      position,
-    });
-    keys.push(performance.now() - started);
+    await measure(() => page.locator("#sort").selectOption(order));
+    if (await page.locator("#next-page").isEnabled()) {
+      await measure(() => page.locator("#next-page").click());
+      await measure(() => page.locator("#previous-page").click());
+    }
+    if (await page.locator("#entries tr").count()) {
+      await measure(async () => {
+        await page.locator("#entries tr").first().press("Enter");
+        await page.locator("#detail-close").waitFor();
+      });
+      await measure(() => page.locator("#detail-close").click());
+    }
   }
-  await rapidScrub(page);
+  await rapidSort(page);
   return {
     searchMs: distribution(queries),
     keyboardMs: distribution(keys),
-    pointerMoves: 120,
+    sortChanges: 120,
     summaryRows: await page.locator(".event").count(),
-    tickNodes: await page.locator(".tick").count(),
   };
 }
-
-export async function rapidScrub(page: Page) {
-  const track = await page.locator("#scrubber").boundingBox();
-  assert(track, "Scrubber must be visible.");
-  await page.mouse.move(track.x + 22, track.y + 1);
-  await page.mouse.down();
-  await page.mouse.move(track.x + 22, track.y + track.height - 2, { steps: 60 });
-  await page.mouse.move(track.x + 22, track.y + 1, { steps: 60 });
-  await page.mouse.up();
+export async function rapidSort(page: Page) {
+  if (await page.locator("#call-detail").isVisible()) await page.locator("#detail-close").click();
+  await page.locator("#sort").evaluate((node) => {
+    const control = node as HTMLSelectElement;
+    for (let index = 0; index < 120; index++) {
+      control.value = index % 2 ? "newest" : "largest";
+      control.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
   await completed(page);
 }

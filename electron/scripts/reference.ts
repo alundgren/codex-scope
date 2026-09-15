@@ -15,16 +15,11 @@ try {
   await page.waitForSelector('html[data-ready="true"]');
   await app.evaluate(
     ({ BrowserWindow }, file) => BrowserWindow.getAllWindows()[0].loadFile(file),
-    path.resolve("../docs/mockups/event-journal-v2.html"),
+    path.resolve("../docs/mockups/tool-call-journal.html"),
   );
-  await page.waitForSelector("#scrubber");
-  // Compare application content at equal sizes, without the prototype's demonstration frame.
-  await page.addStyleTag({
-    content:
-      ".study{padding:0;max-width:none}.outside,.demo,#feedback,.titlebar{display:none}.window{height:100dvh;min-height:0;border:0;border-radius:0;box-shadow:none}",
-  });
+  await page.waitForSelector("#rows");
   for (const [name, width, height] of [
-    ["desktop", 1180, 760],
+    ["desktop", 1400, 900],
     ["narrow", 440, 820],
   ] as const) {
     await app.evaluate(

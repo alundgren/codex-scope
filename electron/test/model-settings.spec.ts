@@ -28,7 +28,7 @@ async function tool(page: Page, name: string) {
   await page.locator("#functions summary").click();
   await page.locator(`[data-tool="${name}"]`).click();
 }
-async function refresh(page: Page, expected = "9 models") {
+async function refresh(page: Page, expected = "10 models") {
   await page.locator("#model-refresh").click();
   await expect(page.locator("#model-status")).toContainText(expected);
 }
@@ -55,7 +55,7 @@ test("empty selectors, hidden catalog, explicit persistence and stale invocation
       .toBe("");
     await f.page.screenshot({ path: info.outputPath("01-empty.png") });
     await f.page.locator("#analysis-model").focus();
-    await expect(f.page.locator("#model-status")).toContainText("9 models");
+    await expect(f.page.locator("#model-status")).toContainText("10 models");
     await expect(f.page.locator('#analysis-model option[value="hidden-model"]')).toContainText(
       "hidden",
     );

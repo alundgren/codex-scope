@@ -12,18 +12,19 @@ incoming synthetic frames, owns one database/transport worker and validates narr
 for inspection, copying, status and Clear. The worker parses accepted input,
 stores original payload text and metadata in local recording order, and evicts
 oldest rows within fixed limits. The sandboxed, isolated renderer displays at
-most five neighboring summaries and one complete original payload as text.
+most twelve row summaries and one complete original payload as text.
 Local HTML/CSS and compiled TypeScript supply the selected journal and custom payload
 scrollbar. Capture and history add no runtime package or extra OS process.
 Optional session analysis starts a bounded local Codex CLI process group.
 
 Normal launch leaves capture off and creates no input connection. Functions selects the journal, analyzer or Settings without destroying task state. Start and Stop control input separately from recording lifetime. Each journal starts its viewing position in Live. An explicitly started configured collector supplies live events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
 while capture continues. Retained bounds and arrival counts stay current.
-Literal search covers complete accepted payloads and metadata. Full session IDs
-and several hook selections filter history and matching-arrival counters equally.
-The vertical slider freezes its matching count and retained upper bound during a
-gesture, with one logical stop per event and a distinct Live endpoint. Timed
-worker queries and bounded option pages avoid whole-recording result arrays.
+Literal search covers complete accepted payloads and metadata. The journal shows
+PostToolUse calls; a combined picker filters sessions, tools, models, command
+prefixes and response size. The table sorts by local arrival or response size
+and pages through bounded results. A response-first overlay holds the table,
+while scalar summaries continue following all retained matches. Timed worker
+queries and bounded choice pages avoid whole-recording arrays.
 Clear requires two separate activations within its three-second deadline,
 invalidates old work and removes old history before starting a fresh connection.
 The renderer adopts the generation accepted by the main process. A refused
@@ -152,14 +153,26 @@ Both processes need limits on incoming bytes, event rate, queue bytes, queue cou
 
 Use a fixed measured recording size budget and evict the oldest rows in small transactions. Account for the database, journal or WAL, temporary search files, and SQLite cache, not just payload lengths. Set physical growth limits and leave disk headroom. If eviction cannot keep up or a write fails, discard incoming events and keep the app responsive. Avoid full database compaction during capture. Freed pages can be reused without shrinking the file on every eviction. See [SQLite pragmas](https://sqlite.org/pragma.html) for the controls to evaluate; a database page limit alone does not bound every sidecar file.
 
-The current viewer loads at most five visible summaries and one selected payload, with no whole-recording ID array or summary cache. Use stable event IDs for neighboring rows. Coarse slider positions may use SQL
-offsets within the measured retained row/byte ceilings and query deadline. Text search covers retained payload text and metadata, using literal matching rather than executing regex. Debounce input, cancel obsolete work, and enforce query deadlines. Filtering never changes which events are captured. One active worker predicate
-also updates scalar matching counts when rows arrive or are evicted. A frozen
-navigation request carries the matching count, retained upper ID and cumulative
-matching eviction count. New arrivals cannot change its ranks; matching eviction
-invalidates it. Recording, filter and target identities reject obsolete replies.
-A JavaScript SQLite function checks shared cancellation and the query deadline
-per visited row. Choice indexes and result pages stay inside fixed budgets.
+The journal displays PostToolUse calls through twelve-row pages, with one selected
+payload loaded on demand for its overlay; table navigation transfers no payload. No whole-recording ID array or summary cache
+enters the renderer. The SQLite worker extracts model, literal command and
+response-byte conveniences at ingestion while retaining original payload text.
+Text response bytes count UTF-8; structured response bytes count compact JSON;
+missing responses remain unknown. Metadata cost and its indexes stay within the
+recording's byte, page and disk limits.
+
+`search.ts` applies one literal predicate to retained queries, accepted arrivals
+and eviction accounting. It maintains scalar matching count, known response bytes,
+and measured-call count for live summaries. Filters combine sessions, tools,
+models, literal command prefix and response size. All summaries describe current
+retained matches even while the table holds an older upper ID. Sorting uses local
+IDs or response-byte size followed by local ID, with unknown sizes last.
+
+Paged SQL choices and row queries check deadlines; navigation also checks shared
+cancellation during row visits. Frozen requests carry an upper ID, matching count
+and cumulative matching removals so later arrivals cannot reorder held results.
+Eviction invalidates stale requests. Recording, filter and target identities reject
+obsolete replies. Capture and session analysis remain independent of journal filters.
 
 Numeric defaults for bytes, timeouts, rates, and storage are maintained in the application development guides. Changes require measured overload checks. At every limit, shed work rather than expand capacity indefinitely.
 
@@ -175,17 +188,17 @@ successful cleanup. Its numeric budgets are in the
 
 ## Recording lifetime
 
-| Action or failure | Required behavior |
-| --- | --- |
-| Open the viewer | Create one new recording in an app-owned private directory |
-| Pause following or browse history | Keep recording; preserve the current view position |
-| Hide or minimize the window | Keep recording |
-| Mac sleeps or connection drops | Preserve received history; do not record missed remote events |
-| Reconnect | Begin a new live connection; show the coverage gap |
-| History reaches its budget | Evict oldest events in bounded work; show earliest retained time |
-| Clear history | Discard old queues, queries, and database; start a new recording |
-| Close the only window or quit | Stop intake, close database handles, delete the recording and sidecars, quit |
-| Crash or force quit | Delete abandoned app-owned recordings at next launch |
+| Action or failure                 | Required behavior                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| Open the viewer                   | Create one new recording in an app-owned private directory                   |
+| Pause following or browse history | Keep recording; preserve the current view position                           |
+| Hide or minimize the window       | Keep recording                                                               |
+| Mac sleeps or connection drops    | Preserve received history; do not record missed remote events                |
+| Reconnect                         | Begin a new live connection; show the coverage gap                           |
+| History reaches its budget        | Evict oldest events in bounded work; show earliest retained time             |
+| Clear history                     | Discard old queues, queries, and database; start a new recording             |
+| Close the only window or quit     | Stop intake, close database handles, delete the recording and sidecars, quit |
+| Crash or force quit               | Delete abandoned app-owned recordings at next launch                         |
 
 Use one app instance per local recording owner. Startup cleanup must not delete an active instance's files or anything outside the app's private recording directory. A cleanup failure must be visible and handled with bounded retries; it must not hang quit indefinitely or be reported as successful deletion. Ordinary deletion does not guarantee forensic erasure, and immediate cleanup cannot be guaranteed after a crash.
 

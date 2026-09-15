@@ -24,7 +24,7 @@ const LIMITS = Object.freeze({
   requests: 4,
   requestMs: 2500,
   cleanupMs: 1500,
-  rows: 5,
+  rows: 12,
   retainedBytes: 8 * 1024 * 1024,
   retainedCount: 10000,
   databaseBytes: 16 * 1024 * 1024,
@@ -326,9 +326,15 @@ class History extends EventEmitter {
     if (query.targetId !== Atomics.load(this.shared, 1)) return Promise.resolve({ stale: true });
     return this.call("navigate", { query });
   }
-  choices(generation: number, field: ChoiceField, cursor: string | null, direction: Direction) {
+  choices(
+    generation: number,
+    field: ChoiceField,
+    cursor: string | null,
+    direction: Direction,
+    text = "",
+  ) {
     if (generation !== this.generation) return Promise.resolve({ stale: true });
-    return this.call("choices", { field, cursor, direction });
+    return this.call("choices", { field, cursor, direction, text });
   }
   async clear(generation: number) {
     if (this.closed) return this.call("clear");

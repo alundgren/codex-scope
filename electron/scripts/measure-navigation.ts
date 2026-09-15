@@ -33,7 +33,7 @@ const report: MeasurementReport = {
     memory: os.totalmem(),
   },
   method:
-    "Actual Electron/Xvfb without recording. All Electron process-group members and descendants sampled every 250 ms. Summed RSS duplicates shared pages; final PSS is one aggregate snapshot. CPU 100% is one core. Main includes synthetic input serialization. Search timings include 180 ms input debounce and driver/IPC costs; keyboard timings include driver/IPC, expected selected ID, completed journal update and the next animation frame. Per-query worker maximum excludes those costs.",
+    "Actual Electron/Xvfb without recording. All Electron process-group members and descendants sampled every 250 ms. Summed RSS duplicates shared pages; final PSS is one aggregate snapshot. CPU 100% is one core. Main includes synthetic input serialization. Search timings include 180 ms input debounce and driver/IPC costs; keyboard timings include driver/IPC, completed result page, completed journal update and the next animation frame. Per-query worker maximum excludes those costs.",
   workloads: {},
 };
 const status = () => app.evaluate(() => globalThis.scopeHistory.snapshot());
@@ -46,14 +46,14 @@ async function feed(count: number, maximum = false) {
         let frame = message;
         if (!maximum) {
           const payload = JSON.stringify({
-            hook_event_name: "PreToolUse",
+            hook_event_name: "PostToolUse",
             session_id: `session-${index % 40}`,
             message: "population synthetic input",
             unknown_tail: `${"x".repeat(60)} literal [a.*]%_ ${index % 2 ? "odd" : "even"}`,
           });
           frame = {
             type: "event",
-            hook_type: "PreToolUse",
+            hook_type: "PostToolUse",
             session_id: `session-${index % 40}`,
             tool_name: null,
             payload,
@@ -125,7 +125,7 @@ try {
     }, 20);
   });
   report.workloads.idle = await sample(app, 4000);
-  await page.locator('button[data-event="4"]').click();
+  await page.locator('tr[data-event="4"]').click();
   await page.locator("#scrollbar").press("PageDown");
   for (const [label, added] of [
     ["1000", 1000],

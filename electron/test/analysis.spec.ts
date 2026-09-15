@@ -88,6 +88,7 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
     await append(app, calls());
     await page.locator(".event").first().click();
     const journalSelection = await page.locator("#payload").getAttribute("data-event");
+    await page.locator("#detail-close").click();
     await page.locator("#capture").click();
     await expect(page.locator(".connection")).toHaveText("Stopped");
     await openSession(page);
@@ -609,7 +610,7 @@ test("clipboard failure and delayed completion remain bounded and recoverable", 
     await page.getByRole("button", { name: "Keep suggestion", exact: true }).first().click();
     await app.evaluate(({ clipboard }) => clipboard.writeText("Existing clipboard"));
     await app.evaluate(({ clipboard }) => {
-      const write = clipboard.writeText;
+      const write = clipboard.writeText.bind(clipboard);
       clipboard.writeText = async () => {
         clipboard.writeText = write;
         throw new Error("Synthetic clipboard failure");
@@ -621,7 +622,7 @@ test("clipboard failure and delayed completion remain bounded and recoverable", 
     );
     await capture(page, info, "clipboard-failed");
     await app.evaluate(({ clipboard }) => {
-      const write = clipboard.writeText;
+      const write = clipboard.writeText.bind(clipboard);
       clipboard.writeText = (text) =>
         new Promise<void>((resolve, reject) => {
           setTimeout(() => {

@@ -134,7 +134,7 @@ app
         : (connectionFile ?? path.join(app.getPath("userData"), "connection.json")),
       optionalConnection: !connectionFile,
       directory: path.join(app.getPath("userData"), "recordings"),
-      fixture: path.join(import.meta.dirname, "fixtures", "journal.jsonl"),
+      fixture: path.join(import.meta.dirname, "fixtures", "journal.jsonl.gz"),
       continuous: !process.argv.includes("--fixtures-only"),
       synthetic,
       settingsFile: path.join(app.getPath("userData"), "preferences.json"),
@@ -430,13 +430,17 @@ app
         field: ChoiceField,
         cursor: string | null,
         direction: Direction,
+        text = "",
       ) => {
         if (
           !trusted(event) ||
           readingChoices ||
           !Number.isSafeInteger(generation) ||
-          !["session", "hook"].includes(field) ||
+          !["session", "hook", "tool", "model"].includes(field) ||
           !["next", "previous"].includes(direction) ||
+          typeof text !== "string" ||
+          text.length > QUERY_LIMITS.text ||
+          !text.isWellFormed() ||
           !(
             cursor === null ||
             (typeof cursor === "string" && Buffer.byteLength(cursor) <= QUERY_LIMITS.choiceBytes)
@@ -445,7 +449,7 @@ app
           throw new Error("Filter choices unavailable.");
         readingChoices = true;
         try {
-          return await history.choices(generation, field, cursor, direction);
+          return await history.choices(generation, field, cursor, direction, text);
         } finally {
           readingChoices = false;
         }
@@ -461,43 +465,64 @@ app
       return history.snapshot();
     });
     let copying = false;
-    ipcMain.handle("scope:copy", async (event, generation: number, id: number) => {
-      if (
-        !trusted(event) ||
-        !Number.isSafeInteger(id) ||
-        !Number.isSafeInteger(generation) ||
-        copying
-      )
-        return false;
-      copying = true;
-      let timer: NodeJS.Timeout | undefined;
-      const write = Promise.resolve()
-        .then(async () => {
-          const result = await history.inspect(generation, id, 1);
-          if (
-            generation !== history.generation ||
-            !("selected" in result) ||
-            result.selected?.id !== id
-          )
-            return false;
-          await clipboard.writeText(result.selected.text);
-          return generation === history.generation;
-        })
-        .catch(() => false)
-        .finally(() => {
-          copying = false;
-        });
-      try {
-        return await Promise.race([
-          write,
-          new Promise((resolve) => {
-            timer = setTimeout(() => resolve(false), COPY_TIMEOUT_MS);
-          }),
-        ]);
-      } finally {
-        clearTimeout(timer);
-      }
-    });
+    ipcMain.handle(
+      "scope:copy",
+      async (
+        event,
+        generation: number,
+        id: number,
+        part: "json" | "response" | "input" = "json",
+      ) => {
+        if (
+          !["json", "response", "input"].includes(part) ||
+          !trusted(event) ||
+          !Number.isSafeInteger(id) ||
+          !Number.isSafeInteger(generation) ||
+          copying
+        )
+          return false;
+        copying = true;
+        let timer: NodeJS.Timeout | undefined;
+        const write = Promise.resolve()
+          .then(async () => {
+            const result = await history.inspect(generation, id, 1);
+            if (
+              generation !== history.generation ||
+              !("selected" in result) ||
+              result.selected?.id !== id
+            )
+              return false;
+            const input =
+              part === "json"
+                ? null
+                : (JSON.parse(result.selected.text) as Record<string, unknown>);
+            const content = input?.[part === "response" ? "tool_response" : "tool_input"];
+            if (part !== "json" && content === undefined) return false;
+            await clipboard.writeText(
+              part === "json"
+                ? result.selected.text
+                : typeof content === "string"
+                  ? content
+                  : JSON.stringify(content),
+            );
+            return generation === history.generation;
+          })
+          .catch(() => false)
+          .finally(() => {
+            copying = false;
+          });
+        try {
+          return await Promise.race([
+            write,
+            new Promise((resolve) => {
+              timer = setTimeout(() => resolve(false), COPY_TIMEOUT_MS);
+            }),
+          ]);
+        } finally {
+          clearTimeout(timer);
+        }
+      },
+    );
     window.on("show", present);
     window.on("restore", present);
     const hidden = () => {

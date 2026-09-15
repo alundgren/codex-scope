@@ -10,7 +10,7 @@ import { execFileSync } from "node:child_process";
 import path from "node:path";
 import os from "node:os";
 import { sample, bytes } from "./process-metrics.ts";
-import { completed, interactions, rapidScrub } from "./interaction-metrics.ts";
+import { completed, interactions, rapidSort } from "./interaction-metrics.ts";
 import { fakeCollector, wait } from "../test/fake-collector.ts";
 import { frame } from "../test/navigation-helpers.ts";
 import { evaluateReport } from "./resource-thresholds.ts";
@@ -60,7 +60,7 @@ const report: RegressionReport = {
     excluded:
       "Xvfb, Openbox, Node driver, fake collector and metric reader. No video, screenshots, tests or concurrent app workloads.",
     latency:
-      "Monotonic driver input start through completed journal aria-busy=false, matching selected row/payload/slider, successful result, and following animation frame. Search includes 180 ms debounce. Startup includes launch, connection readiness and two animation frames.",
+      "Monotonic driver input start through completed journal aria-busy=false, committed result page and requested first row, successful result, and following animation frame. Search includes 180 ms debounce; sort includes 60 ms coalescing. Each sort/page/inspect action is timed separately. The 120-change burst runs in one renderer task. Startup includes launch, connection readiness and two animation frames.",
     disk: "Worker maximum of all recording files inside transactions includes rollback journal, sidecars and owner marker. SQLite temp_store=MEMORY; 8 MiB SQLite heap includes its temporary work. Independent endpoint scan verifies disk totals.",
     completion:
       "Phase completion queries current worker transport processing and response-buffer diagnostics; coalesced UI notifications are not a worker completion signal.",
@@ -225,9 +225,9 @@ async function trial(index: number) {
       result.failedView = await page.evaluate(() => ({
         busy: document.querySelector<HTMLElement>("#entries")!.getAttribute("aria-busy"),
         payloadId: document.querySelector<HTMLElement>("#payload")!.dataset.event,
-        selectedRowId: document.querySelector<HTMLElement>('.event[aria-pressed="true"]')?.dataset
+        selectedRowId: document.querySelector<HTMLElement>('.event[aria-selected="true"]')?.dataset
           .event,
-        position: document.querySelector<HTMLElement>("#scrubber")!.getAttribute("aria-valuenow"),
+        position: document.querySelector<HTMLElement>("#entries")!.dataset.position,
         notice: document.querySelector<HTMLElement>("#notice")!.textContent,
       }));
       throw error;
@@ -306,7 +306,7 @@ async function trial(index: number) {
       await wait(65);
     }
     await settle();
-    await page.locator('button[data-event="4"]').click();
+    await page.locator('tr[data-event="4"]').click();
     await page.locator("#scrollbar").press("PageDown");
     const held = await page.locator("#payload").evaluate((node) => ({
       id: node.dataset.event,
@@ -355,7 +355,7 @@ async function trial(index: number) {
       for (const text of ["odd", "even", "literal", "missing", ""])
         await page.locator("#search").fill(text);
       await completed(page);
-      await rapidScrub(page);
+      await rapidSort(page);
       return await intake;
     });
     for (let cycle = 1; cycle <= 3; cycle++)
@@ -368,7 +368,7 @@ async function trial(index: number) {
       "Three maximum-payload cycles remain bounded while eviction continues.",
     );
     await record("navigateMaximum", () => interactions(page, state));
-    await page.locator("#scrubber").press("End");
+    await page.locator("#live").click();
     await completed(page);
     for (const kind of ["hidden", "minimized"]) {
       await app!.evaluate(({ BrowserWindow }, kind) => {

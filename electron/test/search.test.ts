@@ -16,7 +16,7 @@ function succeeded(result: Reply<Navigation>): Navigation {
 function setup() {
   const database = new DatabaseSync(":memory:");
   database.exec(`CREATE TABLE events(id INTEGER PRIMARY KEY, receivedAt TEXT, localReceivedAt TEXT, connectionId TEXT,
-    sequence INTEGER, hook TEXT, session TEXT, tool TEXT, bytes INTEGER, preview TEXT, text TEXT, context TEXT)`);
+    sequence INTEGER, hook TEXT, session TEXT, tool TEXT, bytes INTEGER, preview TEXT, text TEXT, context TEXT, model TEXT, command TEXT, responseBytes INTEGER)`);
   const insert = database.prepare(
     "INSERT INTO events(id,receivedAt,localReceivedAt,connectionId,sequence,hook,session,tool,bytes,preview,text) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
   );
@@ -184,7 +184,7 @@ test("cancellation interrupts a running SQLite scan without retaining its result
   try {
     await new Promise((resolve) => worker.once("message", resolve));
     const insert = x.database.prepare(
-      "INSERT INTO events SELECT ?,receivedAt,localReceivedAt,connectionId,sequence,hook,session,tool,bytes,preview,?,context FROM events WHERE id=1",
+      "INSERT INTO events SELECT ?,receivedAt,localReceivedAt,connectionId,sequence,hook,session,tool,bytes,preview,?,context,model,command,responseBytes FROM events WHERE id=1",
     );
     for (let id = 5; id <= 10000; id++) insert.run(id, "x".repeat(500));
     x.state.last.id = 10000;
@@ -229,6 +229,107 @@ test("colliding short labels display full IDs and stay inside the choice byte li
     const page = x.search.choices("session", null, "next");
     assert.deepEqual(page.labels, [null, null]);
     assert(Buffer.byteLength([...page.values, ...(page.labels ?? [])].join("")) <= 128 * 1024);
+  } finally {
+    x.database.close();
+  }
+});
+
+test("journal filters combine categories and keep live known-byte totals through arrivals and eviction", () => {
+  const x = setup();
+  try {
+    x.database.exec(
+      "UPDATE events SET hook='PostToolUse', model='model-a', command='rg files', responseBytes=100 WHERE id IN (1,2); UPDATE events SET model='model-b', command='cd project && rg files', responseBytes=300 WHERE id=2; UPDATE events SET hook='PostToolUse', responseBytes=0 WHERE id=3;",
+    );
+    const base: Filter = { ...filter(), hooks: ["PostToolUse"], sort: "largest" };
+    let result = succeeded(x.query(base));
+    assert.equal(result.view.count, 3);
+    assert.equal(result.selected, null, "Table navigation does not transfer a payload");
+    assert.equal(result.view.responseBytes, 400);
+    assert.equal(result.view.measuredCalls, 3);
+    assert.deepEqual(
+      result.rows.map((r) => r.id),
+      [2, 1, 3],
+    );
+    result = succeeded(
+      x.query({
+        ...base,
+        prefix: "rg",
+        models: ["model-a"],
+        tools: ["test_tool"],
+        sessions: ["same-prefix-a", "same-prefix-b"],
+        minimumBytes: 99,
+      }),
+    );
+    assert.equal(result.view.count, 1);
+    assert.equal(result.rows[0]?.id, 1);
+    result = succeeded(x.query({ ...base, minimumBytes: 100, unknownBytes: true }));
+    assert.equal(result.view.count, 1);
+    assert.equal(result.rows[0]?.id, 2);
+    result = succeeded(x.query({ ...base, models: [null] }));
+    assert.equal(result.view.count, 1);
+    x.database.exec("UPDATE events SET hook='PostToolUse',responseBytes=NULL WHERE id=4");
+    result = succeeded(x.query({ ...base, unknownBytes: true }));
+    assert.equal(result.view.count, 1);
+    assert.equal(result.view.responseBytes, 0);
+    assert.equal(result.view.measuredCalls, 0);
+    const id = result.queryId;
+    const event = { ...x.events[0], id: 5, hook: "PostToolUse", responseBytes: null };
+    x.search.accepted(event);
+    assert.equal(x.search.status().count, 2);
+    assert.equal(x.search.status().arrivals, 1);
+    x.search.removedEvents(1, 4, 0, 0);
+    assert.equal(x.search.status().count, 1);
+    assert.equal(x.search.status().queryId, id);
+    result = succeeded(x.query(base));
+    assert.deepEqual(
+      result.rows.map((r) => r.id),
+      [2, 1, 3],
+    );
+    const next = succeeded(
+      x.query(base, { kind: "rank", rank: 3, snapshot: result.snapshot }, result.queryId),
+    );
+    assert.deepEqual(
+      next.rows.map((r) => r.id),
+      [4],
+    );
+  } finally {
+    x.database.close();
+  }
+});
+
+test("searchable catalogs page exact tool/model identities without SQL wildcard matching", () => {
+  const x = setup();
+  try {
+    x.database.exec("UPDATE events SET tool='Tool_%',model='Model café' WHERE id=1");
+    assert.deepEqual(x.search.choices("tool", null, "next", "_%").values, ["Tool_%"]);
+    assert.deepEqual(x.search.choices("model", null, "next", "CAFÉ").values, ["Model café"]);
+  } finally {
+    x.database.close();
+  }
+});
+
+test("largest-response paging uses the retained anchor after earlier ranks are evicted", () => {
+  const x = setup();
+  try {
+    x.database.exec("UPDATE events SET hook='PostToolUse',responseBytes=500-id*100;");
+    const f: Filter = { ...filter(), hooks: ["PostToolUse"], sort: "largest" };
+    const result = succeeded(x.query(f, { kind: "rank", rank: 1 }));
+    assert.equal(result.rows[0].id, 2);
+    x.database.exec("DELETE FROM events WHERE id=1");
+    x.state.total = 3;
+    x.state.first = { id: 2, receivedAt: x.events[1].receivedAt };
+    x.search.removedEvents(1, 1, 400, 1);
+    const frozen = { ...result.snapshot, count: 3, removed: 1 };
+    const next = succeeded(
+      x.query(f, { kind: "select", id: 2, page: "next", snapshot: frozen }, result.queryId),
+    );
+    assert.equal(next.rows[0].id, 4);
+    assert.equal(next.position, 2);
+    const previous = succeeded(
+      x.query(f, { kind: "select", id: 4, page: "previous", snapshot: frozen }, result.queryId),
+    );
+    assert.equal(previous.rows[0].id, 2);
+    assert.equal(previous.position, 0);
   } finally {
     x.database.close();
   }

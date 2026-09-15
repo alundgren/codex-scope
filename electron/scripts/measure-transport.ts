@@ -102,7 +102,7 @@ try {
   await record("connectedIdle", () => wait(4000));
   await record("sustained1800", () => feed(1800, 6));
   await record("maximumPayload240", () => feed(240, 65, fixture[4]));
-  await page.locator("#scrubber").press("ArrowUp");
+  await page.locator("#entries tr").first().click();
   await page.locator("#scrollbar").press("PageDown");
   const selected = await page.locator("#payload").getAttribute("data-event"),
     offset = await page.locator("#payload").evaluate((node) => node.scrollTop);
