@@ -1,10 +1,3 @@
-import type { PostingRequest, PostingState } from "./review-posting-types.ts";
-import type { FeedbackDraft } from "./review-feedback.ts";
-import type { GuideAction, GuideArtifact, GuideRequest } from "./review-guidance-types.ts";
-import type { ReviewContent } from "./review-types.ts";
-import type { PromptOverrides, PromptEdit } from "./review-prompts.ts";
-import type { ConversationRequest, ConversationState } from "./review-session-types.ts";
-import type { ReviewRequest, ReviewReply } from "./review-types.ts";
 import type { ModelSelection, ModelCatalog } from "./model-types.ts";
 import type { AnalysisAPI, AnalysisSnapshot } from "./analysis-types.ts";
 export interface EventValue {
@@ -192,11 +185,9 @@ export interface Faults {
   settingsDelay?: number;
 }
 export interface ConnectionSettings {
-  prompts: PromptOverrides;
   endpoint: string;
   hasToken: boolean;
   diagnosis: ModelSelection;
-  review: ModelSelection;
   commandLineOverride: boolean;
   error?: string;
 }
@@ -204,30 +195,11 @@ export interface SettingsEdit {
   endpoint: string;
   token: string;
   diagnosis: ModelSelection;
-  review: ModelSelection;
 }
 export interface ScopeAPI extends AnalysisAPI {
-  copyComment(request: { review: string; body: string }): Promise<boolean>;
-  openComment(request: { review: string; comment: number | null }): Promise<boolean>;
-  posting(request: PostingRequest): Promise<PostingState>;
-  guidance(
-    request: GuideRequest,
-  ): Promise<{ artifacts?: GuideArtifact[]; content?: ReviewContent }>;
-  onGuidanceCancel(callback: (id: string) => void): void;
-  onGuidance(callback: (action: GuideAction) => Promise<string>): void;
-  copyFeedback(request: {
-    review: string;
-    draft: FeedbackDraft;
-    section: "author" | "agent" | "both";
-  }): Promise<boolean>;
-  conversation(request: ConversationRequest): Promise<ConversationState | undefined>;
-  onConversation(callback: () => void): void;
-  review(request: ReviewRequest): Promise<ReviewReply>;
-  cancelReview(): void;
   models(): Promise<ModelCatalog>;
   cancelModels(): void;
   settings(): Promise<ConnectionSettings>;
-  savePrompt(value: PromptEdit): Promise<Reply<ConnectionSettings>>;
   saveSettings(value: SettingsEdit): Promise<Reply<ConnectionSettings>>;
   capture(start: boolean): Promise<Reply<{ ok: boolean }>>;
   status(): Promise<HistoryStatus>;
@@ -247,7 +219,6 @@ export interface ScopeAPI extends AnalysisAPI {
 }
 export interface HistoryOperations {
   settings: { data: Record<string, never>; result: ConnectionSettings };
-  savePrompt: { data: { value: PromptEdit }; result: ConnectionSettings };
   saveSettings: { data: { value: SettingsEdit }; result: ConnectionSettings };
   capture: { data: { start: boolean }; result: { ok: boolean } };
   analysis: { data: { session: string }; result: AnalysisSnapshot };

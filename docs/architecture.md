@@ -17,7 +17,7 @@ Local HTML/CSS and compiled TypeScript supply the selected journal and custom pa
 scrollbar. Capture and history add no runtime package or extra OS process.
 Optional session analysis starts a bounded local Codex CLI process group.
 
-Normal launch leaves capture off and creates no input connection. Functions selects the journal, analyzer, review entry or Settings without destroying task state. Start and Stop control input separately from recording lifetime. Each journal starts its viewing position in Live. An explicitly started configured collector supplies live events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
+Normal launch leaves capture off and creates no input connection. Functions selects the journal, analyzer or Settings without destroying task state. Start and Stop control input separately from recording lifetime. Each journal starts its viewing position in Live. An explicitly started configured collector supplies live events; synthetic mode uses seed events and continued arrivals. Selecting a row holds its neighborhood and payload offset
 while capture continues. Retained bounds and arrival counts stay current.
 Literal search covers complete accepted payloads and metadata. Full session IDs
 and several hook selections filter history and matching-arrival counters equally.
@@ -41,7 +41,7 @@ all have fixed limits. The [Electron development guide](../electron/README.md)
 explains commands, ownership and resource limits.
 
 The worker also owns connection preferences and authenticated HTTP NDJSON transport. Settings reads expose the origin and token presence, never the saved token. Successful settings edits stop input; a separate activation identifier rejects delayed arrivals without clearing the recording or analysis generation. Local private
-settings store an HTTPS origin, token and separate diagnosis/review model and effort selections in one bounded atomic private document. External connection files with token-file locations are read-only imports; literal loopback HTTP
+settings store an HTTPS origin, token and the diagnosis model and effort selection in one bounded atomic private document. External connection files with token-file locations are read-only imports; literal loopback HTTP
 is accepted for same-host tests. Node HTTP APIs use separate connections for the
 stream and heartbeat, strict certificate checks, fixed deadlines and one retry
 timer. No redirects or replay requests are followed. Stream parsing uses a fixed
@@ -272,46 +272,3 @@ omissions and unavailable originals. No Linux collector or wire-protocol changes
 are needed.
 
 Local model discovery uses one transient installed `codex app-server` process. It initializes and exhausts `model/list` cursors including hidden entries, without starting a thread or turn, then removes its temporary files. Main validates the pair again before each restricted diagnosis or handoff invocation. Catalog and execution share bounded process/storage controls but retain their distinct protocols. Settings persistence records only explicit pairs and never adopts the CLI default. See the [catalog behavior and limits](../electron/README.md#local-model-catalog) and the [official app-server protocol](https://learn.chatgpt.com/docs/app-server).
-
-## Pull request inspection
-
-The Electron main process owns one temporary `PRReview`, separate from captured history and diagnosis. A narrow validated IPC request delegates only PR open/refresh, changed-file paging, selected content, screenshot selection/removal and ending the review. The renderer owns its lens, divider and bounded reading positions. Navigation hides and preserves this workspace.
-
-All GitHub reads invoke local `gh api` with argument arrays in an app-owned private directory. No target repository checkout, local source execution or remote-image loading occurs. PR metadata pins the target base and head; the GitHub comparison merge base identifies left-side source. Changed-file pages are checked against the pinned PR after retrieval. Source reads validate the parent Git Tree entry mode and fetch its exact blob OID; symlinks and submodules remain unavailable. Only one page and one selected source/diff remain in main, and one 200-row page crosses IPC. No additional runtime package or persistent process is added.
-
-The screenshot picker accepts bounded PNG bytes and checks dimensions before Chromium decoding. IPC returns only an image identifier URL. A read-only local protocol route serves the selected bounded PNG bytes, avoiding base64 copies in main, preload and renderer. CSP permits local images while retaining the local-script policy and denied remote requests. Sandboxing, context isolation and sender validation stay enabled, following Electron's [security guidance](https://www.electronjs.org/docs/latest/tutorial/security). Whole-app measurements include the transient gh process, following Electron's [performance guidance](https://www.electronjs.org/docs/latest/tutorial/performance). See [PR inspection behavior and limits](pr-review.md).
-
-
-## PR conversation process
-
-The main process owns one `ReviewSession`, independent of the PR evidence browser's selected page. Its app-server thread lasts only until review end or Scope quit. A restricted private CLI home excludes unrelated configuration and thread history. Session-attached evidence tools map host-issued IDs to pinned GitHub source or supplied PNG files through `PRReview`; they expose no arbitrary local path or execution operation. The renderer receives coalesced twenty-entry conversation pages through validated IPC. Capture remains independent; diagnosis and review share one permitted model process group. See [temporary conversation limits and CLI logging exception](pr-review.md#temporary-conversation).
-
-The session uses asynchronous child I/O and capped parsing in main, with no new runtime package, embedded server or additional renderer worker. The installed CLI owns model execution. This follows Electron's [performance guidance](https://www.electronjs.org/docs/latest/tutorial/performance) to defer optional work, avoid blocking I/O and measure all affected processes. Conversation IPC checks the exact main-frame sender and preserves the sandboxed, isolated preload contract described in Electron's [security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
-
-The versioned review prompt registry is shared by Settings and turn construction.
-The existing worker atomically persists explicit overrides in a bounded private
-settings document independent of collector credentials. Main snapshots effective
-base and lens instructions at submission and retains only their version metadata
-with transcript entries. The renderer keeps bounded drafts and renders plain
-text. Fixed host permissions remain outside editable prompts. This adds no
-runtime dependency, process or cross-launch review state.
-
-PR guidance remains inside the active review session. The dynamic-tool dispatcher
-validates evidence identities and bounded declarative actions, while the notebook
-renderer owns follow, input focus and display cancellation. A single acknowledgment
-reports whether a target was shown or retained. DOM source rows and local SVG
-render marks and diagrams without loading agent-supplied documents. Artifact data
-stays in bounded main/renderer memory and ends with the review.
-
-Feedback generation reuses the active review thread and registered feedback prompt.
-The final turn output is validated in `review-session.ts`; `review-feedback.ts`
-defines the bounded finding contract, handoff text and retained annotation references.
-The renderer owns two temporary editable drafts and one pending generation request.
-Validated clipboard IPC checks the pinned review identity and bounds each copy.
-No remote write, new process or runtime dependency is involved. Current feedback
-limits and evidence-verification limits are maintained in `docs/pr-review.md`.
-
-PR comment delivery is owned by `electron/src/review-posting.ts`, behind validated
-main/preload IPC. It serializes preflight, local gh creation and exact readback,
-retains one uncertain attempt for bounded read-only resolution, and cleans its private
-body file. The renderer owns editable previews; session tools have no posting API.

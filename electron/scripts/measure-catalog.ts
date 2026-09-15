@@ -80,11 +80,11 @@ try {
     await expect(status).toContainText(expected);
     await expect(refreshButton).toBeEnabled();
   }
-  async function choose(role: string, model: string, effort: string) {
+  async function choose(model: string, effort: string) {
     const started = performance.now();
-    await page.locator(`#${role}-model`).selectOption(model);
+    await page.locator("#analysis-model").selectOption(model);
     await expect(refreshButton).toBeEnabled();
-    await page.locator(`#${role}-effort`).selectOption(effort);
+    await page.locator("#analysis-effort").selectOption(effort);
     await page.evaluate(
       () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
     );
@@ -109,10 +109,10 @@ try {
     cases.maximum = await measure(async () => {
       await refresh("256 models.");
       await expect(page.locator("#analysis-model option")).toHaveCount(257);
-      desktopSelectionMs = await choose("analysis", `model-255-${"x".repeat(110)}`, "effort-31");
+      desktopSelectionMs = await choose(`model-255-${"x".repeat(110)}`, "effort-31");
       await expect(page.locator("#analysis-effort option")).toHaveCount(33);
       await page.setViewportSize({ width: 390, height: 700 });
-      narrowSelectionMs = await choose("review", `model-254-${"x".repeat(110)}`, "effort-30");
+      narrowSelectionMs = await choose(`model-254-${"x".repeat(110)}`, "effort-30");
       await page.locator("#settings-save").scrollIntoViewIfNeeded();
       await pause(500);
     });
@@ -142,7 +142,7 @@ try {
     await writeFile(control, "success");
     cases.recovery = await measure(async () => {
       await refresh("9 models.");
-      await choose("analysis", "gpt-5.6-luna", "low");
+      await choose("gpt-5.6-luna", "low");
     });
   }
   const settled = await sample(app, 3000);

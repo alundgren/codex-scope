@@ -601,7 +601,7 @@ export function attachAnalysis(
         node(
           "p",
           selectedSession
-            ? "Analyze this session to inspect its tool calls and review suggestions. Choose the diagnosis model and effort in Settings before starting."
+            ? "Analyze this session to inspect its tool calls and recommendations. Choose the diagnosis model and effort in Settings before starting."
             : "Choose a captured session to begin.",
           "analysis-empty",
         ),

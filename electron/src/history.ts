@@ -116,9 +116,7 @@ class History extends EventEmitter {
         if (!request) return;
         if (
           request.generation !== this.generation &&
-          !["close", "settings", "saveSettings", "savePrompt", "capture"].includes(
-            request.operation,
-          )
+          !["close", "settings", "saveSettings", "capture"].includes(request.operation)
         )
           request.resolve({ stale: true });
         else request.resolve(message.result ?? { error: "History operation failed." });
@@ -131,9 +129,7 @@ class History extends EventEmitter {
     this.ready = this.call("open");
   }
   get savingSettings() {
-    return [...this.pending.values()].some((request) =>
-      ["saveSettings", "savePrompt"].includes(request.operation),
-    );
+    return [...this.pending.values()].some((request) => request.operation === "saveSettings");
   }
   snapshot() {
     return {
@@ -144,9 +140,7 @@ class History extends EventEmitter {
         [...this.pending.values()].some(
           (request) =>
             request.generation !== this.generation &&
-            !["close", "settings", "saveSettings", "savePrompt", "capture"].includes(
-              request.operation,
-            ),
+            !["close", "settings", "saveSettings", "capture"].includes(request.operation),
         ),
       settingsSaving: this.savingSettings,
       localDrops: this.localDrops,
@@ -196,7 +190,7 @@ class History extends EventEmitter {
       : [data: HistoryOperations[Operation]["data"]]
   ): Promise<Reply<HistoryOperations[Operation]["result"]>> {
     const data = args[0] ?? {};
-    if (["saveSettings", "savePrompt"].includes(operation) && this.savingSettings)
+    if (operation === "saveSettings" && this.savingSettings)
       return Promise.resolve({ error: "Settings are still saving. Wait for the result." });
     const control = operation === "clear" || operation === "close" || operation === "capture";
     if (this.closed)
@@ -212,7 +206,7 @@ class History extends EventEmitter {
       const timer = setTimeout(
         () =>
           resolve(
-            ["saveSettings", "savePrompt"].includes(operation)
+            operation === "saveSettings"
               ? { pending: request }
               : { error: "History operation timed out. Try again.", timedOut: true },
           ),
@@ -225,7 +219,7 @@ class History extends EventEmitter {
         operation,
       });
       this.peakPending = Math.max(this.peakPending, this.pending.size);
-      if (["saveSettings", "savePrompt"].includes(operation)) this.emit("status", this.snapshot());
+      if (operation === "saveSettings") this.emit("status", this.snapshot());
       try {
         this.worker.postMessage({ request, generation: this.generation, operation, ...data });
       } catch {

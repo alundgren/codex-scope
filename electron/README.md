@@ -1,6 +1,6 @@
 # Electron development
 
-The viewer opens idle with capture stopped. Functions provides searchable navigation to the event journal, session analyzer, PR review entry and Settings. PR review opens one pinned GitHub PR in the full-window notebook. Source and supplied PNG evidence remain temporary. Feedback prepares editable author and agent handoffs in the same review thread, supports manual editing after failure, and supports explicit previewed top-level PR comments through local gh. See [PR review](../docs/pr-review.md) for retrieval, omissions and bounds. Start capture opens the collector's version 1 live stream after connection settings are valid. Stop capture closes input work and keeps retained events and active analysis available. Tool navigation preserves each task's state. It also runs
+The viewer opens idle with capture stopped. Functions provides searchable navigation to the event journal, session analyzer and Settings. Start capture opens the collector's version 1 live stream after connection settings are valid. Stop capture closes input work and keeps retained events and active analysis available. Tool navigation preserves each task's state. It also runs
 independently with synthetic data and no collector or credentials. In synthetic
 mode, it opens five seed events in a fresh temporary SQLite recording,
 starts in Live, and generates one new synthetic event each second. Selecting a
@@ -75,7 +75,7 @@ commands act on the focused control without renderer clipboard access.
 
 Use Settings to enter an HTTPS collector origin and token. A Linux pairing URL such as `https://host:port/?token=secret` fills both fields. The URL field discards the query after extraction; the token field stays masked and clears after save. Duplicate or unknown query parameters, empty tokens and malformed links are rejected.
 
-Connection and model settings write one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and separate diagnosis/review model and effort choices, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. Only one settings save may run at a time. A save that exceeds the 2500 ms reply deadline remains owned until the worker finishes; Settings shows it as pending and prevents retries from overlapping the private temporary file. Completion updates the form with the actual success or failure. Stop capture remains available while a save is pending. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
+Connection and model settings write one app-owned `preferences.json` under the application user data directory. The document contains the origin, token and the diagnosis model and effort choice, is limited to 4096 bytes, and is replaced atomically with mode `0600`. One private temporary file of at most 4096 bytes is reused after interrupted saves. Only one settings save may run at a time. A save that exceeds the 2500 ms reply deadline remains owned until the worker finishes; Settings shows it as pending and prevents retries from overlapping the private temporary file. Completion updates the form with the actual success or failure. Stop capture remains available while a save is pending. Failed validation or saving leaves the previous settings and capture state intact. Saving successfully stops capture and retains history; Start capture is explicit. Saved tokens never return through read IPC or logs. The renderer only holds a token supplied by the user until saving.
 
 For external configuration import, create a private JSON file outside Git with two fields:
 
@@ -100,7 +100,7 @@ literal loopback IPs may use HTTP for same-host testing. `localhost` is not a
 plaintext exception because its name resolution is external to the URL.
 The repository ignores `electron/connection.local.json` and `electron/token.local`
 for local development, but app settings should normally remain outside the clone.
-Scope never writes imported configuration or token files. A command-line file overrides the saved connection at launch. Settings explains this override; saving applies the replacement for the current launch, while the command-line file wins again on the next launch. Model and effort selection stays in Settings and never starts a turn on its own. Both pairs begin empty. Legacy settings retain the connection but discard the old prefilled model because they did not record an explicit choice. Save settings persists new explicit choices, including when no collector connection is configured.
+Scope never writes imported configuration or token files. A command-line file overrides the saved connection at launch. Settings explains this override; saving applies the replacement for the current launch, while the command-line file wins again on the next launch. Model and effort selection stays in Settings and never starts a turn on its own. Both values begin empty. Legacy settings retain the connection but discard the old prefilled model because they did not record an explicit choice. Save settings persists new explicit choices, including when no collector connection is configured.
 
 Authentication, version, endpoint and certificate failures stop retrying. Correct the connection in Settings, save and Start capture to recover. Transient failures use one
 retry timer with backoff from 500 ms to 8 seconds. Existing history remains
@@ -116,7 +116,7 @@ work and starts a new recording and connection only after successful cleanup.
 ## Build and validation
 
 `vp run build` compiles TypeScript with Vite+ Pack and bundles the renderer with Vite+.
-The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis or PR review starts one bounded Codex CLI process group. They do not run concurrently. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
+The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis starts one bounded Codex CLI process group. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
 Playwright's FFmpeg binary are excluded from the bundle. Production bundles are minified. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and synthetic fixtures enter `dist/app`.
 
 `vp run check` runs Vite+ formatting, lint, and strict TypeScript checks. `vp run dev` builds and starts Electron with synthetic data; rerun it after edits. Unit tests run through Vite+ Vitest on Node, and desktop scenarios use Playwright with actual Electron.
@@ -302,7 +302,7 @@ evidence definitions, resource limits, temporary state and capture limitations.
 
 Open a model picker or choose Refresh models in Settings to ask the installed `codex app-server` for its catalog. Scope sends `initialize`, `initialized` and cursor-paged `model/list` requests with `includeHidden: true`, then ends the discovery process. It never starts a thread or turn for discovery. Hidden models stay visible and selectable. The CLI's default model and effort are ignored. A returned model does not prove account access; execution errors remain explicit. Empty catalogs, stale choices, unsupported efforts and incomplete reads keep input intact and offer refresh or reselection.
 
-Diagnosis and handoff preparation reread the catalog immediately before restricted `codex exec --ephemeral` execution. Both use the explicitly selected model and effort recorded on that analysis run. Model discovery cannot enable tools or project access. PR review validates the saved selection against the catalog before starting its temporary review thread.
+Diagnosis and handoff preparation reread the catalog immediately before restricted `codex exec --ephemeral` execution. Both use the explicitly selected model and effort recorded on that analysis run. Model discovery cannot enable tools or project access.
 
 One discovery can run at a time, without a queue. Navigation away from Settings, Cancel discovery and app shutdown cancel its process group. Discovery and analysis do not run CLI processes concurrently. The catalog is held only in memory and is never recovered after closing Scope. A private `catalog/work` directory holds temporary files and logs only while discovery runs, with an ownership marker preventing reuse while an earlier process remains alive. Codex keeps ownership of its existing authentication, configuration and SQLite state. Scope does not copy that state, change its location, read its contents or include its existing disk footprint in the app temporary-storage budget. Initialization may maintain that CLI-owned state through normal CLI behavior; Scope sends no thread, conversation or configuration-write requests.
 
@@ -317,20 +317,3 @@ One discovery can run at a time, without a queue. Navigation away from Settings,
 Limits accommodate measured installed-CLI catalog reads and the bounded maximum-catalog fixture. The catalog process retains the inherited CPU limit and disables core dumps. Its private temporary directory is sampled, but the analysis executor's per-file size limit is not imposed on the CLI's existing SQLite files. Exceeding any limit marks the result incomplete and permits explicit retry. Raw child output never appears in logs or IPC errors.
 
 After building, run `xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec node scripts/measure-catalog.ts` from `electron` without concurrent tests or recording. Add `--real` for installed-CLI discovery with existing authentication and no model turn. The fixture run measures maximum catalogs, output/page pressure, cancellation and recovery. Reports include all app processes and descendants, temporary bytes, frame delay and quit time under ignored `measurements/`. Linux measurements do not establish macOS behavior.
-
-## PR notebook validation
-
-`vp exec node scripts/measure-review.ts` measures the large-PR working set, on-demand source reads, maximum accepted PNG evidence, cancellation, output pressure and recovery without recording. Run inside the documented fresh Xvfb/Openbox desktop after building. `test/review.spec.ts` records the notebook interaction and failure/recovery walkthrough. The [PR review guide](../docs/pr-review.md) maintains the evidence limits.
-
-Temporary PR conversation checks use `vp test run test/review-session.test.ts test/review-tools.test.ts` and the sandboxed `test/review-conversation.spec.ts` desktop walkthrough. Resource reproduction is separate from visual execution:
-
-```bash
-xvfb-run -a -s '-screen 0 1600x1000x24' vp exec node scripts/desktop.ts vp exec node scripts/measure-review-session.ts
-```
-
-This exercises 110 fixture turns, twenty-entry presentation, concurrent capture, diagnosis busy handling, a bounded large source result, conversation capacity and quit cleanup. Reports stay under ignored `measurements/`. `scripts/measure-review-live.ts` is an explicit, optional live check that uses installed Codex authentication, `gpt-6-astra` with low effort and public repository source. It starts real model turns and measures their whole-app cost, so it is excluded from routine tests. Neither command proves macOS performance or native lifecycle behavior.
-
-Review prompt editing uses a separate private `review-prompts.json` with only
-explicit overrides. Its 128 KiB document and one 128 KiB atomic temporary file
-are separate from the 4 KiB connection/model document. Prompt saves preserve
-capture and other settings. See [review prompt behavior and limits](../docs/pr-review.md#review-prompts).
