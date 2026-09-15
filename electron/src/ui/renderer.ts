@@ -281,6 +281,7 @@ function cancelWork() {
   window.scope.cancel(generation, targetId);
 }
 function hold() {
+  cancelWork();
   if (live) heldAt = activeView()?.arrivals ?? 0;
   live = false;
 }
@@ -356,7 +357,10 @@ function receive(value: HistoryStatus) {
       };
       summary(value);
     }
-  } else if ((live && changed) || reset || (!currentRows.length && (activeView()?.count ?? 0) > 0))
+  } else if (
+    reset ||
+    (live && (changed || (!loading && !currentRows.length && (activeView()?.count ?? 0) > 0)))
+  )
     void requestNavigation({ kind: "live" });
 }
 function drawRows() {

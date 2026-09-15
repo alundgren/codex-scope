@@ -153,3 +153,60 @@ test("catalog search, unknown-only size, delayed filters, timeout, pressure and 
     await video.saveAs(info.outputPath("journal-recovery.webm"));
   }
 });
+
+test("inspection cancels a delayed live reply and empty held results only update totals", async ({}, info) => {
+  const { app, page, video } = await launch(info);
+  try {
+    await append(
+      app,
+      Array.from({ length: 20 }, (_, i) => call(i + 1)),
+    );
+    await expect(page.locator("#count")).toHaveText("21");
+    await expect(page.locator("#entries")).toHaveAttribute("aria-busy", "false");
+    const table = page.locator(".tablewrap");
+    await table.evaluate((node) => (node.scrollTop = 90));
+    const rows = await page
+      .locator("#entries tr")
+      .evaluateAll((nodes) => nodes.map((node) => (node as HTMLElement).dataset.event));
+    const id = rows[2]!;
+    await app.evaluate(() => {
+      const history = globalThis.scopeHistory;
+      const original = history.navigate.bind(history);
+      history.navigate = async (...args) => {
+        const result = await original(...args);
+        await new Promise((resolve) => setTimeout(resolve, 700));
+        return result;
+      };
+    });
+    await append(app, [call(25)]);
+    await expect(page.locator("#entries")).toHaveAttribute("aria-busy", "true");
+    await page.locator(`tr[data-event="${id}"]`).click();
+    const offset = await table.evaluate((node) => node.scrollTop);
+    await expect(page.locator("#call-detail")).toBeVisible();
+    expect(
+      await page
+        .locator("#entries tr")
+        .evaluateAll((nodes) => nodes.map((node) => (node as HTMLElement).dataset.event)),
+    ).toEqual(rows);
+    expect(await table.evaluate((node) => node.scrollTop)).toBe(offset);
+    await page.keyboard.press("Escape");
+    await expect(page.locator(`tr[data-event="${id}"]`)).toBeFocused();
+    await capture(page, info, "delayed-reply-held");
+    await page.locator("#search").fill("futureunique");
+    await expect(page.locator("#count")).toHaveText("0");
+    await expect(page.locator("#entries tr")).toHaveCount(0);
+    await append(app, [call(26, { tool_response: "futureunique" })]);
+    await expect(page.locator("#count")).toHaveText("1");
+    await expect(page.locator("#response-total")).toHaveText("12 B");
+    await expect(page.locator("#count")).toHaveAttribute("data-arrivals", "1");
+    await page.waitForTimeout(900);
+    await expect(page.locator("#entries tr")).toHaveCount(0);
+    await capture(page, info, "empty-held-live-totals");
+    await page.locator("#live").click();
+    await expect(page.locator("#entries tr")).toHaveCount(1);
+    await capture(page, info, "explicit-resume");
+  } finally {
+    await app.close();
+    await video.saveAs(info.outputPath("held-races-walkthrough.webm"));
+  }
+});
