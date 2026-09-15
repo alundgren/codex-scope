@@ -7,6 +7,7 @@ import type {
 } from "../analysis-types.ts";
 import type { HistoryStatus, ChoicePage, Direction } from "../types.ts";
 import { requiredElement } from "./elements.ts";
+import { labeledLocalTime } from "./time.ts";
 
 type View = "results" | "trail" | "routing" | "recommendations";
 type ViewState = { search: string; group: string; sort: string; scroll: number };
@@ -306,7 +307,7 @@ export function attachAnalysis(
       line,
       node(
         "span",
-        `${call.model || "Model unknown"} · ${call.tool} · ${call.receivedAt.slice(11, 19)} UTC`,
+        `${call.model || "Model unknown"} · ${call.tool} · ${labeledLocalTime(call.receivedAt)}`,
         "analysis-secondary",
       ),
     );

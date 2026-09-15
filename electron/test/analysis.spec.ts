@@ -96,6 +96,8 @@ test("one session keeps call focus, per-view filters, decisions and journal posi
     await capture(page, info, "01-model-choice");
     await analyze(page);
     await expect(page.locator(".analysis-call")).toHaveCount(12);
+    await expect(page.locator(".analysis-secondary").first()).toContainText("local");
+    await expect(page.locator(".analysis-secondary").first()).not.toContainText("UTC");
     await page.locator(".analysis-call").first().click();
     const focused = await page
       .locator('.analysis-call[aria-pressed="true"]')

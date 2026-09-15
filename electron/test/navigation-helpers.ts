@@ -15,7 +15,7 @@ export const fault = (app: ElectronApplication, faults: Faults) =>
     if (!("ok" in result) || !result.ok) throw new Error("Worker diagnostics unavailable.");
     return result;
   }, faults);
-export async function launch(info: TestInfo) {
+export async function launch(info: TestInfo, { timezone }: { timezone?: string } = {}) {
   const root = await mkdtemp("/tmp/scope-navigation-test-");
   const app = await _electron.launch({
     args: [
@@ -25,6 +25,7 @@ export async function launch(info: TestInfo) {
       `--scope-test-root=${root}`,
     ],
     chromiumSandbox: true,
+    ...(timezone ? { env: { ...process.env, TZ: timezone } } : {}),
     ...(info
       ? { recordVideo: { dir: info.outputPath("video"), size: { width: 1180, height: 820 } } }
       : {}),

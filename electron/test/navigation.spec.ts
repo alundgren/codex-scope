@@ -22,6 +22,23 @@ function call(index: number, overrides: Record<string, unknown> = {}) {
   };
 }
 
+test("journal timestamps use the OS timezone at minute resolution", async ({}, info) => {
+  const { app, page, video } = await launch(info, { timezone: "America/New_York" });
+  try {
+    await append(app, [call(1)]);
+    const row = page.locator("#entries tr").first();
+    await expect(row.locator(".received")).toHaveText("06:24");
+    await capture(page, info, "local-time-table");
+    await row.click();
+    await expect(page.locator("#metadata .detail-identity")).toContainText("06:24 local");
+    await expect(page.locator("#metadata .detail-identity")).not.toContainText("UTC");
+    await capture(page, info, "local-time-detail");
+  } finally {
+    await app.close();
+    await video.saveAs(info.outputPath("local-time.webm"));
+  }
+});
+
 test("A journal combines filters, sorts responses, and holds rows while totals stay live", async ({}, info) => {
   const { app, page, video } = await launch(info);
   const errors: string[] = [];
