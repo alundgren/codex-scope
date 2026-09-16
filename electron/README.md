@@ -64,7 +64,18 @@ xvfb-run -a -s '-screen 0 1600x1000x24' vp run test
 xvfb-run -a vp run start
 ```
 
-On a desktop with a display, use `vp run start`. Normal startup opens no stream, generates no events and starts no analysis. `vp run start --synthetic` selects it explicitly. Use `vp run start --fixtures-only`
+After setup, start the app from the repository root on a desktop with a display:
+
+```bash
+./electron/start.sh
+```
+
+The script builds the app and launches it in normal mode using the workspace's
+installed tools. It also works as `./start.sh` from inside `electron/` and forwards
+arguments such as `--connection-config=/absolute/private/connection.json`.
+Normal startup opens no stream, generates no events and starts no analysis.
+Use Settings to configure the collector, then Start capture to receive live events.
+`vp run start --synthetic` selects synthetic mode explicitly. Use `vp run start --fixtures-only`
 to keep the initial recording finite while exercising inspection. The
 `--history-test` switch exposes fault injection only to the Electron main-process
 debugger and accepts `--scope-test-root` for an isolated owner directory. It
