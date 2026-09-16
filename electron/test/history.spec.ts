@@ -341,7 +341,9 @@ test("an old intake timeout after Clear preserves newly accepted events and coun
     await page.locator("#live").click();
     await page.locator("#entries tr").first().click();
     await page.locator('[data-tab="json"]').click();
-    await expect(page.locator("#json")).toHaveText(source[4].payload);
+    await expect(page.locator("#json")).toHaveText(
+      JSON.stringify(JSON.parse(source[4].payload), null, 2),
+    );
     await expect(page.locator("#notice")).toBeEmpty();
     await capture(page, info, "clear-old-timeout-recovered");
   } finally {
@@ -374,7 +376,9 @@ test("worker failure while confirming Clear preserves visible history until rest
     await expect(page.locator("#notice")).toContainText(
       "Temporary history is unavailable. Restart the app",
     );
-    await expect(page.locator("#json")).toHaveText(source[4].payload);
+    await expect(page.locator("#json")).toHaveText(
+      JSON.stringify(JSON.parse(source[4].payload), null, 2),
+    );
     expect(await page.locator("#payload").evaluate((node) => node.scrollTop)).toBe(offset);
     expect(await state(app)).toMatchObject({ generation: 1, total: 5 });
     await expect(page.locator("#entries")).toHaveAttribute("aria-busy", "false");

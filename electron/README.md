@@ -16,8 +16,10 @@ searchable and paged; selected values remain bounded. Live summaries count all
 retained matches and known response bytes, with unknown responses separate and
 averages divided only by measured calls.
 
-Clicking a row opens a response-first overlay and holds the table. Input and
-original JSON remain available. Closing the overlay keeps the position held;
+Clicking a row opens a response-first overlay that fills the app window and holds
+the table. Input and original JSON remain available. JSON is indented and syntax
+colored, including JSON inside text responses; other text keeps its line breaks.
+Closing the overlay keeps the position held;
 Resume live follows arrivals again. Paging holds results, while changing filters
 or sorting rebuilds them without resuming Live. Capture continues independently.
 Copy JSON preserves accepted text, whitespace, unknown fields and UTF-8 bytes.
@@ -120,7 +122,7 @@ work and starts a new recording and connection only after successful cleanup.
 ## Build and validation
 
 `vp run build` compiles TypeScript with Vite+ Pack and bundles the renderer with Vite+.
-The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server, formatter or framework. Explicit session analysis starts one bounded Codex CLI process group. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
+The output in `dist/app` runs through `vp run start`. The application has no runtime package dependency, embedded server or framework. Explicit session analysis starts one bounded Codex CLI process group. Electron keeps its embedded Node.js and Chromium runtime, including `node:sqlite`; Bun manages development dependencies and does not run application code. One bounded Node worker owns SQLite and ingestion. Tests and
 Playwright's FFmpeg binary are excluded from the bundle. Production bundles are minified. Main and worker code emit ESM `.mjs`; the sandboxed preload emits `.cjs`. Only compiled app files and a gzip-compressed synthetic fixture enter `dist/app`. Fixture decompression uses the existing source-byte limit and runs only for synthetic mode.
 
 `vp run check` runs Vite+ formatting, lint, and strict TypeScript checks. `vp run dev` builds and starts Electron with synthetic data; rerun it after edits. Unit tests run through Vite+ Vitest on Node, and desktop scenarios use Playwright with actual Electron.
@@ -285,9 +287,14 @@ running and suppresses presentation updates. Status messages allow only one unac
 The sandboxed preload exposes only status subscription, bounded inspection and
 filtered navigation, cancellation, paged filter choices, copying and Clear. Main validates the window, top-level frame, exact local URL
 and request arguments. There is no generic SQL/filesystem/clipboard access,
-credential exposure or remote content. One original payload text node remains
-complete and navigable, without pretty-print expansion. One clipboard write may
-remain pending; its two-second timeout does not release the native-write slot
+credential exposure or remote content. Inspection formats only the selected tab,
+using text nodes and colored spans. Formatting preserves JSON number literals,
+duplicate keys and string escapes. It stops before exceeding 262,144 display
+characters or 4,096 text/span parts and falls back to the complete unformatted
+text with a visible explanation. The formatter does not recurse into nested
+values, and it releases its display parts when the tab or selection changes.
+Copy JSON still uses the original captured text; Input and Response copy their
+values without display formatting. One clipboard write may remain pending; its two-second timeout does not release the native-write slot
 until the operation settles.
 
 The desktop session control allows more room for branch text; the narrow toolbar

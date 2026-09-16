@@ -12,7 +12,9 @@ incoming synthetic frames, owns one database/transport worker and validates narr
 for inspection, copying, status and Clear. The worker parses accepted input,
 stores original payload text and metadata in local recording order, and evicts
 oldest rows within fixed limits. The sandboxed, isolated renderer displays at
-most twelve row summaries and one complete original payload as text.
+most twelve row summaries and one selected payload. Its JSON view adds bounded
+indentation and syntax colors using text nodes and spans, with complete
+unformatted text as the fallback when formatting would exceed its limits.
 Local HTML/CSS and compiled TypeScript supply the selected journal and custom payload
 scrollbar. Capture and history add no runtime package or extra OS process.
 Optional session analysis starts a bounded local Codex CLI process group.
@@ -22,8 +24,8 @@ while capture continues. Retained bounds and arrival counts stay current.
 Literal search covers complete accepted payloads and metadata. The journal shows
 PostToolUse calls; a combined picker filters sessions, tools, models, command
 prefixes and response size. The table sorts by local arrival or response size
-and pages through bounded results. A response-first overlay holds the table,
-while scalar summaries continue following all retained matches. Timed worker
+and pages through bounded results. A response-first overlay fills the app window
+and holds the table, while scalar summaries continue following all retained matches. Timed worker
 queries and bounded choice pages avoid whole-recording arrays.
 Clear requires two separate activations within its three-second deadline,
 invalidates old work and removes old history before starting a fresh connection.
