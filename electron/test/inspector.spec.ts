@@ -12,6 +12,7 @@ const messages = (await readFile("fixtures/journal.jsonl", "utf8"))
   .split("\n")
   .map((line) => JSON.parse(line));
 const original = (id: number) => messages[id].payload;
+const formatted = (id: number) => JSON.stringify(JSON.parse(original(id)), null, 2);
 const offset = (page: Page) => page.locator("#payload").evaluate((node) => node.scrollTop);
 const maximum = (page: Page) =>
   page.locator("#payload").evaluate((node) => node.scrollHeight - node.clientHeight);
@@ -69,7 +70,7 @@ async function touchDrag(page: Page, x: number, y: number, destination: number) 
 test("recorded overlay preserves original bytes, scroll controls, copy failure recovery and narrow layout", async ({}, info) => {
   const { app, page, video } = await launch(info);
   try {
-    await expect(page.locator("#json")).toHaveText(original(4), { useInnerText: false });
+    expect(await page.locator("#json").textContent()).toBe(formatted(4));
     await page.locator("#copy").click();
     await expect(page.locator("#copy")).toHaveText("Copied");
     expect(await app.evaluate(({ clipboard }) => clipboard.readText())).toBe(original(4));
@@ -328,7 +329,9 @@ test("long session and tool labels leave the complete payload and byte count usa
     await resize(app, 360, 640);
     await select(page, 1);
     await expect(page.locator("#metadata")).toContainText(session);
-    expect(await page.locator("#json").textContent()).toBe(raw);
+    expect(await page.locator("#json").textContent()).toBe(
+      JSON.stringify(JSON.parse(raw), null, 2),
+    );
     expect(await page.locator("#payload").evaluate((node) => node.clientHeight)).toBeGreaterThan(
       50,
     );
@@ -360,7 +363,7 @@ test("a rejected oversized fixture remains absent while valid history stays usab
     await expect(page.locator("#notice")).toContainText("1 oversized");
     await expect(page.locator("#count")).toHaveText("1");
     await select(page, 4);
-    expect(await page.locator("#json").textContent()).toBe(original(4));
+    expect(await page.locator("#json").textContent()).toBe(formatted(4));
     await capture(page, info, "oversized-rejected");
   } finally {
     await app.close();
@@ -386,7 +389,7 @@ test("empty and unreadable fixtures explain their state, with recovery after res
         else await page.waitForSelector('html[data-ready="true"]');
         if (name === "empty")
           await expect(page.locator("#empty-results")).toContainText("No tool calls");
-        if (name === "recovered") await expect(page.locator("#json")).toHaveText(original(4));
+        if (name === "recovered") await expect(page.locator("#json")).toHaveText(formatted(4));
         else await expect(page.locator("#copy")).toBeDisabled();
         await capture(page, info, name);
       } finally {

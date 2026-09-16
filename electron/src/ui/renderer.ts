@@ -13,6 +13,7 @@ import { requiredElement } from "./elements.ts";
 import { attachScrollbar } from "./scrollbar.ts";
 import { attachFilters } from "./filters.ts";
 import { labeledLocalTime, localTime } from "./time.ts";
+import { renderJson } from "./json.ts";
 
 const entries = requiredElement("#entries"),
   payload = requiredElement("#payload"),
@@ -476,7 +477,7 @@ function renderPayload() {
   if (!selected) return;
   const value = JSON.parse(selectedText) as Record<string, unknown>;
   const content = tab === "response" ? value.tool_response : value.tool_input;
-  json.textContent =
+  const text =
     tab === "json"
       ? selectedText
       : content === undefined
@@ -486,6 +487,7 @@ function renderPayload() {
         : typeof content === "string"
           ? content
           : JSON.stringify(content);
+  const limited = renderJson(json, text);
   payload.scrollTop = 0;
   payload.dataset.event = String(selectedId);
   payload.setAttribute(
@@ -513,7 +515,9 @@ function renderPayload() {
     button.setAttribute("aria-pressed", String(button.dataset.tab === tab));
   copy.textContent = `Copy ${tab === "json" ? "JSON" : tab}`;
   copy.disabled = false;
-  status.textContent = "List held while you inspect.";
+  status.textContent = limited
+    ? "Formatting limit reached. Showing complete unformatted text."
+    : "List held while you inspect.";
   updateScroll();
 }
 function render(result: Reply<Navigation>) {

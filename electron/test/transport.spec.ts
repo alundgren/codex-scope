@@ -189,7 +189,9 @@ test("recorded transport: connection, held reconnect, totals, local drops, Clear
     await expect(page.locator("#count")).toHaveText("1");
     await page.locator("#entries tr").first().click();
     await page.locator('[data-tab="json"]').click();
-    await expect(page.locator("#json")).toHaveText(source[3].payload);
+    await expect(page.locator("#json")).toHaveText(
+      JSON.stringify(JSON.parse(source[3].payload), null, 2),
+    );
     await page.locator("#detail-close").click();
     await capture(page, info, "clear-recovered");
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].hide());
@@ -367,7 +369,9 @@ test("recorded worker exit disconnects capture and restart opens a fresh recordi
     const requests = server.state.requestCount;
     await wait(2200);
     expect(server.state.requestCount).toBe(requests);
-    await expect(run.page.locator("#json")).toHaveText(source[4].payload);
+    await expect(run.page.locator("#json")).toHaveText(
+      JSON.stringify(JSON.parse(source[4].payload), null, 2),
+    );
     await expect(run.page.locator("#entries")).toHaveAttribute("aria-busy", "false");
     for (const id of ["clear", "live", "copy", "search", "filter-open"])
       await expect(run.page.locator(`#${id}`)).toBeDisabled();
@@ -397,11 +401,13 @@ test("recorded worker exit disconnects capture and restart opens a fresh recordi
       selection.addRange(range);
     });
     await run.page.keyboard.press("Control+c");
-    // Native selection copy omits the final layout newline. Copy JSON has separate exact-byte checks.
+    // Selection copies the formatted view. Copy JSON has separate exact-byte checks.
     expect(await run.app.evaluate(({ clipboard }) => clipboard.readText())).toBe(
-      source[4].payload.replace(/\n$/, ""),
+      JSON.stringify(JSON.parse(source[4].payload), null, 2),
     );
-    expect(await run.page.locator("#json").textContent()).toBe(source[4].payload);
+    expect(await run.page.locator("#json").textContent()).toBe(
+      JSON.stringify(JSON.parse(source[4].payload), null, 2),
+    );
     await run.page.evaluate(() => getSelection()!.removeAllRanges());
     await capture(run.page, info, "worker-exit");
     await run.app.evaluate(({ BrowserWindow }) =>
@@ -417,7 +423,9 @@ test("recorded worker exit disconnects capture and restart opens a fresh recordi
     server.event(source[1]);
     await run.page.locator("#entries tr").first().click();
     await run.page.locator('[data-tab="json"]').click();
-    await expect(run.page.locator("#json")).toHaveText(source[1].payload);
+    await expect(run.page.locator("#json")).toHaveText(
+      JSON.stringify(JSON.parse(source[1].payload), null, 2),
+    );
     await expect(run.page.locator("#notice")).not.toContainText("unavailable");
     for (const id of ["clear", "live", "copy", "search", "filter-open"])
       await expect(run.page.locator(`#${id}`)).toBeEnabled();

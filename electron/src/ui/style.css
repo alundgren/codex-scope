@@ -725,11 +725,15 @@ td:last-child {
   background: transparent;
 }
 #call-detail {
-  width: min(920px, calc(100vw - 50px));
-  height: min(700px, calc(100vh - 60px));
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 0;
+  border-radius: 0;
   background: var(--bg);
   color: var(--text);
 }
@@ -779,7 +783,24 @@ td:last-child {
   background: var(--field);
 }
 .detail-content pre {
+  color: var(--text);
+  font-size: 16px;
   line-height: 1.65;
+}
+.json-key {
+  color: var(--blue);
+}
+.json-string {
+  color: #3d6034;
+}
+.json-number {
+  color: var(--accent);
+}
+.json-boolean {
+  color: var(--danger);
+}
+.json-null {
+  color: var(--muted);
 }
 .detail-footer {
   padding: 13px 24px;
@@ -790,6 +811,10 @@ td:last-child {
 }
 .detail-footer #copy-status {
   color: var(--muted);
+}
+.detail-footer #copy {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 @media (max-width: 1100px) {
   header {
